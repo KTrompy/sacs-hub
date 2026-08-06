@@ -17,6 +17,10 @@ export const EMPTY_FILTERS = {
   industries: [],
   services: [],
   mentoringOnly: false,
+  classOf: [],
+  occupations: [],
+  provinces: [],
+  schoolRelationship: [], // currentParent, currentStaffMember, oldBoy, pastParent, pastStaffMember
 }
 
 const QUICK_TABS = [
@@ -129,6 +133,20 @@ export function useDirectoryFilters(session, refetchTrigger) {
     if (f.industries.length && !f.industries.includes(p.industry)) return false
     if (f.services.length && !(p.services_offered || []).some((s) => f.services.includes(s))) return false
     if (f.mentoringOnly && !p.is_open_to_opportunities) return false
+    if (f.classOf.length && !f.classOf.includes(p.grad_year?.toString())) return false
+    if (f.occupations.length && !(p.occupation || '').split(',').map((s) => s.trim().toLowerCase()).some((occ) => f.occupations.some((fOcc) => occ.includes(fOcc.toLowerCase())))) return false
+    if (f.provinces.length && !f.provinces.includes(p.province)) return false
+    if (f.schoolRelationship.length) {
+      const hasRelationship = f.schoolRelationship.some((rel) => {
+        if (rel === 'current-parent' && p.is_current_parent === true) return true
+        if (rel === 'current-staff' && p.is_current_staff === true) return true
+        if (rel === 'old-boy' && p.is_old_boy === true) return true
+        if (rel === 'past-parent' && p.is_past_parent === true) return true
+        if (rel === 'past-staff' && p.is_past_staff === true) return true
+        return false
+      })
+      if (!hasRelationship) return false
+    }
     return true
   }
 
@@ -231,14 +249,6 @@ export function DirectoryFilterPanel({ f }) {
         />
       </FilterSection>
 
-      <FilterSection title="Location">
-        <MultiSelectAutocomplete
-          options={COUNTRIES}
-          values={f.draftFilters.countries}
-          onChange={(v) => f.setDraft('countries', v)}
-          placeholder="All countries — start typing to add one"
-        />
-      </FilterSection>
 
       <FilterSection title="Class year" defaultOpen={false}>
         {f.decadeOptions.length > 0 && (
@@ -276,6 +286,140 @@ export function DirectoryFilterPanel({ f }) {
           values={f.draftFilters.services}
           onChange={(v) => f.setDraft('services', v)}
           placeholder="Any service — start typing to add one"
+        />
+      </FilterSection>
+
+      <FilterSection title="Class of" defaultOpen={false}>
+        <div className="filter-checkbox-list">
+          {f.decadeOptions.map((d) => (
+            <label key={d} className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={f.draftFilters.classOf.includes(d.toString())}
+                onChange={(e) => {
+                  const val = d.toString()
+                  const isChecked = e.target.checked
+                  const newClassOf = isChecked
+                    ? [...f.draftFilters.classOf, val]
+                    : f.draftFilters.classOf.filter((x) => x !== val)
+                  f.setDraft('classOf', newClassOf)
+                }}
+              />
+              {decadeLabel(d)}
+            </label>
+          ))}
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Country" defaultOpen={false}>
+        <MultiSelectAutocomplete
+          options={COUNTRIES}
+          values={f.draftFilters.countries}
+          onChange={(v) => f.setDraft('countries', v)}
+          placeholder="All countries — start typing to add one"
+        />
+      </FilterSection>
+
+      <FilterSection title="Occupation" defaultOpen={false}>
+        <div className="input-clear-wrap">
+          <input
+            type="text"
+            placeholder="Search occupations"
+            value={f.draftFilters.occupations.join(', ')}
+            onChange={(e) => f.setDraft('occupations', e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
+          />
+          {f.draftFilters.occupations.length > 0 && (
+            <button type="button" className="search-clear" onClick={() => f.setDraft('occupations', [])} aria-label="Clear occupations">×</button>
+          )}
+        </div>
+      </FilterSection>
+
+      <FilterSection title="School Relationship" defaultOpen={false}>
+        <div className="filter-checkbox-list">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={f.draftFilters.schoolRelationship.includes('current-parent')}
+              onChange={(e) => {
+                const val = 'current-parent'
+                const isChecked = e.target.checked
+                const newRels = isChecked
+                  ? [...f.draftFilters.schoolRelationship, val]
+                  : f.draftFilters.schoolRelationship.filter((x) => x !== val)
+                f.setDraft('schoolRelationship', newRels)
+              }}
+            />
+            Current Parent
+          </label>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={f.draftFilters.schoolRelationship.includes('current-staff')}
+              onChange={(e) => {
+                const val = 'current-staff'
+                const isChecked = e.target.checked
+                const newRels = isChecked
+                  ? [...f.draftFilters.schoolRelationship, val]
+                  : f.draftFilters.schoolRelationship.filter((x) => x !== val)
+                f.setDraft('schoolRelationship', newRels)
+              }}
+            />
+            Current Staff Member
+          </label>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={f.draftFilters.schoolRelationship.includes('old-boy')}
+              onChange={(e) => {
+                const val = 'old-boy'
+                const isChecked = e.target.checked
+                const newRels = isChecked
+                  ? [...f.draftFilters.schoolRelationship, val]
+                  : f.draftFilters.schoolRelationship.filter((x) => x !== val)
+                f.setDraft('schoolRelationship', newRels)
+              }}
+            />
+            Old Boy
+          </label>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={f.draftFilters.schoolRelationship.includes('past-parent')}
+              onChange={(e) => {
+                const val = 'past-parent'
+                const isChecked = e.target.checked
+                const newRels = isChecked
+                  ? [...f.draftFilters.schoolRelationship, val]
+                  : f.draftFilters.schoolRelationship.filter((x) => x !== val)
+                f.setDraft('schoolRelationship', newRels)
+              }}
+            />
+            Past Parent
+          </label>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={f.draftFilters.schoolRelationship.includes('past-staff')}
+              onChange={(e) => {
+                const val = 'past-staff'
+                const isChecked = e.target.checked
+                const newRels = isChecked
+                  ? [...f.draftFilters.schoolRelationship, val]
+                  : f.draftFilters.schoolRelationship.filter((x) => x !== val)
+                f.setDraft('schoolRelationship', newRels)
+              }}
+            />
+            Past Staff Member
+          </label>
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Province" defaultOpen={false}>
+        <MultiSelectAutocomplete
+          options={SA_CITIES.map((city) => city.split(',')[1]?.trim()).filter(Boolean)}
+          values={f.draftFilters.provinces}
+          onChange={(v) => f.setDraft('provinces', v)}
+          placeholder="All provinces — start typing to add one"
         />
       </FilterSection>
 
