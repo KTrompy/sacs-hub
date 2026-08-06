@@ -1681,7 +1681,11 @@ function ProfilePhotoModal({ avatarUrl, name, onClose, onEdit, onUpdate, onDelet
   const initials = (name || 'A').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
   // Escape, focus trap and Back-button close — this one was closable by
   // backdrop click only.
-  const modalRef = useModal({ onClose, closeOnEscape: !deleting })
+  // history: false — this modal is a quick-action sheet (view / edit / update /
+  // delete), not a page-level view. Giving it a history entry caused a race: the
+  // cleanup history.back() fired a popstate that PhotoCropper's useModal caught,
+  // closing the cropper before the user ever saw it.
+  const modalRef = useModal({ onClose, closeOnEscape: !deleting, history: false })
   return (
     <div className="modal-backdrop pfp-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Profile photo">
       <div className="pfp-modal" ref={modalRef} onClick={e => e.stopPropagation()}>
