@@ -357,20 +357,7 @@ input, textarea, select { font: inherit; }
   inset: 0;
   width: 100%;
   height: 100%;
-}
-/* Blurred, scaled-up copy fills the full banner so there's no bare color
-   showing at the sides — sits behind the real photo. */
-.hero-banner-img-blur {
   object-fit: cover;
-  filter: blur(20px) brightness(0.7);
-  transform: scale(1.1);
-}
-/* The real photo shown whole (no crop) — this is the "zoomed out" fix;
-   object-fit: cover was scaling the 980x365 source up and cropping the
-   top/bottom off. contain shows the entire photo, letterboxed over the
-   blurred backdrop above instead of hard color bars. */
-.hero-banner-img-contain {
-  object-fit: contain;
 }
 /* No text overlay (matches the Lions Connect reference — plain photo, no
    caption). The gradient fades the photo to solid --paper at the bottom so
