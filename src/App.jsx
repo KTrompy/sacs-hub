@@ -569,7 +569,7 @@ export default function App() {
     )
   }
 
-  // Locked out until the committee verifies them against residence
+  // Locked out until the committee verifies them against school
   // records — no browsing while pending. Enforced in the database too as
   // of schema-update-46: every SELECT policy now requires is_approved(),
   // so this screen is a real lock rather than just a screen.
@@ -976,7 +976,7 @@ function AccountRemoved({ onSignOut }) {
   )
 }
 
-// Shown when an admin has checked someone against residence records and
+// Shown when an admin has checked someone against school records and
 // couldn't place them (profiles.declined_at, schema-update-57).
 //
 // Deliberately not the PendingVerification screen with different words. That
@@ -991,7 +991,7 @@ function AccountDeclined({ reason, onSignOut }) {
         <img src="/sacs-logo.png" alt="SACS logo" className="auth-logo" />
         <h1 className="auth-title">We couldn&rsquo;t verify your account</h1>
         <p className="auth-verify-note">
-          Every new account is checked against SACS residence records before
+          Every new account is checked against SACS school records before
           anyone is let in, and we weren&rsquo;t able to match yours.
         </p>
         {reason ? <p className="auth-verify-note"><strong>What we were told:</strong> {reason}</p> : null}

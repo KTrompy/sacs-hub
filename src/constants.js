@@ -1,11 +1,11 @@
-// Longest plausible stay in the residence, used by the signup wizard
+// Longest plausible stay at the school, used by the signup wizard
 // (Auth.jsx) and the social-login catch-up form (FinishSignup.jsx) to
 // sanity-check the "from" and "to" year dropdowns against each other.
-// Generous on purpose — a long degree plus a year or two on house
-// committee is real; twenty years is a mis-picked decade in one of the two
-// dropdowns, which the committee otherwise has to catch by hand when
-// verifying against residence records.
-export const MAX_RESIDENCE_YEARS = 12
+// Generous on purpose — prep years, a repeated grade or two, is real;
+// twenty years is a mis-picked decade in one of the two dropdowns, which
+// the committee otherwise has to catch by hand when verifying against
+// school records.
+export const MAX_SCHOOL_YEARS = 12
 
 // Grouped from real alumni occupation data.
 // "Other" is handled separately in the UI (shows a text input).
@@ -110,8 +110,9 @@ export const INDUSTRIES = [
 // "dokter", "coder", "prokureur" or "plumber" all land on the right row —
 // none of those words appear in any label.
 //
-// Afrikaans terms are in on purpose: this is a Stellenbosch residence, and a
-// good number of alumni will reach for "boer" or "onderwyser" first.
+// Afrikaans terms are in on purpose: SACS is a Cape Town school with a good
+// number of Afrikaans-speaking alumni who will reach for "boer" or
+// "onderwyser" first.
 // Matching is substring-based, so short stems ("boer") also cover the longer
 // forms ("boerdery"). Keep entries lowercase.
 export const INDUSTRY_KEYWORDS = {

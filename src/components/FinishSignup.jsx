@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { MAX_RESIDENCE_YEARS } from '../constants.js'
+import { MAX_SCHOOL_YEARS } from '../constants.js'
 import { friendlyAuthError } from '../authErrors.js'
 import { PrivacyPolicyModal } from './PrivacyPolicy.jsx'
 
@@ -18,7 +18,7 @@ import { PrivacyPolicyModal } from './PrivacyPolicy.jsx'
 // ever heard about them either, and their accounts sat unreachable.
 //
 // So it now asks only for what the committee actually needs to verify someone
-// against residence records — who you are and when you were in SACS — plus
+// against school records — who you are and when you were in SACS — plus
 // the consent that legally has to be collected before anything is stored.
 // Everything else (address, city, the map pin, post code) is collected on the
 // profile page immediately after approval: App.jsx already routes first-time
@@ -141,8 +141,8 @@ export default function FinishSignup({ session, profile, onDone }) {
     if (!endYear) return 'Select your final year (or expected final year).'
     if (Number(endYear) < Number(startYear)) return 'Your final year can’t be before your first year.'
     // Same sanity check as the signup wizard — see Auth.jsx.
-    if (Number(endYear) - Number(startYear) > MAX_RESIDENCE_YEARS) {
-      return `That's more than ${MAX_RESIDENCE_YEARS} years in SACS — check the years are right.`
+    if (Number(endYear) - Number(startYear) > MAX_SCHOOL_YEARS) {
+      return `That's more than ${MAX_SCHOOL_YEARS} years in SACS — check the years are right.`
     }
     if (newsOptIn === null) return 'Choose whether you’d like news and events by email.'
     if (!dataConsent) return 'You’ll need to consent to your data being held to join.'
@@ -160,7 +160,7 @@ export default function FinishSignup({ session, profile, onDone }) {
       .update({
         full_name: fullName,
         // Own columns as of schema-update-57 — an admin checking someone
-        // against residence records needs the legal first name, which is
+        // against school records needs the legal first name, which is
         // exactly what full_name loses whenever a preferred name is given.
         first_name: firstName.trim(),
         preferred_name: preferredName.trim(),
@@ -205,7 +205,7 @@ export default function FinishSignup({ session, profile, onDone }) {
             which is its own reason to abandon a form. */}
         <p className="auth-verify-note">
           We just need your name and the years you were in SACS &mdash; that&rsquo;s what
-          the committee checks against residence records. You can fill in the rest
+          the committee checks against school records. You can fill in the rest
           of your profile once you&rsquo;re in.
         </p>
 

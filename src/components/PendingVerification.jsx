@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient'
 
 // Full-screen gate shown to signed-in members who haven't been approved
 // yet — the app itself stays locked until the alumni committee verifies
-// them against SACS residence records (Admin → Pending approval).
+// them against SACS school records (Admin → Pending approval).
 // A confirmation email on approval is planned once an email provider
 // (e.g. Resend) is wired up — see Admin.jsx's setApproved.
 export default function PendingVerification({ session, profile, onProfileChange }) {
@@ -90,7 +90,7 @@ export default function PendingVerification({ session, profile, onProfileChange 
         <div className="pending-verify-icon" aria-hidden="true">⏳</div>
         <h1 className="auth-title">{name ? `Thanks, ${name}!` : 'Thanks for joining!'}</h1>
         <p className="auth-verify-note">
-          Your details are being verified against SACS residence records by
+          Your details are being verified against SACS school records by
           the alumni committee. You&rsquo;ll receive an email at{' '}
           <strong>{email}</strong> as soon as you&rsquo;re confirmed — then you
           can sign in and meet everyone.
@@ -106,7 +106,7 @@ export default function PendingVerification({ session, profile, onProfileChange 
         {/* The profile editor sits behind the approval gate, so until the
             committee verifies them there is no way for someone to correct
             a misspelt surname or the wrong years — the very details being
-            checked against residence records. This at least gives them a
+            checked against school records. This at least gives them a
             route to say so, with the account's email already in the
             subject line so it can be matched up. */}
         <p className="auth-verify-contact">

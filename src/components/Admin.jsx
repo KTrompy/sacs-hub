@@ -622,7 +622,7 @@ function PendingList({
           <h3 className="admin-list-heading">Declined</h3>
           <p className="admin-tab-footnote" style={{ marginTop: 0, marginBottom: 10 }}>
             Turned down and told so by email. Their account and anything they'd posted is untouched,
-            so this can be reversed at any time — which matters, because the older residence records
+            so this can be reversed at any time — which matters, because the older school records
             are patchy and a decline is often our mistake rather than theirs.
           </p>
           <ul className="admin-list">
@@ -666,7 +666,7 @@ function PendingList({
             </div>
             <div className="modal-body">
               <p>
-                They'll be emailed to say we couldn't match them against residence records, and
+                They'll be emailed to say we couldn't match them against school records, and
                 they'll see the same message if they sign in. Nothing is deleted and you can undo
                 this at any time.
               </p>
@@ -713,7 +713,7 @@ function PendingRows({ rows, onApprove, onStartDecline, onResendConfirmation, bu
               <span className="admin-row-name">
                 {m.full_name || 'Name not set yet'}
                 {/* The legal first name, shown only when it differs from the
-                    display name — that's the one to check against residence
+                    display name — that's the one to check against school
                     records, and it's exactly the one full_name hides whenever
                     someone gave a preferred name. */}
                 {m.first_name && m.preferred_name && m.preferred_name !== m.first_name && (

@@ -7,7 +7,7 @@ import CityAutocomplete from './CityAutocomplete.jsx'
 import { PASSWORD_MIN, passwordProblem, PasswordStrengthMeter } from '../passwordRules.jsx'
 import { authRedirectTo } from '../authRedirect.js'
 import { friendlyAuthError } from '../authErrors.js'
-import { MAX_RESIDENCE_YEARS } from '../constants.js'
+import { MAX_SCHOOL_YEARS } from '../constants.js'
 import { PrivacyPolicyModal } from './PrivacyPolicy.jsx'
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
@@ -509,8 +509,8 @@ export default function Auth({ initialError = null, initialMode = null }) {
     // Nobody lives in res for more than about a decade. Catches the common
     // slip of picking the wrong decade in one of the two dropdowns, which
     // the committee otherwise has to spot by hand during verification.
-    if (Number(endYear) - Number(startYear) > MAX_RESIDENCE_YEARS) {
-      return `That's more than ${MAX_RESIDENCE_YEARS} years in SACS — check the years are right.`
+    if (Number(endYear) - Number(startYear) > MAX_SCHOOL_YEARS) {
+      return `That's more than ${MAX_SCHOOL_YEARS} years in SACS — check the years are right.`
     }
     if (!city.trim()) return 'Enter your city or town.'
     if (!country.trim()) return 'Enter your country.'
@@ -680,7 +680,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
             // The three name parts have their own columns as of
             // schema-update-57. Before that they existed only inside
             // auth.users.raw_user_meta_data, where nothing in the app could
-            // read them — so an admin verifying someone against residence
+            // read them — so an admin verifying someone against school
             // records couldn't see the legal first name whenever a preferred
             // name had been given, which is exactly when they'd need it.
             first_name: details.first_name,
@@ -770,7 +770,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
               </p>
               <p className="auth-verify-note">
                 After that, your details go to the alumni committee to be checked
-                against SACS residence records, and we&rsquo;ll email you again
+                against SACS school records, and we&rsquo;ll email you again
                 once you&rsquo;re confirmed as an Old Boy.
               </p>
               <p className="hint">
@@ -802,7 +802,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
             </>
           ) : (
             <p className="auth-verify-note">
-              Your details will be verified against SACS residence records. Once
+              Your details will be verified against SACS school records. Once
               you&rsquo;re confirmed as an Old Boy, you&rsquo;ll receive an email at{' '}
               <strong>{signupEmail}</strong> and can sign in.
             </p>
@@ -1268,7 +1268,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
         )}
 
         <p className="auth-note">
-          New accounts are verified against SACS residence records — you&rsquo;ll
+          New accounts are verified against SACS school records — you&rsquo;ll
           get an email as soon as you&rsquo;re confirmed.
         </p>
       </div>
