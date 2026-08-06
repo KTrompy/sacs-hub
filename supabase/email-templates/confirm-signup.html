@@ -1,0 +1,64 @@
+<!--
+  SACS Alumni Hub — "Confirm signup" auth email template.
+
+  This is NOT deployed by code — Supabase's built-in auth emails (confirm
+  signup, magic link, reset password, etc.) live in the dashboard, not the
+  repo, and there's no MCP/API tool wired up here to push them. Paste this in
+  manually:
+
+    Supabase Dashboard → Authentication → Email Templates → Confirm signup
+    → replace the "Message body" with everything below → Save.
+
+  Uses Supabase's Go-template variables ({{ .ConfirmationURL }} etc.), which
+  the dashboard renders at send time — leave those as-is.
+
+  Palette matches src/styles.css and the send-approval-email function so all
+  transactional mail looks like one product: SACS gold #C9A227, SACS navy
+  #002F5F, paper #FAF7F2, Georgia for display type.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<body style="margin:0; padding:0; background:#FAF7F2; font-family:'Inter',Arial,sans-serif; color:#1A1A1A;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAF7F2; padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px; width:100%; background:#FFFFFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(26,26,26,0.06);">
+          <tr>
+            <td style="background:#002F5F; padding:20px 32px;">
+              <span style="font-family:Georgia,'Times New Roman',serif; font-size:20px; color:#FFFFFF; letter-spacing:0.02em;">SACS Alumni Hub</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 32px 28px;">
+              <h1 style="margin:0 0 16px; font-family:Georgia,'Times New Roman',serif; font-size:22px; color:#002F5F;">Confirm your email</h1>
+              <p style="margin:0 0 20px; font-size:15px; line-height:1.6; color:#1A1A1A;">
+                Thanks for signing up for SACS Alumni Hub. Confirm this email address to finish creating your account.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-radius:8px; background:#C9A227;">
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:12px 28px; font-size:15px; font-weight:600; color:#FFFFFF; text-decoration:none; border-radius:8px;">Confirm email address</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:28px 0 0; font-size:13px; line-height:1.6; color:#5C5C5C;">
+                An admin will still need to approve your account before you can sign in — you'll get a separate email once that happens.
+              </p>
+              <p style="margin:16px 0 0; font-size:12px; line-height:1.6; color:#5C5C5C;">
+                If you didn't request this, you can ignore this email.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px; border-top:1px solid #E8E1D5;">
+              <p style="margin:0; font-size:12px; line-height:1.6; color:#5C5C5C;">
+                SACS Alumni Hub · <a href="https://www.sacsalumni.org" style="color:#5C5C5C;">sacsalumni.org</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# Dependencies — never commit these. They were tracked in git until
+# 2026-08-01, which made every clone enormous and shipped a frozen, months-old
+# dependency tree alongside the source. package.json + package-lock.json are
+# the record of what to install; node_modules is the result of installing it.
+node_modules/
+
+# Build output
+dist/
+dist-test/
+dist.old*/
+
+# Vite writes one of these every time it reloads its config in dev. Several
+# hundred had accumulated in the project root.
+vite.config.js.timestamp-*
+
+# Local secrets. .env.example is the tracked template.
+.env
+.env.local
+.env.*.local
+
+# Scratch / editor / OS noise
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+.~lock.*#
+
+dist-audit/
+
+# Stray files that shouldn't have been in the folder at all — the Supabase
+# CLI installer got downloaded straight into the project root instead of
+# somewhere temporary, and a leftover test/scratch file never got cleaned up.
+# 71MB .deb also tripped GitHub's file-size warning on the first push attempt.
+supabase.deb
+testfile123
+page-09.jpg
+page-10.jpg
