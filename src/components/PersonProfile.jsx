@@ -206,9 +206,7 @@ export default function PersonProfile({ session, me, onMessage }) {
               <LocationIcon /> {locationLine}
             </p>
           )}
-          <span className="profile-status-pill">
-            {p.is_current_resident ? 'Current Old Boy · in house' : 'Alumnus'}
-          </span>
+          <span className="profile-status-pill">Alumnus</span>
         </div>
       </div>
 

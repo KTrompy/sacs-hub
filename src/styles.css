@@ -1,13 +1,13 @@
 /* SACS Alumni Hub — design tokens
-   Navy anchors (the shield), gold accents (the crest and motto), black + white
-   supply the discipline. NOTE: variable names kept as --orange/--maroon from
-   the Eendrag fork to minimise diff churn — they hold SACS gold/navy values now.
+   Navy anchors (the shield), a baby-blue accent, black + white supply the
+   discipline. NOTE: variable names kept as --orange/--maroon from the
+   Eendrag fork to minimise diff churn — they hold SACS blue/navy values now.
    A future refactor can rename to --accent/--primary. */
 
 :root {
-  --orange: #C9A227;         /* SACS gold (accent) */
-  --orange-dark: #A6841F;    /* darker gold for hover/active */
-  --orange-soft: #F7EED2;    /* pale gold background wash */
+  --orange: #6EC3E8;         /* SACS baby blue (accent) */
+  --orange-dark: #3E9DC9;    /* darker baby blue for hover/active */
+  --orange-soft: #E6F6FC;    /* pale blue background wash */
   --maroon: #002F5F;         /* SACS navy (primary) */
   --maroon-dark: #001B37;    /* deeper navy for headers */
   --maroon-soft: #33547F;    /* softer navy for accents */
@@ -10157,9 +10157,9 @@ button.delete-danger svg { flex-shrink: 0; }
 
    Deliberately unlike every other block on Home. The rest of the page is
    white feed-widget cards; this is full-bleed photography with white type
-   burned into it, because it's the one section about the house's history
-   rather than its live network, and it should read as an editorial insert
-   rather than another widget.
+   burned into it, because it's the one section about SACS's history
+   rather than its live alumni network, and it should read as an editorial
+   insert rather than another widget.
    ========================================================================== */
 
 .legends-band {

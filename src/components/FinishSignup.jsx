@@ -25,7 +25,7 @@ import { PrivacyPolicyModal } from './PrivacyPolicy.jsx'
 // members straight there with every empty field highlighted, so nothing is
 // lost, it's just asked for at a point where the person is already in and has
 // a reason to care.
-const FOUNDING_YEAR = 1961
+const FOUNDING_YEAR = 1829
 const THIS_YEAR = new Date().getFullYear()
 const START_YEARS = []
 for (let y = THIS_YEAR; y >= FOUNDING_YEAR; y--) START_YEARS.push(y)

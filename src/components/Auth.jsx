@@ -12,8 +12,8 @@ import { PrivacyPolicyModal } from './PrivacyPolicy.jsx'
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
-// SACS opened in 1961 — nobody can have started before that.
-const FOUNDING_YEAR = 1961
+// SACS was founded in 1829 — nobody can have started before that.
+const FOUNDING_YEAR = 1829
 const THIS_YEAR = new Date().getFullYear()
 // Start years run 1961..now; end years allow a few years into the future so
 // current residents can pick their expected final year.
@@ -821,7 +821,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
       <div className="auth-card">
         <img src="/sacs-logo.png" alt="SACS logo" className="auth-logo" />
         <h1 className="auth-title">SACS Alumni</h1>
-        <p className="auth-sub">Character · Style · Pride · Since 1961</p>
+        <p className="auth-sub">Spectemur Agendo · Since 1829</p>
 
         {mode !== 'forgot' && (
           // Deliberately NOT role="tablist"/"tab". That markup promises a

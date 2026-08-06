@@ -39,7 +39,6 @@ const EMPTY = {
   province: '', postal_code: '',
   bio: '',
   linkedin_url: '', phone: '',
-  is_current_resident: false,
   expertise: [],
   services_offered: [],
   business_website: '',
@@ -194,7 +193,6 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
         bio: profile.bio || '',
         linkedin_url: profile.linkedin_url || '',
         phone: profile.phone || '',
-        is_current_resident: !!profile.is_current_resident,
         expertise: normalizeExpertise(profile.expertise),
         services_offered: Array.isArray(profile.services_offered) ? profile.services_offered : [],
         business_website: profile.business_website || '',
@@ -894,25 +892,6 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
           </label>
         </div>
 
-        <div className="field">
-          <span>Status</span>
-          <div className="onboarding-choice-row profile-choice-row">
-            <button
-              type="button"
-              className={!form.is_current_resident ? 'onboarding-choice on' : 'onboarding-choice'}
-              onClick={() => set('is_current_resident', false)}
-            >
-              Alumnus
-            </button>
-            <button
-              type="button"
-              className={form.is_current_resident ? 'onboarding-choice on' : 'onboarding-choice'}
-              onClick={() => set('is_current_resident', true)}
-            >
-              Still here
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Career Section */}

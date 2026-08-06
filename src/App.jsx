@@ -599,7 +599,7 @@ export default function App() {
             <img src="/sacs-logo.png" alt="SACS logo" className="brand-logo" />
             <div>
               <span className="brand-name">SACS Alumni</span>
-              <span className="brand-motto">Character · Style · Pride · Since 1961</span>
+              <span className="brand-motto">Spectemur Agendo · Since 1829</span>
             </div>
           </div>
 
@@ -801,7 +801,7 @@ export default function App() {
                 Initiated and built by Kyle Trompeter —{' '}
                 <a className="footer-link" href="mailto:kyletrompeter0@gmail.com">get in touch</a>
                 {' · '}
-                <button type="button" className="footer-link footer-link-btn" onClick={() => goTo('/donate')}>Support the house</button>
+                <button type="button" className="footer-link footer-link-btn" onClick={() => goTo('/donate')}>Support SACS</button>
                 {' · '}
                 <button type="button" className="footer-link footer-link-btn" onClick={() => goTo('/privacy')}>Privacy Policy</button>.
               </span>

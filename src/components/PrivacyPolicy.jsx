@@ -13,7 +13,7 @@ import useModal from '../useModal.js'
 //     session and therefore before the router's protected routes exist.
 // Update the "Last updated" date below whenever the content changes —
 // POPIA notices are meant to reflect current practice, not history.
-const LAST_UPDATED = '3 August 2026'
+const LAST_UPDATED = '6 August 2026'
 
 export function PrivacyPolicyContent() {
   return (
@@ -22,7 +22,8 @@ export function PrivacyPolicyContent() {
 
       <p>
         SACS Alumni Hub ("the Hub") is an unofficial community site run by
-        alumni, for alumni of SACS House, Stellenbosch. Kyle Trompeter
+        alumni, for alumni of SACS (South African College Schools), Newlands,
+        Cape Town. Kyle Trompeter
         administers it and is the responsible party for the personal
         information collected here under South Africa's Protection of
         Personal Information Act, 2013 (POPIA).
@@ -31,8 +32,8 @@ export function PrivacyPolicyContent() {
       <h3>What we collect</h3>
       <p>
         When you join, we collect your name, email address, the years you
-        lived in SACS, and a residential address, which the committee uses
-        to verify you actually lived in the house before approving your
+        attended SACS, and a residential address, which the committee uses
+        to verify you actually attended before approving your
         account. From there, anything else on your profile is what you
         choose to add: phone number, city/country and the coordinates used
         to place you on the alumni map, occupation, employer, industry,

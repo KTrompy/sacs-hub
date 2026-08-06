@@ -105,7 +105,7 @@ export default function Directory({ session, people, loading, me, onMessage, hid
       {!hideHeader && (
         <>
           <h2 className="panel-title">Old Boys</h2>
-          <p className="panel-sub">The house, out in the world — and still in it.</p>
+          <p className="panel-sub">Old Boys, out in the world.</p>
         </>
       )}
 
@@ -182,7 +182,7 @@ function PersonCard({ person: p, isMe, onMessage }) {
               {isMe && <span className="person-card-you">You</span>}
             </div>
             <div className="person-card-meta">
-              {p.industry || (p.is_current_resident ? 'In house' : 'Alum')}
+              {p.industry || 'Alum'}
             </div>
             {roleLine && <p className="person-card-role">{roleLine}</p>}
             {locationLine && <p className="person-card-location">{locationLine}</p>}

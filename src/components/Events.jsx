@@ -431,7 +431,7 @@ export default function Events({ session, profile, onMessage }) {
       <div className="panel-header-row">
         <div>
           <h2 className="panel-title">Events</h2>
-          <p className="panel-sub">Reunions, golf days, house drinks. See you there.</p>
+          <p className="panel-sub">Reunions, golf days, get-togethers. See you there.</p>
         </div>
         <div className="events-header-actions">
           <div className="view-switch" role="tablist" aria-label="Events view">

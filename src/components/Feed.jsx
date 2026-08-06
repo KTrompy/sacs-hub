@@ -24,7 +24,7 @@ export { WhosOnline }
 // everywhere else in the app, not a stripped-down version.
 const POSTER_FIELDS =
   'id, full_name, avatar_url, grad_year, degree, industry, occupation, company, city, country, ' +
-  'is_current_resident, linkedin_url, bio, expertise, services_offered, business_website, ' +
+  'linkedin_url, bio, expertise, services_offered, business_website, ' +
   'availability, geographic_focus, is_open_to_opportunities'
 
 const MAX_IMAGES = 4
@@ -397,7 +397,7 @@ export default function Feed({ session, profile, onMessage }) {
   return (
     <section className="panel">
       <h2 className="panel-title">Feed</h2>
-      <p className="panel-sub">Photos, updates, shoutouts — what the house is up to.</p>
+      <p className="panel-sub">Photos, updates, shoutouts — what Old Boys are up to.</p>
 
       <div className="feed-layout">
         <div className="feed-main">

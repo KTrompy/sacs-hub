@@ -9,11 +9,8 @@ import { useIsWide } from '../utils.js'
 // owns one instance of this hook and hands the filtered list to whichever
 // view is currently showing, same toolbar and "Filter by" panel either way.
 
-export const STATUS = { ALL: 'all', CURRENT: 'current', ALUMNI: 'alumni' }
-
 export const EMPTY_FILTERS = {
   name: '',
-  status: STATUS.ALL,
   yearFrom: '',
   yearTo: '',
   countries: [],
@@ -30,7 +27,7 @@ const QUICK_TABS = [
 ]
 
 const PEOPLE_SELECT = 'id, full_name, grad_year, degree, occupation, industry, company, city, country, ' +
-  'is_current_resident, bio, avatar_url, linkedin_url, approved, lat, lng, last_seen, ' +
+  'bio, avatar_url, linkedin_url, approved, lat, lng, last_seen, ' +
   'expertise, services_offered, business_website, looking_to_connect, ' +
   'availability, geographic_focus, is_open_to_opportunities, created_at, experience'
 
@@ -126,8 +123,6 @@ export function useDirectoryFilters(session, refetchTrigger) {
       if (!hay.includes(needle)) return false
     }
     if (f.name && !(p.full_name || '').toLowerCase().includes(f.name.trim().toLowerCase())) return false
-    if (f.status === STATUS.CURRENT && !p.is_current_resident) return false
-    if (f.status === STATUS.ALUMNI && p.is_current_resident) return false
     if (f.yearFrom && (!p.grad_year || p.grad_year < Number(f.yearFrom))) return false
     if (f.yearTo && (!p.grad_year || p.grad_year > Number(f.yearTo))) return false
     if (f.countries.length && !f.countries.includes(p.country)) return false
@@ -156,7 +151,7 @@ export function useDirectoryFilters(session, refetchTrigger) {
     return Object.entries(f).filter(([k, v]) => {
       if (Array.isArray(v)) return v.length > 0
       if (typeof v === 'boolean') return v
-      return v && !(k === 'status' && v === STATUS.ALL)
+      return Boolean(v)
     }).length
   }
   const activeFilterCount = countActive(effectiveFilters)
@@ -284,13 +279,6 @@ export function DirectoryFilterPanel({ f }) {
         />
       </FilterSection>
 
-      <FilterSection title="Affiliation" defaultOpen={false}>
-        <div className="filter-radio-row">
-          <button type="button" className={f.draftFilters.status === STATUS.ALL ? 'on' : ''} onClick={() => f.setDraft('status', STATUS.ALL)}>All</button>
-          <button type="button" className={f.draftFilters.status === STATUS.CURRENT ? 'on' : ''} onClick={() => f.setDraft('status', STATUS.CURRENT)}>In house</button>
-          <button type="button" className={f.draftFilters.status === STATUS.ALUMNI ? 'on' : ''} onClick={() => f.setDraft('status', STATUS.ALUMNI)}>Alumni</button>
-        </div>
-      </FilterSection>
     </>
   )
 

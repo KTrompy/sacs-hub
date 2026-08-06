@@ -63,7 +63,7 @@ export default function ResetPassword({ onDone, onCancel }) {
       <div className="auth-card">
         <img src="/sacs-logo.png" alt="SACS logo" className="auth-logo" />
         <h1 className="auth-title">Set a new password</h1>
-        <p className="auth-sub">Character · Style · Pride · Since 1961</p>
+        <p className="auth-sub">Spectemur Agendo · Since 1829</p>
 
         {done ? (
           <>

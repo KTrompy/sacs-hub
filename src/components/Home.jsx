@@ -760,8 +760,8 @@ export default function Home({ session, profile, onMessage }) {
           </div>
 
           <div className="feed-widget home-donate-card">
-            <h3>Support the house</h3>
-            <p>Every gift, big or small, helps keep the house standing for the Old Boys who come after us. Give to whichever cause resonates with you most.</p>
+            <h3>Support SACS</h3>
+            <p>Every gift, big or small, helps keep SACS strong for the Old Boys who come after us. Give to whichever cause resonates with you most.</p>
             <button type="button" className="btn primary wide" onClick={() => navigate('/donate')}>Give now</button>
           </div>
         </aside>

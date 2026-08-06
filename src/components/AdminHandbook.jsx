@@ -97,7 +97,7 @@ export default function AdminHandbook() {
         <Callout tone="good" title="The single most important habit">
           Never approve someone you can't place. An approved account can read every member's
           profile, message anyone privately, and post to the feed. Approval is the only wall
-          between the house and the internet. It takes one WhatsApp to a classmate to check.
+          between the alumni community and the internet. It takes one WhatsApp to a classmate to check.
         </Callout>
         <h4>What you are <em>not</em> responsible for</h4>
         <ul className="hb-list">
@@ -392,7 +392,7 @@ export default function AdminHandbook() {
         <h4>Before you hand over</h4>
         <ol className="hb-list">
           <li>
-            <strong>Create a shared house email address</strong> (e.g. an address the committee
+            <strong>Create a shared committee email address</strong> (e.g. an address the committee
             controls, not an individual). Everything else hangs off this.
           </li>
           <li>

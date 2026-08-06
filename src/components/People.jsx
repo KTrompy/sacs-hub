@@ -30,7 +30,7 @@ export default function People({ session, onMessage, onGoToProfile, refetchTrigg
         <div>
           <h2 className="panel-title">Old Boys</h2>
           <p className="panel-sub">
-            {view === 'list' ? 'The house, out in the world — and still in it.' : 'Where are we all now?'}
+            {view === 'list' ? 'Old Boys, out in the world.' : 'Where are we all now?'}
           </p>
         </div>
         <div className="view-switch" role="tablist" aria-label="Old Boys view">

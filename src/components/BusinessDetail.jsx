@@ -15,7 +15,7 @@ import { BusinessLogo, BusinessForm } from './BusinessDirectory.jsx'
 
 const POSTER_FIELDS =
   'id, full_name, avatar_url, grad_year, degree, industry, occupation, company, city, country, ' +
-  'is_current_resident, linkedin_url, bio, expertise, services_offered, business_website, ' +
+  'linkedin_url, bio, expertise, services_offered, business_website, ' +
   'availability, geographic_focus, is_open_to_opportunities'
 
 // Same plain-div marker Leaflet trick BusinessDirectory's map view uses
