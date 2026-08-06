@@ -10586,3 +10586,207 @@ button.stretched-link {
   justify-content: flex-end;
   margin-top: 18px;
 }
+
+/* ============================================================
+   MERCH SHOP (Shop.jsx, ShopProduct.jsx, Cart.jsx, Checkout.jsx,
+   MyOrders.jsx, MerchAdmin.jsx)
+   ============================================================ */
+
+/* ---------- Shop grid ---------- */
+.merch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+.merch-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+.merch-card:hover, .merch-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+  outline: none;
+}
+.merch-card-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--paper);
+}
+.merch-card-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.merch-card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--paper);
+  border-bottom: 1px dashed var(--line-strong);
+}
+.merch-card-image-placeholder.large { aspect-ratio: 4 / 3; border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); }
+.merch-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--maroon);
+  color: #fff;
+}
+.merch-badge-soldout { background: var(--danger); }
+.merch-card-body { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px 14px; }
+.merch-card-category {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--orange-dark);
+}
+.merch-card-name { font-weight: 700; color: var(--ink); }
+.merch-card-price { color: var(--ink-soft); font-size: 14px; }
+
+/* ---------- Product detail ---------- */
+.shop-product-layout { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; margin-top: 8px; }
+.shop-product-image { flex: 1 1 320px; max-width: 420px; }
+.shop-product-image img { width: 100%; border-radius: var(--radius); object-fit: contain; background: var(--paper); aspect-ratio: 4 / 3; }
+.shop-product-info { flex: 1 1 320px; min-width: 260px; }
+.shop-product-price { font-size: 22px; font-weight: 700; color: var(--maroon); margin: 4px 0 12px; }
+.shop-product-description { color: var(--ink-soft); line-height: 1.6; white-space: pre-wrap; margin-bottom: 16px; }
+.shop-product-options { margin-bottom: 16px; }
+.shop-product-options-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+.shop-product-options-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.shop-variant-pill {
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.shop-variant-pill:hover:not(:disabled) { border-color: var(--orange); }
+.shop-variant-pill.on { border-color: var(--maroon); background: var(--maroon); color: #fff; }
+.shop-variant-pill.soldout { opacity: 0.5; cursor: not-allowed; text-decoration: line-through; }
+.shop-variant-pill-delta { opacity: 0.8; }
+.shop-product-qty { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.shop-product-stock-hint { font-size: 12.5px; color: var(--ink-soft); }
+.merch-pickup-note { margin-top: 16px; font-size: 12.5px; color: var(--ink-soft); font-style: italic; }
+
+.qty-stepper { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line-strong); border-radius: 999px; overflow: hidden; }
+.qty-stepper button {
+  background: var(--paper);
+  border: none;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ink);
+}
+.qty-stepper button:hover:not(:disabled) { background: var(--orange-soft); }
+.qty-stepper button:disabled { opacity: 0.4; cursor: default; }
+.qty-stepper span { min-width: 28px; text-align: center; font-weight: 700; font-size: 14px; }
+
+/* ---------- Cart / Checkout ---------- */
+.cart-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
+.cart-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.cart-row-image { width: 54px; height: 54px; flex-shrink: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--paper); }
+.cart-row-image img { width: 100%; height: 100%; object-fit: contain; }
+.cart-row-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cart-row-name { font-weight: 700; color: var(--ink); }
+.cart-row-variant, .cart-row-price { font-size: 12.5px; color: var(--ink-soft); }
+.cart-row-line-total { font-weight: 700; color: var(--ink); min-width: 80px; text-align: right; }
+.cart-row .icon-btn-delete { font-size: 20px; line-height: 1; }
+
+.cart-summary { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 4px; border-top: 1px solid var(--line); margin-top: 14px; }
+.cart-summary-label { color: var(--ink-soft); }
+.cart-summary-total { font-size: 20px; font-weight: 700; color: var(--maroon); }
+.cart-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+.checkout-summary-list { margin-top: 8px; }
+.checkout-pay-block { margin-top: 20px; max-width: 420px; }
+.checkout-pay-note { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; text-align: center; }
+.checkout-confirmation { max-width: 480px; margin: 20px auto; text-align: center; }
+.checkout-confirmation-icon {
+  width: 56px;
+  height: 56px;
+  line-height: 56px;
+  border-radius: 999px;
+  background: var(--ok);
+  color: #fff;
+  font-size: 26px;
+  margin: 0 auto 16px;
+}
+
+/* ---------- My Orders / Admin order rows (shared) ---------- */
+.order-row { flex-direction: column; align-items: stretch; }
+.order-row-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.order-row-chevron { color: var(--ink-soft); font-size: 11px; flex-shrink: 0; }
+.order-row-detail { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 10px; }
+.order-items-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
+.order-items-list li { display: flex; justify-content: space-between; gap: 10px; color: var(--ink); }
+.order-row-note { font-size: 13px; color: var(--ink-soft); margin: 0; }
+.order-status-row { max-width: 260px; }
+.order-status-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.order-status-badge.tone-good { background: rgba(44, 110, 73, 0.12); color: var(--ok); }
+.order-status-badge.tone-warn { background: var(--orange-soft); color: var(--orange-dark); }
+.order-status-badge.tone-bad { background: rgba(163, 51, 39, 0.12); color: var(--danger); }
+
+/* ---------- Admin: Merch products & variants ---------- */
+.admin-merch-thumb-empty { border: 1px dashed var(--line-strong); background: var(--paper); }
+.merch-admin-product-editor { max-width: 620px; }
+.variants-editor { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+.variants-editor-title { font-size: 16px; margin: 0 0 12px; color: var(--ink); }
+.variant-form {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.variant-form .btn-row.variant-form-btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+
+@media (max-width: 640px) {
+  .merch-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .shop-product-layout { gap: 20px; }
+  .cart-row { flex-wrap: wrap; }
+  .cart-row-line-total { text-align: left; }
+}

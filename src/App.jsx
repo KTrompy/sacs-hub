@@ -11,6 +11,7 @@ import { Avatar } from './components/Directory.jsx'
 import FloatingMessages from './components/FloatingMessages.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
 import ConfirmDialog from './components/ConfirmDialog.jsx'
+import { CartProvider, useCart } from './components/CartContext.jsx'
 
 // Route-level code splitting.
 //
@@ -37,6 +38,11 @@ const Jobs = lazy(() => import('./components/Jobs.jsx'))
 const JobDetail = lazy(() => import('./components/JobDetail.jsx'))
 const BusinessDirectory = lazy(() => import('./components/BusinessDirectory.jsx'))
 const BusinessDetail = lazy(() => import('./components/BusinessDetail.jsx'))
+const Shop = lazy(() => import('./components/Shop.jsx'))
+const ShopProduct = lazy(() => import('./components/ShopProduct.jsx'))
+const Cart = lazy(() => import('./components/Cart.jsx'))
+const Checkout = lazy(() => import('./components/Checkout.jsx'))
+const MyOrders = lazy(() => import('./components/MyOrders.jsx'))
 const LegendsHall = lazy(() => import('./components/LegendsHall.jsx'))
 const LegendProfile = lazy(() => import('./components/LegendProfile.jsx'))
 const Donate = lazy(() => import('./components/Donate.jsx'))
@@ -64,6 +70,7 @@ const TABS = [
   { id: 'mentoring', label: 'Mentoring', path: '/mentoring', icon: MentoringIcon },
   { id: 'events', label: 'Events', path: '/events', icon: EventsIcon },
   { id: 'businesses', label: 'Business Directory', path: '/businesses', icon: BusinessIcon },
+  { id: 'shop', label: 'Merch', path: '/shop', icon: ShopIcon },
 ]
 
 // Admin-only, appended to the nav when the signed-in profile has is_admin
@@ -592,6 +599,7 @@ export default function App() {
   const moreNavVisible = moreNavOverride !== null ? moreNavOverride : isSecondaryActive
 
   return (
+    <CartProvider>
     <div className="app">
       <header className="masthead">
         <div className="masthead-inner">
@@ -604,6 +612,8 @@ export default function App() {
           </div>
 
           <div className="masthead-actions">
+            <CartHeaderButton onClick={() => goTo('/shop/cart')} />
+
             <button type="button"
               className="header-icon-btn"
               onClick={() => setMessagesOpen((o) => !o)}
@@ -756,6 +766,11 @@ export default function App() {
               <Route path="/jobs/:jobId" element={<JobDetail session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/businesses" element={<BusinessDirectory session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/businesses/:businessId" element={<BusinessDetail session={session} profile={profile} onMessage={openMessage} />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/shop/cart" element={<Cart />} />
+              <Route path="/shop/checkout" element={<Checkout />} />
+              <Route path="/shop/orders" element={<MyOrders session={session} />} />
+              <Route path="/shop/:productId" element={<ShopProduct />} />
               <Route path="/legends" element={<LegendsHall />} />
               <Route path="/legends/:legendId" element={<LegendProfile />} />
               <Route path="/donate" element={<Donate />} />
@@ -919,6 +934,7 @@ export default function App() {
         </div>
       )}
     </div>
+    </CartProvider>
   )
 }
 
@@ -1100,6 +1116,45 @@ function BusinessIcon() {
     </svg>
   )
 }
+function ShopIcon() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 8l1.2-4h9.6L18 8" />
+      <path d="M4 8h16l-1.2 12.5a1.5 1.5 0 0 1-1.5 1.5H6.7a1.5 1.5 0 0 1-1.5-1.5L4 8Z" />
+      <path d="M9 12a3 3 0 0 0 6 0" />
+    </svg>
+  )
+}
+
+function CartIcon() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M3 4h2l2.2 11.1a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.2L20.5 8H6" />
+    </svg>
+  )
+}
+
+// Lives in the masthead next to Messages — its own component (rather than
+// inlining the button in App's JSX) because useCart() needs to be called
+// from inside <CartProvider>, and App itself renders the provider around
+// its whole return rather than being a child of it.
+function CartHeaderButton({ onClick }) {
+  const { count } = useCart()
+  return (
+    <button type="button"
+      className="header-icon-btn"
+      onClick={onClick}
+      aria-label={count > 0 ? `Cart, ${count} item${count === 1 ? '' : 's'}` : 'Cart'}
+      title="Cart"
+    >
+      <CartIcon />
+      {count > 0 && <span className="notif-badge">{count > 9 ? '9+' : count}</span>}
+    </button>
+  )
+}
+
 function AdminIcon() {
   return (
     <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

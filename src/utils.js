@@ -144,6 +144,16 @@ export function useObjectUrls(files) {
   return urls
 }
 
+// South African Rand, always 2 decimals — R150 and R149.99 should look like
+// they belong on the same price list, not one looking rounder than the other.
+export function formatZAR(amount) {
+  const n = Number(amount)
+  return 'R' + (Number.isFinite(n) ? n : 0).toLocaleString('en-ZA', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
 export function useIsWide(breakpoint = 900) {
   const [isWide, setIsWide] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth >= breakpoint : true

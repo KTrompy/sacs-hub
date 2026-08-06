@@ -9,6 +9,7 @@ import ConfirmDialog from './ConfirmDialog.jsx'
 import { Avatar } from './Directory.jsx'
 import { useToast } from './Toast.jsx'
 import AdminHandbook from './AdminHandbook.jsx'
+import MerchAdmin from './MerchAdmin.jsx'
 import Turnstile, { TURNSTILE_SITE_KEY } from './Turnstile.jsx'
 import { authRedirectTo } from '../authRedirect.js'
 import { friendlyAuthError } from '../authErrors.js'
@@ -55,6 +56,11 @@ const SUBTABS = [
     help: "Alumni businesses. Feature pins one to the top of the directory — harmless and reversible, but worth agreeing a rule for so it doesn't become a favour.",
   },
   {
+    id: 'merch',
+    label: 'Merch',
+    help: "The SACS shop — products, size/colour options and stock, and every order placed. There's no live payment gateway yet, so a new order is a promise to pay, not a completed sale — chase payment before moving someone past Pending.",
+  },
+  {
     id: 'legends',
     label: 'Notable Old Boys',
     help: "The old boys featured on the home page. Three show at a time and the set rotates every Monday, so the more you write up the longer it stays fresh. Hide is the reversible one — it pulls someone off the home page but keeps the write-up.",
@@ -99,6 +105,7 @@ const COUNT_TABLES = [
   ['jobs', 'jobs'],
   ['events', 'events'],
   ['businesses', 'businesses'],
+  ['merchOrders', 'merch_orders'],
 ]
 
 export default function Admin({ session }) {
@@ -347,6 +354,7 @@ export default function Admin({ session }) {
         <StatCard label="Jobs" value={counts.jobs} hint="Job listings, open and closed." />
         <StatCard label="Events" value={counts.events} hint="Events, past and upcoming." />
         <StatCard label="Businesses" value={counts.businesses} hint="Alumni businesses listed." />
+        <StatCard label="Merch orders" value={counts.merchOrders} hint="Total shop orders placed, any status." />
       </div>
 
       <div className="admin-subtabs" role="tablist" aria-label="Admin sections">
@@ -420,6 +428,7 @@ export default function Admin({ session }) {
       {subtab === 'jobs' && <JobsModeration />}
       {subtab === 'events' && <EventsModeration />}
       {subtab === 'businesses' && <BusinessesModeration />}
+      {subtab === 'merch' && <MerchAdmin session={session} />}
       {subtab === 'legends' && <LegendsAdmin session={session} />}
       {subtab === 'activity' && <ActivityLog />}
       {subtab === 'handbook' && <AdminHandbook />}
