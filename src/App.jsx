@@ -670,7 +670,13 @@ export default function App() {
           text overlay (matches the reference exactly — just the photo;
           brand name/motto already live in the header next to the logo). */}
       <div className="hero-banner">
-        <img src="/Sacs-High-School-Newlands-Cape-Town.webp" alt="" className="hero-banner-img" />
+        <img
+          src="/Sacs-High-School-Newlands-Cape-Town.webp"
+          alt=""
+          aria-hidden="true"
+          className="hero-banner-img hero-banner-img-blur"
+        />
+        <img src="/Sacs-High-School-Newlands-Cape-Town.webp" alt="" className="hero-banner-img hero-banner-img-contain" />
         <div className="hero-banner-overlay" />
       </div>
 
