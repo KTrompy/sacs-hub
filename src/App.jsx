@@ -577,12 +577,14 @@ export default function App() {
     )
   }
 
-  // Step 2 of joining — membership details (DOB, cell, location, industry,
-  // community roles, comms preferences). Email joiners arrive here straight
-  // from the signup wizard's consent step; Google joiners via FinishSignup
-  // above. Sits before the approval gate so the committee has the full
-  // record when they verify, and existing members from before this shipped
-  // pass through it exactly once on their next sign-in.
+  // Legacy fallback only. Membership details (title, DOB, cell, location,
+  // industry, community roles, comms preferences) are now collected inside
+  // the single signup wizard (Auth.jsx) and FinishSignup above — both set
+  // details_completed_at themselves the moment someone finishes joining, so
+  // a new member never sees this screen. It stays here purely to catch
+  // accounts from before that merge, or a signup whose write genuinely
+  // failed partway — either way, this is the one place left that still
+  // asks for it.
   if (!profile.details_completed_at) {
     return (
       <CompleteDetails

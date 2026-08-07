@@ -1,36 +1,31 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import { MAX_SCHOOL_YEARS } from '../constants.js'
+import { MAX_SCHOOL_YEARS, TITLES, INDUSTRIES, SA_PROVINCES, COMMUNITY_ROLES } from '../constants.js'
 import { friendlyAuthError } from '../authErrors.js'
 import { PrivacyPolicyModal } from './PrivacyPolicy.jsx'
+import PhoneInput from './PhoneInput.jsx'
+import CityAutocomplete from './CityAutocomplete.jsx'
+import CountryAutocomplete from './CountryAutocomplete.jsx'
 
 // Shown (full-screen, before anything else) to anyone signed in whose profile
 // has no consented_at yet — in practice that's people who joined via Google
 // and so never went through the signup form, plus the rare email signup whose
 // post-signup profile update failed.
 //
-// This screen used to ask for eleven things: three name fields, two years,
-// three address lines, province, city, post code, country, plus both consent
-// answers. Seven of the twenty-seven people who came in through the Google
-// button never finished it — they clicked a one-click sign-in and were handed
-// a form asking for their home address, and simply left. Nothing chased them:
-// notify_admins_new_signup only fires once consent is captured, so no admin
-// ever heard about them either, and their accounts sat unreachable.
-//
-// So it now asks only for what the committee actually needs to verify someone
-// against school records — who you are and when you were in SACS — plus
-// the consent that legally has to be collected before anything is stored.
-// Everything else (address, city, the map pin, post code) is collected on the
-// profile page immediately after approval: App.jsx already routes first-time
-// members straight there with every empty field highlighted, so nothing is
-// lost, it's just asked for at a point where the person is already in and has
-// a reason to care.
+// One screen, everything at once — name, years, membership record and
+// address — mirroring the merged Auth.jsx wizard. This used to be split into
+// a short "who you are" screen here plus a second CompleteDetails.jsx screen
+// afterwards; that split is gone, so a Google joiner now finishes signing up
+// in exactly one sitting, same as an email joiner.
 const FOUNDING_YEAR = 1829
 const THIS_YEAR = new Date().getFullYear()
 const START_YEARS = []
 for (let y = THIS_YEAR; y >= FOUNDING_YEAR; y--) START_YEARS.push(y)
 const END_YEARS = []
 for (let y = THIS_YEAR + 7; y >= FOUNDING_YEAR; y--) END_YEARS.push(y)
+
+const MIN_AGE = 5
+const MAX_AGE = 120
 
 // A refresh or a stray back-gesture mid-fill used to throw away everything
 // typed, because "Sign out" was the only way off this screen. `dataConsent` is
@@ -90,6 +85,34 @@ export default function FinishSignup({ session, profile, onDone }) {
   )
   const [startYear, setStartYear] = useState(draft.startYear ?? (meta.start_year || ''))
   const [endYear, setEndYear] = useState(draft.endYear ?? (meta.grad_year || ''))
+
+  // Membership-record + address fields — previously CompleteDetails.jsx, a
+  // separate screen shown only after this one. profile.* prefills are used
+  // (rather than drafted) since a profile_details row may already exist for
+  // someone who half-filled the old profile page before this merge shipped.
+  const [title, setTitle] = useState('')
+  const [dob, setDob] = useState('')
+  const [phone, setPhone] = useState(profile.phone || '')
+  const [country, setCountry] = useState(profile.country || 'South Africa')
+  const [province, setProvince] = useState(profile.province || '')
+  const [city, setCity] = useState(profile.city || '')
+  const [cityCoords, setCityCoords] = useState(null)
+  const [address1, setAddress1] = useState('')
+  const [address2, setAddress2] = useState('')
+  const [address3, setAddress3] = useState('')
+  const [postCode, setPostCode] = useState('')
+  const [industry, setIndustry] = useState(
+    INDUSTRIES.includes(profile.industry) ? profile.industry : (profile.industry ? 'Other' : '')
+  )
+  const [customIndustry, setCustomIndustry] = useState(
+    INDUSTRIES.includes(profile.industry) ? '' : (profile.industry || '')
+  )
+  const [occupation, setOccupation] = useState(profile.occupation || '')
+  const [roles, setRoles] = useState(() => Object.fromEntries(COMMUNITY_ROLES.map((r) => [r.key, false])))
+  const [commPrefPhone, setCommPrefPhone] = useState(true)
+  const [commPrefSms, setCommPrefSms] = useState(true)
+  const [loadingDetails, setLoadingDetails] = useState(true)
+
   const [newsOptIn, setNewsOptIn] = useState(
     draft.newsOptIn ?? (typeof meta.email_news_opt_in === 'boolean' ? meta.email_news_opt_in : null)
   )
@@ -97,6 +120,32 @@ export default function FinishSignup({ session, profile, onDone }) {
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+
+  const isSA = country === 'South Africa'
+
+  // A profile_details row may already exist (someone who half-filled the
+  // profile page, or hit this screen once already and reloaded) — prefill
+  // rather than clobber.
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('profile_details')
+      .select('title, date_of_birth, old_boy, current_parent, past_parent, current_staff, past_staff, comm_pref_email, comm_pref_phone, comm_pref_sms')
+      .eq('profile_id', session.user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return
+        if (data) {
+          if (data.title) setTitle(data.title)
+          if (data.date_of_birth) setDob(data.date_of_birth)
+          setRoles(Object.fromEntries(COMMUNITY_ROLES.map((r) => [r.key, data[r.key] === true])))
+          setCommPrefPhone(data.comm_pref_phone !== false)
+          setCommPrefSms(data.comm_pref_sms !== false)
+        }
+        setLoadingDetails(false)
+      })
+    return () => { cancelled = true }
+  }, [session.user.id])
 
   const values = { firstName, preferredName, lastName, startYear, endYear, newsOptIn }
   // Only writes once there's something the person actually typed, and only
@@ -137,12 +186,29 @@ export default function FinishSignup({ session, profile, onDone }) {
   function validate() {
     if (!firstName.trim()) return 'Enter your first name.'
     if (!lastName.trim()) return 'Enter your last name.'
+    if (!title) return 'Select your title.'
+    if (!dob) return 'Enter your date of birth.'
+    const d = new Date(dob)
+    const age = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000)
+    if (Number.isNaN(d.getTime()) || age < MIN_AGE || age > MAX_AGE) {
+      return 'That date of birth doesn’t look right — please check it.'
+    }
+    if (!phone.trim() || phone.trim().replace(/\D/g, '').length < 6) return 'Enter your cell number.'
     if (!startYear) return 'Select the year you arrived at SACS.'
     if (!endYear) return 'Select your final year (or expected final year).'
     if (Number(endYear) < Number(startYear)) return 'Your final year can’t be before your first year.'
     // Same sanity check as the signup wizard — see Auth.jsx.
     if (Number(endYear) - Number(startYear) > MAX_SCHOOL_YEARS) {
       return `That's more than ${MAX_SCHOOL_YEARS} years in SACS — check the years are right.`
+    }
+    if (!country.trim()) return 'Select your country.'
+    if (isSA && !province) return 'Select your province.'
+    if (!city.trim()) return 'Enter your town or city.'
+    if (!industry) return 'Select your industry.'
+    if (industry === 'Other' && !customIndustry.trim()) return 'Tell us your industry.'
+    if (!occupation.trim()) return 'Enter your occupation.'
+    if (!COMMUNITY_ROLES.some((r) => roles[r.key])) {
+      return 'Select at least one — how are you part of the SACS community?'
     }
     if (newsOptIn === null) return 'Choose whether you’d like news and events by email.'
     if (!dataConsent) return 'You’ll need to consent to your data being held to join.'
@@ -168,13 +234,43 @@ export default function FinishSignup({ session, profile, onDone }) {
         start_year: Number(startYear),
         grad_year: Number(endYear),
         email_news_opt_in: newsOptIn === true,
+        phone: phone.trim(),
+        country: country.trim(),
+        province: isSA ? province : province.trim(),
+        city: city.trim(),
+        address_line1: address1.trim(),
+        address_line2: address2.trim(),
+        address_line3: address3.trim(),
+        postal_code: postCode.trim(),
+        industry: industry === 'Other' ? customIndustry.trim() : industry,
+        occupation: occupation.trim(),
+        ...(cityCoords ? { lat: cityCoords.lat, lng: cityCoords.lng } : {}),
         consented_at: new Date().toISOString(),
+        details_completed_at: new Date().toISOString(),
       })
       .eq('id', session.user.id)
       .select()
       .single()
+    if (err) {
+      setBusy(false)
+      setError(friendlyAuthError(err, "Couldn't save your details — please try again."))
+      return
+    }
+
+    const { error: detErr } = await supabase
+      .from('profile_details')
+      .upsert({
+        profile_id: session.user.id,
+        title,
+        date_of_birth: dob,
+        ...Object.fromEntries(COMMUNITY_ROLES.map((r) => [r.key, roles[r.key] === true])),
+        comm_pref_email: newsOptIn === true,
+        comm_pref_phone: commPrefPhone,
+        comm_pref_sms: commPrefSms,
+      })
     setBusy(false)
-    if (err) { setError(friendlyAuthError(err, "Couldn't save your details — please try again.")); return }
+    if (detErr) { setError(friendlyAuthError(detErr, "Couldn't save your details — please try again.")); return }
+
     try { localStorage.removeItem(draftKey) } catch { /* ignore */ }
     // "We've got your details" email. Google joiners previously received no
     // email at all between signing up and being approved, so the account went
@@ -198,15 +294,11 @@ export default function FinishSignup({ session, profile, onDone }) {
       <div className="auth-card">
         <img src="/sacs-logo.png" alt="SACS logo" className="auth-logo" />
         <h1 className="auth-title">Nearly done</h1>
-        <p className="auth-sub">Step 1 of 2 &mdash; who you are</p>
+        <p className="auth-sub">One more step to join</p>
 
-        {/* Says up front how long this is. The old version opened straight
-            into eleven fields with no indication of where the bottom was,
-            which is its own reason to abandon a form. */}
         <p className="auth-verify-note">
-          Your name and the years you were in SACS &mdash; that&rsquo;s what the
-          committee checks against school records. Next comes one short page
-          of membership details, then you&rsquo;re in the queue.
+          This is everything the committee needs to verify you against school
+          records — all on one page, nothing left for later.
         </p>
 
         <form onSubmit={save} noValidate>
@@ -231,6 +323,27 @@ export default function FinishSignup({ session, profile, onDone }) {
 
           <div className="auth-field-row">
             <label className="field">
+              <span>Title *</span>
+              <div className="select-wrap">
+                <select value={title} onChange={(e) => setTitle(e.target.value)}>
+                  <option value="">Select</option>
+                  {TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            </label>
+            <label className="field">
+              <span>Date of birth *</span>
+              <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} autoComplete="bday" />
+            </label>
+          </div>
+
+          <label className="field">
+            <span>Cell number *</span>
+            <PhoneInput value={phone} onChange={setPhone} />
+          </label>
+
+          <div className="auth-field-row">
+            <label className="field">
               <span>In SACS from *</span>
               <div className="select-wrap">
                 <select value={startYear} onChange={(e) => setStartYear(e.target.value)}>
@@ -249,6 +362,99 @@ export default function FinishSignup({ session, profile, onDone }) {
               </div>
             </label>
           </div>
+
+          <div className="auth-field-row">
+            <label className="field">
+              <span>Industry *</span>
+              <div className="select-wrap">
+                <select value={industry} onChange={(e) => setIndustry(e.target.value)}>
+                  <option value="">Select</option>
+                  {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+                </select>
+              </div>
+            </label>
+            <label className="field">
+              <span>Occupation *</span>
+              <input value={occupation} onChange={(e) => setOccupation(e.target.value)} placeholder="e.g. Attorney, Student" />
+            </label>
+          </div>
+          {industry === 'Other' && (
+            <label className="field">
+              <span>Your industry *</span>
+              <input value={customIndustry} onChange={(e) => setCustomIndustry(e.target.value)} />
+            </label>
+          )}
+
+          <p className="hint" style={{ marginTop: 4 }}>
+            Your address is optional. It&rsquo;s used to place you on the alumni map
+            and to post you reunion invitations, and it isn&rsquo;t displayed on
+            your profile.
+          </p>
+          <label className="field">
+            <span>Address line 1</span>
+            <input value={address1} onChange={(e) => setAddress1(e.target.value)} autoComplete="address-line1" />
+          </label>
+          <label className="field">
+            <span>Address line 2</span>
+            <input value={address2} onChange={(e) => setAddress2(e.target.value)} autoComplete="address-line2" />
+          </label>
+
+          <div className="auth-field-row">
+            <label className="field">
+              <span>Country *</span>
+              <CountryAutocomplete value={country} onChange={setCountry} />
+            </label>
+            {isSA ? (
+              <label className="field">
+                <span>Province *</span>
+                <div className="select-wrap">
+                  <select value={province} onChange={(e) => setProvince(e.target.value)}>
+                    <option value="">Select</option>
+                    {SA_PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </label>
+            ) : (
+              <label className="field">
+                <span>Province / region</span>
+                <input value={province} onChange={(e) => setProvince(e.target.value)} />
+              </label>
+            )}
+          </div>
+
+          <div className="auth-field-row">
+            <label className="field">
+              <span>Town / city *</span>
+              <CityAutocomplete
+                value={city}
+                country={country}
+                onChange={setCity}
+                onSelectCoords={setCityCoords}
+                placeholder="Start typing your town&hellip;"
+              />
+            </label>
+            <label className="field">
+              <span>Post code</span>
+              <input value={postCode} onChange={(e) => setPostCode(e.target.value)} autoComplete="postal-code" />
+            </label>
+          </div>
+
+          <fieldset className="auth-consent-group">
+            <legend>I&rsquo;m part of the SACS community as&hellip; * <span className="hint-inline">(pick all that apply)</span></legend>
+            <div className="chip-toggle-row">
+              {COMMUNITY_ROLES.map((r) => (
+                <button
+                  key={r.key}
+                  type="button"
+                  className={roles[r.key] ? 'chip-toggle on' : 'chip-toggle'}
+                  aria-pressed={roles[r.key]}
+                  onClick={() => setRoles((prev) => ({ ...prev, [r.key]: !prev[r.key] }))}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
 
           <fieldset className="auth-consent-group">
             <legend>I&rsquo;m happy to hear about news and events by email. *</legend>
@@ -269,6 +475,26 @@ export default function FinishSignup({ session, profile, onDone }) {
               </button>
             </div>
           </fieldset>
+
+          <fieldset className="auth-consent-group">
+            <legend>You may also contact me via&hellip;</legend>
+            <div className="chip-toggle-row">
+              {[['phone', commPrefPhone, setCommPrefPhone, 'Phone'], ['sms', commPrefSms, setCommPrefSms, 'SMS']].map(
+                ([key, val, setVal, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={val ? 'chip-toggle on' : 'chip-toggle'}
+                    aria-pressed={val}
+                    onClick={() => setVal(!val)}
+                  >
+                    {label}
+                  </button>
+                )
+              )}
+            </div>
+          </fieldset>
+
           <label className="auth-consent-check">
             <input type="checkbox" checked={dataConsent} onChange={(e) => setDataConsent(e.target.checked)} />
             <span>
@@ -289,7 +515,7 @@ export default function FinishSignup({ session, profile, onDone }) {
               feedback at all. */}
           {error && <p className="form-error" role="alert">{error}</p>}
 
-          <button type="submit" className="btn primary wide" disabled={busy}>
+          <button type="submit" className="btn primary wide" disabled={busy || loadingDetails}>
             {busy ? 'Saving…' : 'Finish joining'}
           </button>
         </form>

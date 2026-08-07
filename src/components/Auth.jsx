@@ -2,13 +2,19 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import ClearableInput from './ClearableInput.jsx'
 import PasswordInput from './PasswordInput.jsx'
+import PhoneInput from './PhoneInput.jsx'
 import CountryAutocomplete from './CountryAutocomplete.jsx'
 import CityAutocomplete from './CityAutocomplete.jsx'
 import { PASSWORD_MIN, passwordProblem, PasswordStrengthMeter } from '../passwordRules.jsx'
 import { authRedirectTo } from '../authRedirect.js'
 import { friendlyAuthError } from '../authErrors.js'
-import { MAX_SCHOOL_YEARS } from '../constants.js'
+import { MAX_SCHOOL_YEARS, TITLES, INDUSTRIES, SA_PROVINCES, COMMUNITY_ROLES } from '../constants.js'
 import { PrivacyPolicyModal } from './PrivacyPolicy.jsx'
+
+// Sanity bounds for the date-of-birth field — same range CompleteDetails.jsx
+// used when this was still a separate post-signup screen.
+const MIN_AGE = 5
+const MAX_AGE = 120
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
@@ -69,7 +75,7 @@ function ProviderIcon() {
   )
 }
 
-// Draft persistence for the three-step signup wizard.
+// Draft persistence for the signup wizard.
 //
 // `signupStep` is React state and nothing else — no URL, no history entry — so
 // a back-gesture on step 2 or 3 (the single most common thing a thumb does on
@@ -140,7 +146,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
   // Same reason the initialError effect below exists: App.jsx resolves this in
   // an effect, which can land after this component has already mounted.
   useEffect(() => { if (initialMode) setMode(initialMode) }, [initialMode])
-  const [signupStep, setSignupStep] = useState(1) // 1 details, 2 years, 3 consent
+  const [signupStep, setSignupStep] = useState(1) // 1 account, 2 membership, 3 address, 4 consent
 
   // Sign-in fields
   const [email, setEmail] = useState('')
@@ -178,6 +184,21 @@ export default function Auth({ initialError = null, initialMode = null }) {
   const [cityCoords, setCityCoords] = useState(null)
   const [postCode, setPostCode] = useState(draft.postCode ?? '')
   const [country, setCountry] = useState(draft.country ?? 'South Africa')
+
+  // Membership-record fields — previously asked on a separate screen
+  // (CompleteDetails.jsx) shown only after confirming the email and signing
+  // back in. Folded into this same wizard so everything is asked once, in
+  // one sitting, with nothing held back for a second visit.
+  const [title, setTitle] = useState('')
+  const [dob, setDob] = useState('')
+  const [phoneCell, setPhoneCell] = useState('')
+  const [industry, setIndustry] = useState('')
+  const [customIndustry, setCustomIndustry] = useState('')
+  const [occupation, setOccupation] = useState('')
+  const [roles, setRoles] = useState(() => Object.fromEntries(COMMUNITY_ROLES.map((r) => [r.key, false])))
+  const [commPrefPhone, setCommPrefPhone] = useState(true)
+  const [commPrefSms, setCommPrefSms] = useState(true)
+
   const [newsOptIn, setNewsOptIn] = useState(draft.newsOptIn ?? null) // null until they choose
   const [dataConsent, setDataConsent] = useState(false)
   const [privacyOpen, setPrivacyOpen] = useState(false)
@@ -234,7 +255,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
   const captchaVisible = !!TURNSTILE_SITE_KEY && (
     signupDone
       ? signupDone === 'confirm'
-      : (mode !== 'signup' || signupStep === 3)
+      : (mode !== 'signup' || signupStep === 4)
   )
 
   useEffect(() => {
@@ -502,7 +523,19 @@ export default function Auth({ initialError = null, initialMode = null }) {
     return null
   }
 
+  // Membership record — title, DOB, cell number, years in SACS, industry,
+  // occupation and which SACS community role(s) apply. Everything the
+  // committee needs to verify someone, asked in this same wizard rather than
+  // on a second screen after email confirmation.
   function validateStep2() {
+    if (!title) return 'Select your title.'
+    if (!dob) return 'Enter your date of birth.'
+    const d = new Date(dob)
+    const age = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000)
+    if (Number.isNaN(d.getTime()) || age < MIN_AGE || age > MAX_AGE) {
+      return 'That date of birth doesn’t look right — please check it.'
+    }
+    if (!phoneCell.trim() || phoneCell.trim().replace(/\D/g, '').length < 6) return 'Enter your cell number.'
     if (!startYear) return 'Select the year you arrived at SACS.'
     if (!endYear) return 'Select your final year (or expected final year).'
     if (Number(endYear) < Number(startYear)) return 'Your final year can’t be before your first year.'
@@ -512,20 +545,33 @@ export default function Auth({ initialError = null, initialMode = null }) {
     if (Number(endYear) - Number(startYear) > MAX_SCHOOL_YEARS) {
       return `That's more than ${MAX_SCHOOL_YEARS} years in SACS — check the years are right.`
     }
-    if (!city.trim()) return 'Enter your city or town.'
-    if (!country.trim()) return 'Enter your country.'
+    if (!industry) return 'Select your industry.'
+    if (industry === 'Other' && !customIndustry.trim()) return 'Tell us your industry.'
+    if (!occupation.trim()) return 'Enter your occupation.'
+    if (!COMMUNITY_ROLES.some((r) => roles[r.key])) {
+      return 'Select at least one — how are you part of the SACS community?'
+    }
     return null
   }
 
   function validateStep3() {
+    if (!city.trim()) return 'Enter your city or town.'
+    if (!country.trim()) return 'Enter your country.'
+    if (country.trim() === 'South Africa' && !province) return 'Select your province.'
+    return null
+  }
+
+  function validateStep4() {
     if (newsOptIn === null) return 'Choose whether you’d like news and events by email.'
     if (!dataConsent) return 'You’ll need to consent to your data being held to join.'
     if (TURNSTILE_SITE_KEY && !captchaToken) return 'Please complete the security check.'
     return null
   }
 
+  const STEP_VALIDATORS = { 1: validateStep1, 2: validateStep2, 3: validateStep3 }
+
   function nextStep() {
-    const problem = signupStep === 1 ? validateStep1() : validateStep2()
+    const problem = STEP_VALIDATORS[signupStep]?.()
     if (problem) { setError(problem); return }
     setError(null)
     setSignupStep((s) => s + 1)
@@ -538,9 +584,11 @@ export default function Auth({ initialError = null, initialMode = null }) {
 
   async function handleSignupSubmit(e) {
     e.preventDefault()
-    const problem = validateStep3()
+    const problem = validateStep4()
     if (problem) { setError(problem); return }
     setBusy(true); setError(null)
+
+    const resolvedIndustry = industry === 'Other' ? customIndustry.trim() : industry
 
     const fullName = `${(preferredName.trim() || firstName.trim())} ${lastName.trim()}`.trim()
     const details = {
@@ -558,7 +606,10 @@ export default function Auth({ initialError = null, initialMode = null }) {
       city: city.trim(),
       postal_code: postCode.trim(),
       country: country.trim(),
-      // Ticked on step 3 to get here. handle_new_user (schema-update-46)
+      industry: resolvedIndustry,
+      occupation: occupation.trim(),
+      phone: phoneCell.trim(),
+      // Ticked on step 4 to get here. handle_new_user (schema-update-46)
       // reads this and stamps consented_at server-side, so the details are
       // saved by the trigger itself rather than depending on the follow-up
       // update below having a session to run under.
@@ -566,6 +617,20 @@ export default function Auth({ initialError = null, initialMode = null }) {
       // Only present when a City suggestion was picked — a null pair would
       // wipe coordinates the profile might already have.
       ...(cityCoords ? { lat: cityCoords.lat, lng: cityCoords.lng } : {}),
+    }
+    // profile_details is a separate table with its own (tighter) RLS — see
+    // Profile.jsx. Sent alongside `details` in the same user_metadata blob so
+    // handle_new_user (SECURITY DEFINER) can write it the moment the auth
+    // user is created, before there's ever a session to write it with
+    // directly — which matters most for email signups, where "Confirm
+        // email" leaves no session until the link is clicked.
+    const membershipDetails = {
+      title,
+      date_of_birth: dob,
+      ...Object.fromEntries(COMMUNITY_ROLES.map((r) => [r.key, roles[r.key] === true])),
+      comm_pref_email: newsOptIn === true,
+      comm_pref_phone: commPrefPhone,
+      comm_pref_sms: commPrefSms,
     }
 
     try {
@@ -582,7 +647,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
         // project's dashboard Site URL, so a signup from a Vercel preview (or
         // localhost) emailed a link pointing at production, and the original
         // link and any resent one could land on different origins.
-        options: { captchaToken, data: details, emailRedirectTo: authRedirectTo() },
+        options: { captchaToken, data: { ...details, ...membershipDetails }, emailRedirectTo: authRedirectTo() },
       })
       if (error) throw error
 
@@ -696,12 +761,36 @@ export default function Auth({ initialError = null, initialMode = null }) {
             city: details.city,
             postal_code: details.postal_code,
             country: details.country,
+            industry: details.industry,
+            occupation: details.occupation,
+            phone: details.phone,
             ...(cityCoords ? { lat: cityCoords.lat, lng: cityCoords.lng } : {}),
             consented_at: new Date().toISOString(),
+            // Set here too (belt-and-braces alongside the trigger) — this is
+            // what lets App.jsx skip the old separate CompleteDetails screen:
+            // everything it used to ask for was just captured above, in this
+            // same wizard, so there's nothing left to complete on a second visit.
+            details_completed_at: new Date().toISOString(),
           })
           .eq('id', session.user.id)
-        // Non-fatal: FinishSignup in App.jsx will catch anything missed.
+        // Non-fatal: the handle_new_user trigger already wrote this from
+        // user_metadata, so this is a safety net rather than the only path.
         if (profErr) console.warn('Profile update after signup failed:', profErr.message)
+        // Same belt-and-braces reasoning for the membership-record table —
+        // upsert rather than insert since the trigger may already have
+        // created the row from the same metadata.
+        const { error: detErr } = await supabase
+          .from('profile_details')
+          .upsert({
+            profile_id: session.user.id,
+            title: membershipDetails.title,
+            date_of_birth: membershipDetails.date_of_birth,
+            ...Object.fromEntries(COMMUNITY_ROLES.map((r) => [r.key, membershipDetails[r.key] === true])),
+            comm_pref_email: membershipDetails.comm_pref_email,
+            comm_pref_phone: membershipDetails.comm_pref_phone,
+            comm_pref_sms: membershipDetails.comm_pref_sms,
+          })
+        if (detErr) console.warn('Membership details save after signup failed:', detErr.message)
         // "We've got your details" email. Fire-and-forget, and deliberately
         // not awaited: a mail failure must never turn a successful signup into
         // a visible error. Only reachable on the branch where a session
@@ -980,19 +1069,22 @@ export default function Auth({ initialError = null, initialMode = null }) {
             <div className="auth-divider"><span>or complete the form</span></div>
 
             <form onSubmit={handleSignupSubmit} noValidate>
-            {/* The dots are decoration — three bare numerals read aloud tell
+            {/* The dots are decoration — four bare numerals read aloud tell
                 you nothing. The real progress statement lives in the live
                 region beside them, so moving between steps is announced. */}
             <div className="auth-steps" aria-hidden="true">
-              {[1, 2, 3].map((n) => (
+              {[1, 2, 3, 4].map((n) => (
                 <span key={n} className={`auth-step-dot ${signupStep === n ? 'on' : ''} ${signupStep > n ? 'done' : ''}`}>
                   {signupStep > n ? '✓' : n}
                 </span>
               ))}
             </div>
             <p className="sr-only" role="status">
-              Step {signupStep} of 3
-              {signupStep === 1 ? ': your details' : signupStep === 2 ? ': your years in SACS' : ': consent'}
+              Step {signupStep} of 4
+              {signupStep === 1 ? ': your details'
+                : signupStep === 2 ? ': your membership record'
+                : signupStep === 3 ? ': your address'
+                : ': consent'}
             </p>
 
             {draftRestored && (
@@ -1011,6 +1103,10 @@ export default function Auth({ initialError = null, initialMode = null }) {
                     setAddress1(''); setAddress2(''); setAddress3('')
                     setProvince(''); setCity(''); setCityCoords(null)
                     setPostCode(''); setCountry('South Africa')
+                    setTitle(''); setDob(''); setPhoneCell('')
+                    setIndustry(''); setCustomIndustry(''); setOccupation('')
+                    setRoles(Object.fromEntries(COMMUNITY_ROLES.map((r) => [r.key, false])))
+                    setCommPrefPhone(true); setCommPrefSms(true)
                     setNewsOptIn(null)
                     setSignupStep(1)
                   }}
@@ -1090,11 +1186,32 @@ export default function Auth({ initialError = null, initialMode = null }) {
 
             {signupStep === 2 && (
               <>
-                <h2 className="auth-step-heading">Your years in SACS</h2>
+                <h2 className="auth-step-heading">Your membership record</h2>
                 <p className="auth-step-sub">
-                  When did you live in SACS? An expected final year is fine if
-                  you&rsquo;re still there.
+                  This is what the committee checks you against school records with.
                 </p>
+
+                <div className="auth-field-row">
+                  <label className="field">
+                    <span>Title *</span>
+                    <div className="select-wrap">
+                      <select value={title} onChange={(e) => setTitle(e.target.value)}>
+                        <option value="">Select</option>
+                        {TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  </label>
+                  <label className="field">
+                    <span>Date of birth *</span>
+                    <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} autoComplete="bday" />
+                  </label>
+                </div>
+
+                <label className="field">
+                  <span>Cell number *</span>
+                  <PhoneInput value={phoneCell} onChange={setPhoneCell} />
+                </label>
+
                 <div className="auth-field-row">
                   <label className="field">
                     <span>From *</span>
@@ -1116,13 +1233,57 @@ export default function Auth({ initialError = null, initialMode = null }) {
                   </label>
                 </div>
 
+                <div className="auth-field-row">
+                  <label className="field">
+                    <span>Industry *</span>
+                    <div className="select-wrap">
+                      <select value={industry} onChange={(e) => setIndustry(e.target.value)}>
+                        <option value="">Select</option>
+                        {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+                      </select>
+                    </div>
+                  </label>
+                  <label className="field">
+                    <span>Occupation *</span>
+                    <input value={occupation} onChange={(e) => setOccupation(e.target.value)} placeholder="e.g. Attorney, Student" />
+                  </label>
+                </div>
+                {industry === 'Other' && (
+                  <label className="field">
+                    <span>Your industry *</span>
+                    <input value={customIndustry} onChange={(e) => setCustomIndustry(e.target.value)} />
+                  </label>
+                )}
+
+                <fieldset className="auth-consent-group">
+                  <legend>I&rsquo;m part of the SACS community as&hellip; * <span className="hint-inline">(pick all that apply)</span></legend>
+                  <div className="chip-toggle-row">
+                    {COMMUNITY_ROLES.map((r) => (
+                      <button
+                        key={r.key}
+                        type="button"
+                        className={roles[r.key] ? 'chip-toggle on' : 'chip-toggle'}
+                        aria-pressed={roles[r.key]}
+                        onClick={() => setRoles((prev) => ({ ...prev, [r.key]: !prev[r.key] }))}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              </>
+            )}
+
+            {signupStep === 3 && (
+              <>
+                <h2 className="auth-step-heading">Your address</h2>
                 {/* See the matching note in FinishSignup.jsx — an unexplained
                     home-address block mid-signup is a well-known drop-off
                     point, and the answer ("map + posted invitations, not shown
                     on your profile") is one sentence. */}
-                <p className="hint" style={{ marginTop: 14 }}>
-                  Your address is optional. It&rsquo;s used to place you on the alumni
-                  map and to post you reunion invitations, and it isn&rsquo;t
+                <p className="hint">
+                  The address lines below are optional. It&rsquo;s used to place you on
+                  the alumni map and to post you reunion invitations, and it isn&rsquo;t
                   displayed on your profile.
                 </p>
                 <label className="field" style={{ marginTop: 10 }}>
@@ -1139,9 +1300,27 @@ export default function Auth({ initialError = null, initialMode = null }) {
                 </label>
                 <div className="auth-field-row">
                   <label className="field">
-                    <span>Province</span>
-                    <input value={province} onChange={(e) => setProvince(e.target.value)} autoComplete="address-level1" />
+                    <span>Country *</span>
+                    <CountryAutocomplete value={country} onChange={setCountry} placeholder="Start typing…" />
                   </label>
+                  {country === 'South Africa' ? (
+                    <label className="field">
+                      <span>Province *</span>
+                      <div className="select-wrap">
+                        <select value={province} onChange={(e) => setProvince(e.target.value)}>
+                          <option value="">Select</option>
+                          {SA_PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                    </label>
+                  ) : (
+                    <label className="field">
+                      <span>Province / region</span>
+                      <input value={province} onChange={(e) => setProvince(e.target.value)} autoComplete="address-level1" />
+                    </label>
+                  )}
+                </div>
+                <div className="auth-field-row">
                   <label className="field">
                     <span>City *</span>
                     {/* Same live Mapbox suggestions as the profile editor — a
@@ -1156,8 +1335,6 @@ export default function Auth({ initialError = null, initialMode = null }) {
                       placeholder="Start typing…"
                     />
                   </label>
-                </div>
-                <div className="auth-field-row">
                   <label className="field">
                     {/* Optional, and no longer hinted as numeric: plenty of
                         countries use letters in theirs (UK, Canada,
@@ -1171,15 +1348,11 @@ export default function Auth({ initialError = null, initialMode = null }) {
                       autoComplete="postal-code"
                     />
                   </label>
-                  <label className="field">
-                    <span>Country *</span>
-                    <CountryAutocomplete value={country} onChange={setCountry} placeholder="Start typing…" />
-                  </label>
                 </div>
               </>
             )}
 
-            {signupStep === 3 && (
+            {signupStep === 4 && (
               <>
                 <h2 className="auth-step-heading">Consent</h2>
                 <fieldset className="auth-consent-group">
@@ -1213,6 +1386,26 @@ export default function Auth({ initialError = null, initialMode = null }) {
                     occasional system emails about my profile. *
                   </span>
                 </label>
+
+                <fieldset className="auth-consent-group">
+                  <legend>You may also contact me via&hellip;</legend>
+                  <div className="chip-toggle-row">
+                    {[['phone', commPrefPhone, setCommPrefPhone, 'Phone'], ['sms', commPrefSms, setCommPrefSms, 'SMS']].map(
+                      ([key, val, setVal, label]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className={val ? 'chip-toggle on' : 'chip-toggle'}
+                          aria-pressed={val}
+                          onClick={() => setVal(!val)}
+                        >
+                          {label}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </fieldset>
+
                 <p className="hint auth-privacy-link">
                   <button type="button" className="link-btn" onClick={() => setPrivacyOpen(true)}>
                     Read our Privacy Policy
@@ -1252,7 +1445,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
                     Back
                   </button>
                 )}
-                {signupStep < 3 ? (
+                {signupStep < 4 ? (
                   <button type="button" className="btn primary" onClick={nextStep} disabled={busy}>
                     Continue
                   </button>
