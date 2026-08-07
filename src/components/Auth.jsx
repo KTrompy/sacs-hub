@@ -1106,7 +1106,7 @@ export default function Auth({ initialError = null, initialMode = null }) {
                     </div>
                   </label>
                   <label className="field">
-                    <span>To *</span>
+                    <span>Class of *</span>
                     <div className="select-wrap">
                       <select value={endYear} onChange={(e) => setEndYear(e.target.value)}>
                         <option value="">Year</option>

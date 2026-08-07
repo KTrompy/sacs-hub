@@ -706,6 +706,18 @@ function PendingList({
   )
 }
 
+// Association-with-SACS flags from profile_details, rendered as short badge
+// labels on a pending row — the one thing an admin most needs at a glance to
+// judge whether someone belongs in the queue at all (e.g. someone who ticked
+// only "Current parent" isn't an Old Boy and may need a different check).
+const MEMBERSHIP_ROLE_LABELS = [
+  ['old_boy', 'Old Boy'],
+  ['current_parent', 'Current Parent'],
+  ['past_parent', 'Past Parent'],
+  ['current_staff', 'Current Staff'],
+  ['past_staff', 'Past Staff'],
+]
+
 function PendingRows({ rows, onApprove, onStartDecline, onResendConfirmation, busyIds }) {
   return (
     <ul className="admin-list">
@@ -715,6 +727,7 @@ function PendingRows({ rows, onApprove, onStartDecline, onResendConfirmation, bu
         // (Google) or the last step of the signup wizard (email).
         const finished = !!m.consented_at
         const confirmed = !!m.email_confirmed_at
+        const roles = MEMBERSHIP_ROLE_LABELS.filter(([key]) => m[key])
         return (
           <li className="admin-row" key={m.id}>
             <Avatar url={null} name={m.full_name} size={40} />
@@ -728,12 +741,35 @@ function PendingRows({ rows, onApprove, onStartDecline, onResendConfirmation, bu
                 {m.first_name && m.preferred_name && m.preferred_name !== m.first_name && (
                   <span className="admin-row-meta"> (on records: {m.first_name} {m.last_name})</span>
                 )}
+                {m.title && <span className="admin-row-meta"> · {m.title}</span>}
               </span>
               <span className="admin-row-meta">
                 <a className="footer-link" href={`mailto:${m.email}`}>{m.email}</a>
                 {m.grad_year ? ` · Class of '${String(m.grad_year).slice(-2)}` : ''}
                 {m.city ? ` · ${m.city}` : ''}
+                {m.province ? `, ${m.province}` : ''}
+                {m.country ? `, ${m.country}` : ''}
               </span>
+              {/* Membership-record details captured at signup (title, DOB,
+                  industry/occupation, cell number) — the committee needs
+                  these to check someone against school records, and until
+                  now they only lived on the person's own profile page,
+                  invisible from here. */}
+              {(m.date_of_birth || m.industry || m.occupation || m.phone) && (
+                <span className="admin-row-meta">
+                  {m.date_of_birth ? `Born ${m.date_of_birth}` : ''}
+                  {m.occupation ? `${m.date_of_birth ? ' · ' : ''}${m.occupation}` : ''}
+                  {m.industry ? ` (${m.industry})` : ''}
+                  {m.phone ? `${(m.date_of_birth || m.occupation) ? ' · ' : ''}${m.phone}` : ''}
+                </span>
+              )}
+              {roles.length > 0 && (
+                <span className="admin-row-badges">
+                  {roles.map(([key, label]) => (
+                    <span key={key} className="admin-badge">{label}</span>
+                  ))}
+                </span>
+              )}
               <span className="admin-row-meta">
                 Signed up {timeAgo(m.created_at)}
                 {finished && !confirmed ? ' · email not confirmed' : ''}
