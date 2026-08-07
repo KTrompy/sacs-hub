@@ -32,7 +32,8 @@ const CV_TYPES = [
 ]
 
 const EMPTY = {
-  full_name: '', grad_year: '', degree: '',
+  full_name: '', first_name: '', preferred_name: '', last_name: '',
+  start_year: '', grad_year: '', degree: '',
   industry: '', occupation: '',
   company: '', city: '', country: 'South Africa',
   address_line1: '', address_line2: '', address_line3: '',
@@ -64,6 +65,7 @@ const EMPTY = {
 const EMPTY_DETAILS = {
   title: '',
   gender: '',
+  date_of_birth: '',
   known_as: '',
   initials: '',
   surname_at_school: '',
@@ -178,6 +180,13 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
       const isKnownIndustry = INDUSTRIES.includes(profile.industry)
       setForm({
         full_name: profile.full_name || '',
+        // Own-name columns (schema-update-57) — the editable fields. A
+        // pre-57 row may have only full_name; split it as a best guess so
+        // the inputs aren't blank for someone whose name is clearly known.
+        first_name: profile.first_name || (profile.full_name || '').split(' ')[0] || '',
+        preferred_name: profile.preferred_name || '',
+        last_name: profile.last_name || (profile.full_name || '').split(' ').slice(1).join(' ') || '',
+        start_year: profile.start_year || '',
         grad_year: profile.grad_year || '',
         degree: profile.degree || '',
         industry: isKnownIndustry ? profile.industry : (profile.industry ? 'Other' : ''),
@@ -609,8 +618,8 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
     setError(null)
     setGeoWarning(false)
 
-    if (!form.full_name.trim()) {
-      setError('Please enter your full name.')
+    if (!form.first_name.trim() || !form.last_name.trim()) {
+      setError('Please enter your first and last name.')
       return false
     }
 
@@ -681,7 +690,13 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
       // the same free-text fields here keeps
       // the directory/search and this profile's own display from showing
       // stray whitespace depending on which flow last touched the row.
-      full_name: form.full_name.trim(),
+      // Assembled the same way the signup flows do it (preferred name wins
+      // for display, legal first name kept in its own column).
+      full_name: `${(form.preferred_name.trim() || form.first_name.trim())} ${form.last_name.trim()}`.trim(),
+      first_name: form.first_name.trim(),
+      preferred_name: form.preferred_name.trim(),
+      last_name: form.last_name.trim(),
+      start_year: form.start_year ? Number(form.start_year) : null,
       degree: form.degree.trim(),
       occupation: form.occupation.trim(),
       company: form.company.trim(),
@@ -736,6 +751,8 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
       .upsert({
         profile_id: session.user.id,
         ...details,
+        // An empty string isn't a valid `date` value — store null instead.
+        date_of_birth: details.date_of_birth || null,
         known_as: details.known_as.trim(),
         initials: details.initials.trim(),
         surname_at_school: details.surname_at_school.trim(),
@@ -853,11 +870,29 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
       <div className="profile-section" ref={aboutSectionRef}>
         <h3 className="profile-section-title">About you</h3>
 
-        <label className="field"><span>Full name</span>
+        <div className="field-row">
+          <label className="field"><span>First name</span>
+            <ClearableInput
+              value={form.first_name}
+              onChange={(e) => set('first_name', e.target.value)}
+              onClear={() => set('first_name', '')}
+            />
+          </label>
+          <label className="field"><span>Last name</span>
+            <ClearableInput
+              value={form.last_name}
+              onChange={(e) => set('last_name', e.target.value)}
+              onClear={() => set('last_name', '')}
+            />
+          </label>
+        </div>
+
+        <label className="field"><span>Preferred first name</span>
           <ClearableInput
-            value={form.full_name}
-            onChange={(e) => set('full_name', e.target.value)}
-            onClear={() => set('full_name', '')}
+            value={form.preferred_name}
+            onChange={(e) => set('preferred_name', e.target.value)}
+            onClear={() => set('preferred_name', '')}
+            placeholder="If different — this is the name others see"
           />
         </label>
 
@@ -873,7 +908,16 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
         </label>
 
         <div className="field-row">
-          <label className="field"><span>Graduation year</span>
+          <label className="field"><span>At SACS from</span>
+            <ClearableInput
+              inputMode="numeric"
+              value={form.start_year}
+              onChange={(e) => set('start_year', e.target.value.replace(/\D/g, '').slice(0, 4))}
+              onClear={() => set('start_year', '')}
+              placeholder="2012"
+            />
+          </label>
+          <label className="field"><span>Class of</span>
             <ClearableInput
               inputMode="numeric"
               value={form.grad_year}
@@ -882,15 +926,16 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
               placeholder="2024"
             />
           </label>
-          <label className={fieldCls('degree')}><span>Degree</span>
-            <ClearableInput
-              value={form.degree}
-              onChange={(e) => set('degree', e.target.value)}
-              onClear={() => set('degree', '')}
-              placeholder="e.g. BCom Accounting"
-            />
-          </label>
         </div>
+
+        <label className={fieldCls('degree')}><span>Degree</span>
+          <ClearableInput
+            value={form.degree}
+            onChange={(e) => set('degree', e.target.value)}
+            onClear={() => set('degree', '')}
+            placeholder="e.g. BCom Accounting"
+          />
+        </label>
 
       </div>
 
@@ -1265,15 +1310,19 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
               </label>
             </div>
 
+            <label className="field"><span>Date of birth</span>
+              <input
+                type="date"
+                value={details.date_of_birth || ''}
+                onChange={(e) => setDetail('date_of_birth', e.target.value)}
+                autoComplete="bday"
+              />
+            </label>
+
+            {/* "Known as" used to live here too — it duplicated the
+                "Preferred first name" field in About you, which writes to
+                profiles.preferred_name and is what the directory shows. */}
             <div className="field-row">
-              <label className="field"><span>Known as</span>
-                <ClearableInput
-                  value={details.known_as}
-                  onChange={(e) => setDetail('known_as', e.target.value)}
-                  onClear={() => setDetail('known_as', '')}
-                  placeholder="Preferred first name, if different"
-                />
-              </label>
               <label className="field"><span>Initials</span>
                 <ClearableInput
                   value={details.initials}
@@ -1282,16 +1331,15 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
                   placeholder="e.g. J.A."
                 />
               </label>
+              <label className="field"><span>Surname at school (if different)</span>
+                <ClearableInput
+                  value={details.surname_at_school}
+                  onChange={(e) => setDetail('surname_at_school', e.target.value)}
+                  onClear={() => setDetail('surname_at_school', '')}
+                  placeholder="Only if it has changed"
+                />
+              </label>
             </div>
-
-            <label className="field"><span>Surname at school (if different)</span>
-              <ClearableInput
-                value={details.surname_at_school}
-                onChange={(e) => setDetail('surname_at_school', e.target.value)}
-                onClear={() => setDetail('surname_at_school', '')}
-                placeholder="Only if your surname has changed since matriculating"
-              />
-            </label>
 
             <div className="field-row">
               <label className="field"><span>ID / passport number</span>
@@ -1318,14 +1366,11 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
                 <PhoneInput value={details.phone_work} onChange={(v) => setDetail('phone_work', v)} />
               </label>
             </div>
-            <label className="field"><span>Fax</span>
-              <PhoneInput value={details.phone_fax} onChange={(v) => setDetail('phone_fax', v)} />
-            </label>
 
             <div className="field">
               <span>Association with SACS</span>
               <span className="hint">Tick everything that applies — these aren&rsquo;t mutually exclusive.</span>
-              <div className="tags-grid compact">
+              <div className="chip-toggle-row">
                 {[
                   ['old_boy', 'Old Boy'],
                   ['current_parent', 'Current parent'],
@@ -1336,7 +1381,8 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
                   <button
                     key={key}
                     type="button"
-                    className={`tag-btn ${details[key] ? 'selected' : ''}`}
+                    className={details[key] ? 'chip-toggle on' : 'chip-toggle'}
+                    aria-pressed={details[key]}
                     onClick={() => setDetail(key, !details[key])}
                   >
                     {label}
@@ -1347,7 +1393,7 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
 
             <div className="field">
               <span>How can the Alumni Association reach you?</span>
-              <div className="tags-grid compact">
+              <div className="chip-toggle-row">
                 {[
                   ['comm_pref_email', 'Email'],
                   ['comm_pref_phone', 'Phone'],
@@ -1356,7 +1402,8 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
                   <button
                     key={key}
                     type="button"
-                    className={`tag-btn ${details[key] ? 'selected' : ''}`}
+                    className={details[key] ? 'chip-toggle on' : 'chip-toggle'}
+                    aria-pressed={details[key]}
                     onClick={() => setDetail(key, !details[key])}
                   >
                     {label}

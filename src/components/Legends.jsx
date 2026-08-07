@@ -136,7 +136,7 @@ export default function LegendsBand() {
     <section className="legends-band" aria-labelledby="legends-heading">
       <div className="legends-head">
         <div className="legends-head-text">
-          <h3 className="legends-title" id="legends-heading">Notable Old Boys</h3>
+          <h3 className="legends-title" id="legends-heading">Old Boys spreading the name, and swelling the fame</h3>
         </div>
         {/* Opens the full Hoek van Helde page rather than cycling to another
             three in place — everyone curated lives there, not just the next
@@ -173,7 +173,7 @@ export default function LegendsBand() {
         ))}
       </div>
       {order.length > 1 && (
-        <div className="home-carousel-dots legends-carousel-dots" role="tablist" aria-label="Notable Old Boys">
+        <div className="home-carousel-dots legends-carousel-dots" role="tablist" aria-label="Old Boys spreading the name, and swelling the fame">
           {order.slice(dots.start, dots.end + 1).map((l, offset) => {
             const i = dots.start + offset
             // The dot at whichever end of the window still has more people

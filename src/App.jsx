@@ -4,6 +4,7 @@ import { supabase, isAuthError } from './supabaseClient'
 import Auth from './components/Auth.jsx'
 import ResetPassword from './components/ResetPassword.jsx'
 import FinishSignup from './components/FinishSignup.jsx'
+import CompleteDetails from './components/CompleteDetails.jsx'
 import PendingVerification from './components/PendingVerification.jsx'
 import Home from './components/Home.jsx'
 import People from './components/People.jsx'
@@ -576,6 +577,22 @@ export default function App() {
     )
   }
 
+  // Step 2 of joining — membership details (DOB, cell, location, industry,
+  // community roles, comms preferences). Email joiners arrive here straight
+  // from the signup wizard's consent step; Google joiners via FinishSignup
+  // above. Sits before the approval gate so the committee has the full
+  // record when they verify, and existing members from before this shipped
+  // pass through it exactly once on their next sign-in.
+  if (!profile.details_completed_at) {
+    return (
+      <CompleteDetails
+        session={session}
+        profile={profile}
+        onDone={(updatedProfile) => setProfile(updatedProfile)}
+      />
+    )
+  }
+
   // Locked out until the committee verifies them against school
   // records — no browsing while pending. Enforced in the database too as
   // of schema-update-46: every SELECT policy now requires is_approved(),
@@ -923,7 +940,7 @@ export default function App() {
             </div>
             <div className="modal-footer">
               <button type="button" className="btn ghost" onClick={keepEditing} disabled={leaveBusy}>Keep editing</button>
-              <button type="button" className="btn ghost" onClick={confirmDiscardAndLeave} disabled={leaveBusy} style={{ color: 'var(--error)' }}>
+              <button type="button" className="btn ghost delete-danger" onClick={confirmDiscardAndLeave} disabled={leaveBusy}>
                 Discard changes
               </button>
               <button type="button" className="btn primary" onClick={confirmSaveAndLeave} disabled={leaveBusy}>

@@ -931,6 +931,24 @@ export const GEOGRAPHIC_FOCUS = [
 // membership record, not their profile-in-the-directory.
 export const TITLES = ['Mr', 'Mrs', 'Ms', 'Miss', 'Dr', 'Prof', 'Rev', 'Adv', 'Other']
 
+// Used by the signup step-2 details screen (CompleteDetails.jsx): province
+// is a dropdown when the country is South Africa, free text otherwise.
+export const SA_PROVINCES = [
+  'Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal', 'Limpopo',
+  'Mpumalanga', 'North West', 'Northern Cape', 'Western Cape',
+]
+
+// Community roles, one multi-select question on the step-2 details screen
+// instead of the old site's five separate yes/no dropdowns. Keys map 1:1 to
+// the profile_details boolean columns.
+export const COMMUNITY_ROLES = [
+  { key: 'old_boy', label: 'Old Boy' },
+  { key: 'current_parent', label: 'Current Parent' },
+  { key: 'past_parent', label: 'Past Parent' },
+  { key: 'current_staff', label: 'Current Staff Member' },
+  { key: 'past_staff', label: 'Past Staff Member' },
+]
+
 // SACS is a boys' school, so "Male" is the sensible default for a new
 // member filling this in for the first time — but it's a plain dropdown,
 // not a locked value, since staff members (who can also hold accounts here)

@@ -198,15 +198,15 @@ export default function FinishSignup({ session, profile, onDone }) {
       <div className="auth-card">
         <img src="/sacs-logo.png" alt="SACS logo" className="auth-logo" />
         <h1 className="auth-title">Nearly done</h1>
-        <p className="auth-sub">Two quick things and you&rsquo;re in the queue</p>
+        <p className="auth-sub">Step 1 of 2 &mdash; who you are</p>
 
         {/* Says up front how long this is. The old version opened straight
             into eleven fields with no indication of where the bottom was,
             which is its own reason to abandon a form. */}
         <p className="auth-verify-note">
-          We just need your name and the years you were in SACS &mdash; that&rsquo;s what
-          the committee checks against school records. You can fill in the rest
-          of your profile once you&rsquo;re in.
+          Your name and the years you were in SACS &mdash; that&rsquo;s what the
+          committee checks against school records. Next comes one short page
+          of membership details, then you&rsquo;re in the queue.
         </p>
 
         <form onSubmit={save} noValidate>
