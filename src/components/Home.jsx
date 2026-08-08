@@ -489,7 +489,6 @@ export default function Home({ session, profile, onMessage }) {
           </ProgressRing>
           <div className="home-banner-body">
             <h2 className="home-banner-title">{greeting()}, {firstName}</h2>
-            <p className="home-banner-tagline">Old Boys spreading the name, and swelling the fame</p>
           </div>
         </div>
         <div className="home-banner-cta">
