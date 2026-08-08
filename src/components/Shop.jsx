@@ -8,7 +8,7 @@ import { formatZAR } from '../utils.js'
 // Shared with MerchAdmin.jsx's product form, same reasoning as
 // LEGEND_CATEGORIES living in Legends.jsx and being imported into Admin.jsx —
 // one list, so the filter pills here and the dropdown there can't drift.
-export const MERCH_CATEGORIES = ['Apparel', 'Headwear', 'Drinkware', 'Accessories', 'Stationery', 'Other']
+export const MERCH_CATEGORIES = ['Apparel', 'Headwear', 'Drinkware', 'Accessories', 'Stationery', 'Homeware', 'Other']
 
 export default function Shop() {
   const [products, setProducts] = useState([])
