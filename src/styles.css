@@ -7212,6 +7212,8 @@ button.delete-danger svg { flex-shrink: 0; }
   gap: 12px;
   margin-bottom: 22px;
 }
+/* Stat cards are buttons: each one jumps to the tab its number lives on.
+   Hover lift + border shift signal the clickability without shouting. */
 .admin-stat-card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -7219,6 +7221,14 @@ button.delete-danger svg { flex-shrink: 0; }
   box-shadow: var(--shadow-card);
   padding: 14px 12px;
   text-align: center;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+.admin-stat-card:hover {
+  border-color: var(--orange);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
 }
 .admin-stat-card.highlight { border-color: var(--orange); background: var(--orange-soft); }
 .admin-stat-value {
@@ -7238,27 +7248,49 @@ button.delete-danger svg { flex-shrink: 0; }
   margin-top: 2px;
 }
 
-.admin-subtabs {
+/* Grouped tab bar: four labelled clusters (People / Content / Shop / Site)
+   inside one card, so eleven tabs read as four small decisions. Pill-style
+   active state — clearer at a glance than an underline when tabs wrap onto
+   two lines on smaller screens. */
+.admin-tabbar {
   display: flex;
-  gap: 4px;
+  gap: var(--sp-5);
   flex-wrap: wrap;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 10px 14px 12px;
+  margin-bottom: 20px;
 }
-.admin-subtabs button {
+.admin-tabgroup { display: flex; flex-direction: column; gap: 5px; }
+.admin-tabgroup + .admin-tabgroup { border-left: 1px solid var(--line); padding-left: var(--sp-5); }
+.admin-tabgroup-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+.admin-tabgroup-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.admin-tabbar button {
   background: none;
-  border: none;
-  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 6px 13px;
   font-weight: 600;
   font-size: var(--fs-sm);
   color: var(--ink-soft);
-  border-bottom: 2px solid transparent;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
+  transition: color 0.12s var(--ease), background 0.12s var(--ease);
 }
-.admin-subtabs button:hover { color: var(--maroon); }
-.admin-subtabs button.on { color: var(--maroon); border-bottom-color: var(--orange); }
+.admin-tabbar button:hover { color: var(--maroon); background: var(--orange-soft); }
+.admin-tabbar button.on { color: #fff; background: var(--maroon); }
+.admin-tabbar button.on .admin-subtab-badge { background: var(--orange); }
 .admin-subtab-badge {
   background: var(--orange);
   color: #fff;
@@ -7409,22 +7441,46 @@ button.delete-danger svg { flex-shrink: 0; }
   opacity: 0.85;
 }
 
-/* Per-tab explainer, so nobody has to click a button to learn what it does. */
-.admin-tab-help {
-  margin: -6px 0 16px;
-  font-size: var(--fs-sm);
-  line-height: 1.55;
-  color: var(--ink-soft);
-  max-width: 74ch;
-}
 .admin-tab-footnote {
   margin: 14px 0 0;
   font-size: var(--fs-xs);
   color: var(--ink-soft);
   font-style: italic;
 }
-.admin-subtabs button.admin-subtab-guide { margin-left: auto; color: var(--orange-dark); }
-.admin-subtabs button.admin-subtab-guide.on { color: var(--maroon); }
+/* The Handbook tab reads in the accent colour so a brand-new admin's eye
+   lands on it — it's the "start here" of the whole page. */
+.admin-tabbar button.admin-subtab-guide { color: var(--orange-dark); }
+.admin-tabbar button.admin-subtab-guide:hover { color: var(--maroon); }
+.admin-tabbar button.admin-subtab-guide.on { color: #fff; }
+
+/* Section header shown above every tab's content: the tab's name as a
+   heading plus its one-line explainer, in one consistent place. */
+.admin-section-head { margin: 0 0 16px; }
+.admin-section-head h3 {
+  font-family: var(--display);
+  font-size: var(--fs-xl);
+  color: var(--maroon);
+  margin: 0 0 4px;
+}
+.admin-section-head p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 74ch;
+}
+
+/* Search + filter chips row at the top of the list-heavy tabs. */
+.admin-toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.admin-toolbar .search { margin: 0; }
+.admin-toolbar .admin-filter-row { margin-bottom: 0; }
+.admin-filter-count {
+  display: inline-block;
+  margin-left: 4px;
+  font-weight: 700;
+  opacity: 0.65;
+}
+.admin-filter.on .admin-filter-count { opacity: 0.85; }
 
 /* Longer "here's how to think about this" note, used on the two tabs where a
    wrong click is expensive (Pending approval, Members). */
@@ -7473,7 +7529,10 @@ button.delete-danger svg { flex-shrink: 0; }
   .admin-row { flex-wrap: wrap; }
   .admin-row-actions { width: 100%; justify-content: flex-start; }
   .admin-attention li { flex-direction: column; align-items: flex-start; gap: 6px; }
-  .admin-subtabs button.admin-subtab-guide { margin-left: 0; }
+  /* Groups stack vertically on phones — side-by-side clusters would wrap
+     unpredictably and lose their labels' meaning. */
+  .admin-tabbar { flex-direction: column; gap: var(--sp-3); }
+  .admin-tabgroup + .admin-tabgroup { border-left: none; padding-left: 0; border-top: 1px solid var(--line); padding-top: var(--sp-3); }
 }
 
 /* ---------- Admin handbook ----------

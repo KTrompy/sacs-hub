@@ -19,63 +19,78 @@ import { friendlyAuthError } from '../authErrors.js'
 // committee member who has never seen it before: every tab should say what it
 // is for and what the buttons on it will do, without them having to click one
 // to find out. The Handbook tab is the long-form version of the same idea.
+// Tabs are grouped by what kind of work they are, so a first-timer can scan
+// four short words — People, Content, Shop, Site — instead of eleven labels.
 const SUBTABS = [
   {
     id: 'pending',
     label: 'Pending approval',
+    group: 'People',
     help: "New signups waiting to be let in. Approving someone gives them full access — the directory, private messaging and posting. Only approve people you can actually place.",
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    help: "Things members have flagged. Use View to judge it yourself, then Mark reviewed once you've dealt with it, or Dismiss if there's nothing wrong. Neither button deletes anything.",
   },
   {
     id: 'members',
     label: 'Members',
+    group: 'People',
     help: "Everyone with an account. Un-approve is the reversible one — it pauses access but keeps everything they've written. Delete account is permanent and has no undo.",
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    group: 'People',
+    help: "Things members have flagged. Use View to judge it yourself, then Mark reviewed once you've dealt with it, or Dismiss if there's nothing wrong. Neither button deletes anything.",
   },
   {
     id: 'posts',
     label: 'Posts',
+    group: 'Content',
     help: "Everything on the feed, newest first. Members can delete their own posts, so you only need this for something that shouldn't be up.",
   },
   {
     id: 'jobs',
     label: 'Jobs',
+    group: 'Content',
     help: "Job listings members have posted. Deleting one also removes any applications sent to it.",
   },
   {
     id: 'events',
     label: 'Events',
-    help: "All events, newest first. Deleting an event also wipes everyone's RSVPs, so check with the organiser first.",
+    group: 'Content',
+    help: "All events, split into upcoming and past. Deleting an event also wipes everyone's RSVPs, so check with the organiser first.",
   },
   {
     id: 'businesses',
     label: 'Businesses',
+    group: 'Content',
     help: "Alumni businesses. Feature pins one to the top of the directory — harmless and reversible, but worth agreeing a rule for so it doesn't become a favour.",
   },
   {
     id: 'merch',
-    label: 'Merch',
+    label: 'Merch & orders',
+    group: 'Shop',
     help: "The SACS shop — products, size/colour options and stock, and every order placed. There's no live payment gateway yet, so a new order is a promise to pay, not a completed sale — chase payment before moving someone past Pending.",
   },
   {
     id: 'legends',
     label: 'Notable Old Boys',
+    group: 'Site',
     help: "The old boys featured on the home page. Three show at a time and the set rotates every Monday, so the more you write up the longer it stays fresh. Hide is the reversible one — it pulls someone off the home page but keeps the write-up.",
   },
   {
     id: 'activity',
     label: 'Activity log',
+    group: 'Site',
     help: "A permanent record of every admin action — who approved, removed or deleted what, and when. Written by the database itself, so nobody can edit or erase it, including you.",
   },
   {
     id: 'handbook',
     label: 'Handbook',
+    group: 'Site',
     help: null, // it explains itself
   },
 ]
+
+const TAB_GROUPS = ['People', 'Content', 'Shop', 'Site']
 
 function timeAgo(iso) {
   const s = Math.floor((Date.now() - new Date(iso)) / 1000)
@@ -346,41 +361,58 @@ export default function Admin({ session }) {
         onGo={setSubtab}
       />
 
+      {/* Every card is also a shortcut: clicking it opens the tab where that
+          number lives, so the overview doubles as navigation. */}
       <div className="admin-stats-row">
-        <StatCard label="Members" value={members.length} hint="Everyone with an account, approved or not." />
-        <StatCard label="Pending" value={pending.length} highlight={pending.length > 0} hint="Signed up but not yet let in." />
-        <StatCard label="Open reports" value={openReportsCount} highlight={openReportsCount > 0} hint="Flags from members you haven't ruled on." />
-        <StatCard label="Posts" value={counts.posts} hint="Total posts on the feed." />
-        <StatCard label="Jobs" value={counts.jobs} hint="Job listings, open and closed." />
-        <StatCard label="Events" value={counts.events} hint="Events, past and upcoming." />
-        <StatCard label="Businesses" value={counts.businesses} hint="Alumni businesses listed." />
-        <StatCard label="Merch orders" value={counts.merchOrders} hint="Total shop orders placed, any status." />
+        <StatCard label="Members" value={members.length} hint="Everyone with an account, approved or not." onClick={() => setSubtab('members')} />
+        <StatCard label="Pending" value={pending.length} highlight={pending.length > 0} hint="Signed up but not yet let in." onClick={() => setSubtab('pending')} />
+        <StatCard label="Open reports" value={openReportsCount} highlight={openReportsCount > 0} hint="Flags from members you haven't ruled on." onClick={() => setSubtab('reports')} />
+        <StatCard label="Posts" value={counts.posts} hint="Total posts on the feed." onClick={() => setSubtab('posts')} />
+        <StatCard label="Jobs" value={counts.jobs} hint="Job listings, open and closed." onClick={() => setSubtab('jobs')} />
+        <StatCard label="Events" value={counts.events} hint="Events, past and upcoming." onClick={() => setSubtab('events')} />
+        <StatCard label="Businesses" value={counts.businesses} hint="Alumni businesses listed." onClick={() => setSubtab('businesses')} />
+        <StatCard label="Merch orders" value={counts.merchOrders} hint="Total shop orders placed, any status." onClick={() => setSubtab('merch')} />
       </div>
 
-      <div className="admin-subtabs" role="tablist" aria-label="Admin sections">
-        {SUBTABS.map((t) => (
-          <button type="button"
-            key={t.id}
-            role="tab"
-            aria-selected={subtab === t.id}
-            className={[
-              subtab === t.id ? 'on' : '',
-              t.id === 'handbook' ? 'admin-subtab-guide' : '',
-            ].filter(Boolean).join(' ')}
-            onClick={() => setSubtab(t.id)}
-          >
-            {t.label}
-            {t.id === 'pending' && readyToApprove.length > 0 && (
-              <span className="admin-subtab-badge">{readyToApprove.length}</span>
-            )}
-            {t.id === 'reports' && openReportsCount > 0 && (
-              <span className="admin-subtab-badge">{openReportsCount}</span>
-            )}
-          </button>
+      <div className="admin-tabbar" role="tablist" aria-label="Admin sections">
+        {TAB_GROUPS.map((group) => (
+          <div className="admin-tabgroup" key={group}>
+            <span className="admin-tabgroup-label" aria-hidden="true">{group}</span>
+            <div className="admin-tabgroup-tabs">
+              {SUBTABS.filter((t) => t.group === group).map((t) => (
+                <button type="button"
+                  key={t.id}
+                  role="tab"
+                  aria-selected={subtab === t.id}
+                  className={[
+                    subtab === t.id ? 'on' : '',
+                    t.id === 'handbook' ? 'admin-subtab-guide' : '',
+                  ].filter(Boolean).join(' ')}
+                  onClick={() => setSubtab(t.id)}
+                >
+                  {t.label}
+                  {t.id === 'pending' && readyToApprove.length > 0 && (
+                    <span className="admin-subtab-badge">{readyToApprove.length}</span>
+                  )}
+                  {t.id === 'reports' && openReportsCount > 0 && (
+                    <span className="admin-subtab-badge">{openReportsCount}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
-      {activeTab?.help && <p className="admin-tab-help">{activeTab.help}</p>}
+      {/* Consistent section header: the tab's name repeated as a heading (so
+          you always know where you are, even scrolled down) plus its one-line
+          explainer. The handbook skips it — it has its own hero. */}
+      {activeTab && activeTab.id !== 'handbook' && (
+        <div className="admin-section-head">
+          <h3>{activeTab.label}</h3>
+          {activeTab.help && <p>{activeTab.help}</p>}
+        </div>
+      )}
 
       {needsSetup ? (
         <div className="admin-setup-banner">
@@ -515,13 +547,18 @@ function AttentionPanel({ loading, readyToApprove, unfinished, unconfirmed, open
 }
 
 /* ---------- Stat card ---------- */
-function StatCard({ label, value, highlight, hint }) {
+function StatCard({ label, value, highlight, hint, onClick }) {
   return (
-    <div className={highlight ? 'admin-stat-card highlight' : 'admin-stat-card'} title={hint}>
+    <button
+      type="button"
+      className={highlight ? 'admin-stat-card highlight' : 'admin-stat-card'}
+      title={hint}
+      onClick={onClick}
+    >
       <span className="admin-stat-value">{value === null || value === undefined ? '–' : value}</span>
       <span className="admin-stat-label">{label}</span>
       {hint && <span className="admin-stat-hint">{hint}</span>}
-    </div>
+    </button>
   )
 }
 
@@ -939,13 +976,29 @@ function ReportList({ items, onSetStatus, navigate }) {
 
 /* ---------- Members table ---------- */
 function MembersTable({ loading, members, myId, onSetApproved, onSetAdmin, onDeleteMember, busyIds }) {
+  const navigate = useNavigate()
   const [confirmTarget, setConfirmTarget] = useState(null) // { member, action: 'delete' | 'promote' | 'demote' | 'unapprove' }
   const [q, setQ] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   if (loading) return <LoadingState message="Loading members…" />
 
+  // Status filters mirror the badges on the rows, so what you filter by is
+  // exactly what you can see. Counts on the chips mean nobody has to click
+  // one just to learn it's empty.
+  const MEMBER_FILTERS = [
+    { id: 'all', label: 'Everyone', match: () => true },
+    { id: 'approved', label: 'Approved', match: (m) => m.approved },
+    { id: 'pending', label: 'Pending', match: (m) => !m.approved && !m.declined_at },
+    { id: 'declined', label: 'Declined', match: (m) => !!m.declined_at },
+    { id: 'admins', label: 'Admins', match: (m) => m.is_admin },
+    { id: 'unconfirmed', label: 'Email unconfirmed', match: (m) => !m.email_confirmed_at },
+  ]
+
   const needle = q.trim().toLowerCase()
+  const activeFilter = MEMBER_FILTERS.find((f) => f.id === statusFilter) || MEMBER_FILTERS[0]
   const shown = members.filter((m) => {
+    if (!activeFilter.match(m)) return false
     if (!needle) return true
     return [m.full_name, m.email, m.city].filter(Boolean).join(' ').toLowerCase().includes(needle)
   })
@@ -982,15 +1035,30 @@ function MembersTable({ loading, members, myId, onSetApproved, onSetAdmin, onDel
           Every action on this tab is recorded in the Activity log with your name against it.
         </p>
       </div>
-      <input
-        className="search"
-        style={{ marginBottom: 14 }}
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search by name, email, city…"
-      />
+      <div className="admin-toolbar">
+        <input
+          className="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search by name, email, city…"
+        />
+        <div className="admin-filter-row" role="group" aria-label="Filter members by status">
+          {MEMBER_FILTERS.map((f) => {
+            const n = members.filter(f.match).length
+            return (
+              <button type="button"
+                key={f.id}
+                className={statusFilter === f.id ? 'admin-filter on' : 'admin-filter'}
+                onClick={() => setStatusFilter(f.id)}
+              >
+                {f.label} <span className="admin-filter-count">{n}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
       {shown.length === 0 ? (
-        <EmptyState icon="search" message="No matching members." />
+        <EmptyState icon="search" message="No matching members." subMessage="Try a different search or filter." />
       ) : (
         <ul className="admin-list">
           {shown.map((m) => {
@@ -1026,6 +1094,11 @@ function MembersTable({ loading, members, myId, onSetApproved, onSetAdmin, onDel
                   </span>
                 </div>
                 <div className="admin-row-actions">
+                  {m.approved && (
+                    <button type="button" className="btn ghost small" onClick={() => navigate(`/people/${m.id}`)} title="Open their profile page">
+                      View profile
+                    </button>
+                  )}
                   {!m.approved ? (
                     !m.consented_at ? (
                       <button type="button" className="btn primary small" disabled title="Hasn't finished signing up yet">Approve</button>
@@ -1079,6 +1152,12 @@ function MembersTable({ loading, members, myId, onSetApproved, onSetAdmin, onDel
             )
           })}
         </ul>
+      )}
+
+      {shown.length > 0 && (
+        <p className="admin-tab-footnote">
+          Showing {shown.length} of {members.length} member{members.length === 1 ? '' : 's'}.
+        </p>
       )}
 
       {confirmTarget && (
@@ -1242,6 +1321,8 @@ function ActivityLog() {
 function PostsModeration() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [q, setQ] = useState('')
+  const navigate = useNavigate()
   const showToast = useToast()
 
   async function load() {
@@ -1273,21 +1354,37 @@ function PostsModeration() {
     )
   }
 
+  const needle = q.trim().toLowerCase()
+  const shown = posts.filter((p) => !needle || [p.title, plainText(p.content), p.profiles?.full_name].filter(Boolean).join(' ').toLowerCase().includes(needle))
+
   return (
-    <ul className="admin-list">
-      {posts.map((p) => (
-        <li className="admin-row" key={p.id}>
-          <div className="admin-row-info">
-            <span className="admin-row-name">{p.title || 'Untitled post'}</span>
-            <span className="admin-row-meta">By {p.profiles?.full_name || 'a member'} · {timeAgo(p.created_at)}</span>
-            {p.content && p.content !== '(no text)' && (
-              <p className="admin-row-preview">{truncate(plainText(p.content))}</p>
-            )}
-          </div>
-          <DeleteButton onConfirm={() => remove(p.id)} label="Delete post" message="This removes the post for everyone. This can't be undone." />
-        </li>
-      ))}
-    </ul>
+    <>
+      <div className="admin-toolbar">
+        <input className="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search posts by title, text or author…" />
+      </div>
+      {shown.length === 0 ? (
+        <EmptyState icon="search" message="No matching posts." />
+      ) : (
+        <ul className="admin-list">
+          {shown.map((p) => (
+            <li className="admin-row" key={p.id}>
+              <div className="admin-row-info">
+                <span className="admin-row-name">{p.title || 'Untitled post'}</span>
+                <span className="admin-row-meta">By {p.profiles?.full_name || 'a member'} · {timeAgo(p.created_at)}</span>
+                {p.content && p.content !== '(no text)' && (
+                  <p className="admin-row-preview">{truncate(plainText(p.content))}</p>
+                )}
+              </div>
+              <div className="admin-row-actions">
+                <button type="button" className="btn ghost small" onClick={() => navigate(`/feed/${p.id}`)} title="Open this post on the feed">View</button>
+                <DeleteButton onConfirm={() => remove(p.id)} label="Delete post" message="This removes the post for everyone. This can't be undone." />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="admin-tab-footnote">Showing the {posts.length} most recent posts.</p>
+    </>
   )
 }
 
@@ -1295,6 +1392,8 @@ function PostsModeration() {
 function JobsModeration() {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [q, setQ] = useState('')
+  const navigate = useNavigate()
   const showToast = useToast()
 
   async function load() {
@@ -1326,21 +1425,37 @@ function JobsModeration() {
     )
   }
 
+  const needle = q.trim().toLowerCase()
+  const shown = jobs.filter((j) => !needle || [j.title, j.company, j.location, j.profiles?.full_name].filter(Boolean).join(' ').toLowerCase().includes(needle))
+
   return (
-    <ul className="admin-list">
-      {jobs.map((j) => (
-        <li className="admin-row" key={j.id}>
-          <div className="admin-row-info">
-            <span className="admin-row-name">{j.title} — {j.company}</span>
-            <span className="admin-row-meta">
-              Posted by {j.profiles?.full_name || 'a member'} · {timeAgo(j.created_at)}
-              {j.location ? ` · ${j.location}` : ''}
-            </span>
-          </div>
-          <DeleteButton onConfirm={() => remove(j.id)} label="Delete listing" message="This removes the job listing. This can't be undone." />
-        </li>
-      ))}
-    </ul>
+    <>
+      <div className="admin-toolbar">
+        <input className="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search jobs by title, company, location or poster…" />
+      </div>
+      {shown.length === 0 ? (
+        <EmptyState icon="search" message="No matching job listings." />
+      ) : (
+        <ul className="admin-list">
+          {shown.map((j) => (
+            <li className="admin-row" key={j.id}>
+              <div className="admin-row-info">
+                <span className="admin-row-name">{j.title} — {j.company}</span>
+                <span className="admin-row-meta">
+                  Posted by {j.profiles?.full_name || 'a member'} · {timeAgo(j.created_at)}
+                  {j.location ? ` · ${j.location}` : ''}
+                </span>
+              </div>
+              <div className="admin-row-actions">
+                <button type="button" className="btn ghost small" onClick={() => navigate(`/jobs/${j.id}`)} title="Open this listing">View</button>
+                <DeleteButton onConfirm={() => remove(j.id)} label="Delete listing" message="This removes the job listing. This can't be undone." />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="admin-tab-footnote">Showing the {jobs.length} most recent listings.</p>
+    </>
   )
 }
 
@@ -1348,6 +1463,8 @@ function JobsModeration() {
 function EventsModeration() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [q, setQ] = useState('')
+  const navigate = useNavigate()
   const showToast = useToast()
 
   async function load() {
@@ -1379,9 +1496,17 @@ function EventsModeration() {
     )
   }
 
-  return (
+  const needle = q.trim().toLowerCase()
+  const shown = events.filter((e) => !needle || [e.title, e.location, e.profiles?.full_name].filter(Boolean).join(' ').toLowerCase().includes(needle))
+  // Upcoming first — those are the ones where a deletion actually affects
+  // people's plans. Past events are kept below for the record.
+  const now = Date.now()
+  const upcoming = shown.filter((e) => new Date(e.event_date) >= now)
+  const past = shown.filter((e) => new Date(e.event_date) < now)
+
+  const renderRows = (rows) => (
     <ul className="admin-list">
-      {events.map((e) => (
+      {rows.map((e) => (
         <li className="admin-row" key={e.id}>
           <div className="admin-row-info">
             <span className="admin-row-name">{e.title}</span>
@@ -1390,10 +1515,31 @@ function EventsModeration() {
               {e.location ? ` · ${e.location}` : ''}
             </span>
           </div>
-          <DeleteButton onConfirm={() => remove(e.id)} label="Delete event" message="This removes the event and everyone's RSVPs. This can't be undone." />
+          <div className="admin-row-actions">
+            <button type="button" className="btn ghost small" onClick={() => navigate(`/events/${e.id}`)} title="Open this event">View</button>
+            <DeleteButton onConfirm={() => remove(e.id)} label="Delete event" message="This removes the event and everyone's RSVPs. This can't be undone." />
+          </div>
         </li>
       ))}
     </ul>
+  )
+
+  return (
+    <>
+      <div className="admin-toolbar">
+        <input className="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search events by title, location or organiser…" />
+      </div>
+      {shown.length === 0 ? (
+        <EmptyState icon="search" message="No matching events." />
+      ) : (
+        <>
+          {upcoming.length > 0 && <h3 className="admin-list-heading">Upcoming</h3>}
+          {upcoming.length > 0 && renderRows(upcoming)}
+          {past.length > 0 && <h3 className="admin-list-heading">Past</h3>}
+          {past.length > 0 && renderRows(past)}
+        </>
+      )}
+    </>
   )
 }
 
@@ -1401,6 +1547,8 @@ function EventsModeration() {
 function BusinessesModeration() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [q, setQ] = useState('')
+  const navigate = useNavigate()
   const showToast = useToast()
 
   async function load() {
@@ -1439,34 +1587,47 @@ function BusinessesModeration() {
     )
   }
 
+  const needle = q.trim().toLowerCase()
+  const shown = items.filter((b) => !needle || [b.name, b.category, b.city, b.country, b.profiles?.full_name].filter(Boolean).join(' ').toLowerCase().includes(needle))
+
   return (
-    <ul className="admin-list">
-      {items.map((b) => (
-        <li className="admin-row" key={b.id}>
-          <div className="admin-row-info">
-            <span className="admin-row-name">
-              {b.name}
-              {b.promoted && <span className="admin-badge admin" style={{ marginLeft: 8 }}>Featured</span>}
-            </span>
-            <span className="admin-row-meta">
-              {b.category} · Listed by {b.profiles?.full_name || 'a member'}
-              {(b.city || b.country) ? ` · ${[b.city, b.country].filter(Boolean).join(', ')}` : ''}
-              {' · '}{timeAgo(b.created_at)}
-            </span>
-          </div>
-          <div className="admin-row-actions">
-            <button type="button"
-              className="btn ghost small"
-              onClick={() => togglePromote(b)}
-              title={b.promoted ? 'Stop pinning this to the top of the directory' : 'Pin this to the top of the business directory'}
-            >
-              {b.promoted ? 'Unfeature' : 'Feature'}
-            </button>
-            <DeleteButton onConfirm={() => remove(b.id)} label="Delete business" message="This removes the business listing. This can't be undone." />
-          </div>
-        </li>
-      ))}
-    </ul>
+    <>
+      <div className="admin-toolbar">
+        <input className="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search businesses by name, category, place or owner…" />
+      </div>
+      {shown.length === 0 ? (
+        <EmptyState icon="search" message="No matching businesses." />
+      ) : (
+        <ul className="admin-list">
+          {shown.map((b) => (
+            <li className="admin-row" key={b.id}>
+              <div className="admin-row-info">
+                <span className="admin-row-name">
+                  {b.name}
+                  {b.promoted && <span className="admin-badge admin" style={{ marginLeft: 8 }}>Featured</span>}
+                </span>
+                <span className="admin-row-meta">
+                  {b.category} · Listed by {b.profiles?.full_name || 'a member'}
+                  {(b.city || b.country) ? ` · ${[b.city, b.country].filter(Boolean).join(', ')}` : ''}
+                  {' · '}{timeAgo(b.created_at)}
+                </span>
+              </div>
+              <div className="admin-row-actions">
+                <button type="button" className="btn ghost small" onClick={() => navigate(`/businesses/${b.id}`)} title="Open this listing">View</button>
+                <button type="button"
+                  className="btn ghost small"
+                  onClick={() => togglePromote(b)}
+                  title={b.promoted ? 'Stop pinning this to the top of the directory' : 'Pin this to the top of the business directory'}
+                >
+                  {b.promoted ? 'Unfeature' : 'Feature'}
+                </button>
+                <DeleteButton onConfirm={() => remove(b.id)} label="Delete business" message="This removes the business listing. This can't be undone." />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   )
 }
 
