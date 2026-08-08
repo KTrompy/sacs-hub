@@ -6600,8 +6600,11 @@ button.delete-danger svg { flex-shrink: 0; }
   color: var(--ink-soft);
 }
 .events-map-search input { border: none; outline: none; background: none; flex: 1; font-size: var(--fs-sm); color: var(--ink); }
-.events-mini-map { border-radius: var(--radius-sm); overflow: hidden; }
-.events-mini-map-inner { width: 100%; height: 180px; }
+/* Sidebar-scale version of the clustered .alumni-map used on the Old Boys
+   map view — same pin clustering/popups/scroll-zoom, just shorter to fit
+   this narrower column. Same pattern as .business-sidebar-map-section. */
+.events-map-widget .map-shell { margin-top: 0; }
+.events-map-widget .alumni-map { height: 320px; border-radius: var(--radius-sm); }
 .events-map-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .events-map-list-item {
   display: flex;

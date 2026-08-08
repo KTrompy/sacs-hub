@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { TILE_URL, TILE_ATTRIBUTION, TILE_SIZE, ZOOM_OFFSET } from '../mapTiles.js'
@@ -35,13 +35,46 @@ const EVENTS_SELECT = `
   comments:event_comments(count)
 `
 
-function eventPinIcon() {
+// Events sharing the same location string collapse onto one pin — same
+// clustering rule AlumniMap.jsx (people) and BusinessDirectory.jsx
+// (businesses) use, so a venue hosting several events on the calendar
+// doesn't stack markers directly on top of each other. Falls back to
+// rounded coordinates for anything missing a location string.
+function clusterKey(e) {
+  const loc = (e.location || '').trim().toLowerCase()
+  if (loc) return `place:${loc}`
+  return `coord:${e.lat.toFixed(2)},${e.lng.toFixed(2)}`
+}
+
+function pinIcon(count) {
   return L.divIcon({
     className: 'alumni-pin-wrap',
-    html: '<div class="alumni-pin">★</div>',
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
+    html: `<div class="alumni-pin">${count > 1 ? count : '★'}</div>`,
+    iconSize: [count > 9 ? 36 : 30, count > 9 ? 36 : 30],
+    iconAnchor: [count > 9 ? 18 : 15, count > 9 ? 18 : 15],
+    popupAnchor: [0, -14],
   })
+}
+
+// Re-fits the view to show every pin whenever the set of clusters changes
+// (first load, or the map's own location search narrowing the list) — same
+// pattern AlumniMap.jsx's and BusinessDirectory.jsx's FitToMarkers use.
+function FitToMarkers({ points }) {
+  const map = useMap()
+  const fingerprint = points.map((p) => p.key).join('|')
+
+  useEffect(() => {
+    if (!points.length) return
+    if (points.length === 1) {
+      map.setView([points[0].lat, points[0].lng], 9)
+      return
+    }
+    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng]))
+    map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fingerprint])
+
+  return null
 }
 
 function sameDay(a, b) {
@@ -402,12 +435,29 @@ export default function Events({ session, profile, onMessage }) {
   const mapMatches = mapNeedle
     ? pinnedEvents.filter((e) => (e.location || '').toLowerCase().includes(mapNeedle) || (e.title || '').toLowerCase().includes(mapNeedle))
     : pinnedEvents
-  const mapCenter = mapMatches.length
-    ? [
-        mapMatches.reduce((s, e) => s + e.lat, 0) / mapMatches.length,
-        mapMatches.reduce((s, e) => s + e.lng, 0) / mapMatches.length,
-      ]
-    : DEFAULT_MAP_CENTER
+
+  // Cluster + auto-fit, same as AlumniMap.jsx/BusinessDirectory.jsx —
+  // FitToMarkers below takes care of framing the view, so we no longer need
+  // to hand-compute a center from the raw matches.
+  const clusters = useMemo(() => {
+    const map = new Map()
+    for (const e of mapMatches) {
+      const key = clusterKey(e)
+      if (!map.has(key)) map.set(key, { key, latSum: 0, lngSum: 0, items: [] })
+      const c = map.get(key)
+      c.latSum += e.lat
+      c.lngSum += e.lng
+      c.items.push(e)
+    }
+    return [...map.values()].map((c) => ({
+      key: c.key, lat: c.latSum / c.items.length, lng: c.lngSum / c.items.length, items: c.items,
+    }))
+  }, [mapMatches])
+
+  const placeCount = useMemo(
+    () => new Set(mapMatches.map((e) => (e.location || '').trim().toLowerCase())).size,
+    [mapMatches]
+  )
 
   function focusEvent(id) {
     const el = document.getElementById(`event-${id}`)
@@ -589,14 +639,52 @@ export default function Events({ session, profile, onMessage }) {
                 placeholder="Search by location"
               />
             </div>
-            <div className="events-mini-map">
-              <MapContainer center={mapCenter} zoom={mapMatches.length ? 9 : 6} scrollWheelZoom={false} className="events-mini-map-inner">
-                <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} tileSize={TILE_SIZE} zoomOffset={ZOOM_OFFSET} />
-                {mapMatches.map((e) => (
-                  <Marker key={e.id} position={[e.lat, e.lng]} icon={eventPinIcon()} eventHandlers={{ click: () => focusEvent(e.id) }} />
-                ))}
-              </MapContainer>
-            </div>
+
+            {mapMatches.length > 0 && (
+              <p className="result-count">
+                {mapMatches.length} {mapMatches.length === 1 ? 'event' : 'events'} pinned across {placeCount} {placeCount === 1 ? 'place' : 'places'}
+              </p>
+            )}
+
+            {pinnedEvents.length === 0 ? (
+              <p className="empty small" style={{ marginTop: 10 }}>No events pinned yet.</p>
+            ) : (
+              <div className="map-shell">
+                <MapContainer center={DEFAULT_MAP_CENTER} zoom={6} scrollWheelZoom className="alumni-map">
+                  <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} tileSize={TILE_SIZE} zoomOffset={ZOOM_OFFSET} />
+                  <FitToMarkers points={clusters} />
+                  {clusters.map((c) => {
+                    const place = c.items[0].location || 'Unknown location'
+                    return (
+                      <Marker key={c.key} position={[c.lat, c.lng]} icon={pinIcon(c.items.length)}>
+                        <Popup maxWidth={280} minWidth={220}>
+                          <div className="map-popup">
+                            <div className="map-popup-title">{place}</div>
+                            <ul className="map-popup-list">
+                              {c.items.map((e) => (
+                                <li key={e.id}>
+                                  <button type="button" className="events-map-list-item" onClick={() => focusEvent(e.id)}>
+                                    <CalendarDotIcon />
+                                    <span>
+                                      <strong>{e.title}</strong>
+                                      <span className="events-map-list-location">
+                                        {new Date(e.event_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                      </span>
+                                    </span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )
+                  })}
+                </MapContainer>
+                <p className="map-hint">Tap a pin to see what's on there, or jump straight to it below.</p>
+              </div>
+            )}
+
             {mapMatches.length > 0 && (
               <ul className="events-map-list">
                 {mapMatches.map((e) => (
@@ -611,9 +699,6 @@ export default function Events({ session, profile, onMessage }) {
                   </li>
                 ))}
               </ul>
-            )}
-            {pinnedEvents.length === 0 && (
-              <p className="empty small" style={{ marginTop: 10 }}>No events pinned yet.</p>
             )}
           </div>
         </aside>
