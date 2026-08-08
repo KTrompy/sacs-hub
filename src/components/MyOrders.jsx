@@ -51,8 +51,23 @@ export default function MyOrders({ session }) {
 
   async function confirmCancel(order) {
     setCancelling(null)
-    const { error: err } = await supabase.from('merch_orders').update({ status: 'cancelled' }).eq('id', order.id)
+    // .select() so we can tell "cancelled" apart from "RLS filtered out every
+    // row" — if an admin confirmed this order while the list here was stale,
+    // the update matches nothing, err is null, and without this check we'd
+    // toast success and flip the row to cancelled locally when nothing
+    // actually changed on the server.
+    const { data, error: err } = await supabase
+      .from('merch_orders')
+      .update({ status: 'cancelled' })
+      .eq('id', order.id)
+      .eq('status', 'pending')
+      .select('id')
     if (err) { showToast("Couldn't cancel that order.", { type: 'error' }); return }
+    if (!data || data.length === 0) {
+      showToast("That order's already been confirmed — contact the committee to cancel it.", { type: 'error' })
+      load()
+      return
+    }
     showToast('Order cancelled')
     setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: 'cancelled' } : o)))
   }

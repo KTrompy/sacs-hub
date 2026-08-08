@@ -23,9 +23,15 @@ export default function Shop() {
     let alive = true
     ;(async () => {
       setLoading(true)
+      // RLS already hides inactive products from ordinary members, but the
+      // SELECT policy lets admins read everything — without this filter an
+      // admin browsing the shop would see hidden/draft products mixed into
+      // the public storefront. Filtering here keeps the storefront identical
+      // for everyone; admins preview drafts via Admin → Merch instead.
       const { data: productRows, error: productErr } = await supabase
         .from('merch_products')
         .select('id, name, description, category, base_price, image_url, created_at')
+        .eq('active', true)
         .order('created_at', { ascending: false })
       if (!alive) return
       if (productErr) { setError(productErr.message); setLoading(false); return }
@@ -36,6 +42,7 @@ export default function Shop() {
         const { data, error: variantErr } = await supabase
           .from('merch_variants')
           .select('id, product_id, size, color, price_delta, stock_quantity')
+          .eq('active', true) // same admin-bypass reasoning as the products query above
           .in('product_id', ids)
         if (variantErr) { setError(variantErr.message); setLoading(false); return }
         variantRows = data || []

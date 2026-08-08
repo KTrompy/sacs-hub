@@ -47,7 +47,18 @@ function MerchOrdersAdmin() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    // merch_orders is in the supabase_realtime publication (schema-update-59)
+    // precisely so an admin sitting on this tab sees a new order land without
+    // a manual refresh — same channel pattern as BusinessDirectory/Jobs.
+    const channel = supabase
+      .channel('admin-merch-orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'merch_orders' }, () => load())
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function setStatus(order, status) {
     const { error: err } = await supabase.from('merch_orders').update({ status }).eq('id', order.id)

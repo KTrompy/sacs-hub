@@ -28,9 +28,16 @@ export default function ShopProduct() {
     let alive = true
     ;(async () => {
       setLoading(true)
+      // .eq('active', true) on both: RLS already hides inactive rows from
+      // members, but admins can read everything — without the filter an admin
+      // would see hidden variants in the picker (and adding one would fail at
+      // checkout, since place_merch_order() re-checks active). Variants come
+      // back in id (creation) order, matching the order the admin arranged
+      // them in the Admin → Merch editor — sorting by size text put "L"
+      // before "M" before "S".
       const [{ data: p, error: pErr }, { data: v, error: vErr }] = await Promise.all([
-        supabase.from('merch_products').select('*').eq('id', productId).maybeSingle(),
-        supabase.from('merch_variants').select('*').eq('product_id', productId).order('size', { ascending: true }),
+        supabase.from('merch_products').select('*').eq('id', productId).eq('active', true).maybeSingle(),
+        supabase.from('merch_variants').select('*').eq('product_id', productId).eq('active', true).order('id', { ascending: true }),
       ])
       if (!alive) return
       if (pErr || vErr || !p) { setNotFound(true); setLoading(false); return }
@@ -85,7 +92,7 @@ export default function ShopProduct() {
 
       <div className="shop-product-layout">
         <div className="shop-product-image">
-          {product.image_url ? <img src={product.image_url} alt="" /> : <div className="merch-card-image-placeholder large" />}
+          {product.image_url ? <img src={product.image_url} alt={product.name} /> : <div className="merch-card-image-placeholder large" />}
         </div>
 
         <div className="shop-product-info">
