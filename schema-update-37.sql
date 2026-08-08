@@ -29,7 +29,7 @@
 -- ============================================================
 
 -- ---------- FIX services_offered COLUMN TYPE ----------
--- On the original Eendrag DB, services_offered was mistakenly created as
+-- On the original SACS DB, services_offered was mistakenly created as
 -- plain `text`. This block converts it to `text[]`. On a fresh install
 -- (like sacs-hub) migration 12 already declares it as text[], so the
 -- conversion is a no-op — the DO block below detects the current type

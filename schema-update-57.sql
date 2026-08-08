@@ -15,7 +15,7 @@
    nothing in the app can read them.
 
    That matters for exactly the thing this site gates on — an admin
-   verifying a signup against Eendrag residence records needs the legal
+   verifying a signup against SACS residence records needs the legal
    first name, which is precisely the one that gets replaced when someone
    fills in "Preferred first name".
    ------------------------------------------------------------------ */
@@ -53,7 +53,7 @@ where u.id = p.id
    2. Declined signups.
 
    An admin could approve or permanently delete, and nothing in between.
-   Someone who isn't an Eendragter therefore sat on the "we're verifying
+   Someone who isn't an Old Boy therefore sat on the "we're verifying
    you" screen indefinitely, being told an answer was coming that never
    would — or got deleted with no explanation and signed straight up
    again, back into the same queue.

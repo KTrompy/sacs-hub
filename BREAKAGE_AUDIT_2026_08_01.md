@@ -1,4 +1,4 @@
-# Eendrag Hub — "what could break" audit
+# SACS Hub — "what could break" audit
 
 **Date:** 1 August 2026
 **Scope:** full stack, start to finish — build/config/deploy, auth & access control, database schema + RLS + storage, runtime crash risks, and things that don't add up.
@@ -288,14 +288,14 @@ The Edge Function's CORS allowlist is:
 
 ```ts
 const ALLOWED_ORIGINS = [
-  'https://eendrag-alumni-six.vercel.app',
+  'https://sacs-hub.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
 ]
 const allowed = ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app')
 ```
 
-`.env.example` documents the plan to move to `https://eendragalumni.com`. On that domain, `allowed` is false, `Access-Control-Allow-Origin` comes back as the *Vercel* URL, the browser blocks the response, and "Delete account" fails with an opaque network error — the one operation where a silent failure is worst.
+`.env.example` documents the plan to move to `https://sacsalumni.org`. On that domain, `allowed` is false, `Access-Control-Allow-Origin` comes back as the *Vercel* URL, the browser blocks the response, and "Delete account" fails with an opaque network error — the one operation where a silent failure is worst.
 
 Separately, `origin.endsWith('.vercel.app')` allows **any** site hosted on Vercel, which anyone can deploy to for free. No credentials travel by cookie here (the token is an explicit `Authorization` header), so it isn't directly exploitable, but it's a wildcard with no reason to exist.
 

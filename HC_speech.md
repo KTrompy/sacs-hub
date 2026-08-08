@@ -2,7 +2,7 @@ Do you know how many of us lose touch the moment we leave this house? Or how you
 
 My name is [name], and I'm asking for your vote for House Committee.
 
-I want to serve on HC because leadership here shouldn't just be about socials and rules — it should be about building something that outlasts our time in this house. That's what I want to bring: the Eendrag Alumni website.
+I want to serve on HC because leadership here shouldn't just be about socials and rules — it should be about building something that outlasts our time in this house. That's what I want to bring: the SACS Alumni website.
 
 Right now, the moment guys leave, we lose them. Years of friendships and connections just disappear. My idea is simple — a platform where every old boy stays part of this house, where current members can reach out to alumni for advice, internships, or just a familiar face in a new city.
 

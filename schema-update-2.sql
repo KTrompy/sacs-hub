@@ -11,7 +11,7 @@ alter table public.profiles add column if not exists mentorship_description text
 alter table public.profiles add column if not exists linkedin_url text default '';
 alter table public.profiles add column if not exists country text default 'South Africa';
 alter table public.profiles add column if not exists province text default '';
--- Are they still living in Eendrag right now (current student) vs alumnus?
+-- Are they still living in SACS right now (current student) vs alumnus?
 alter table public.profiles add column if not exists is_current_resident boolean default false;
 
 -- ---------- POSTS: title + images ----------

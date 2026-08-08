@@ -1,5 +1,5 @@
 -- ============================================================
--- Eendrag Alumni Hub — Supabase schema
+-- SACS Alumni Hub — Supabase schema
 -- Run this once in the Supabase SQL Editor (Dashboard > SQL Editor)
 -- ============================================================
 
@@ -7,8 +7,8 @@
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text not null default '',
-  grad_year int,                     -- year they left Eendrag
-  section text,                      -- Eendrag section they lived in
+  grad_year int,                     -- year they left SACS
+  section text,                      -- SACS section they lived in
   occupation text default '',
   city text default '',
   bio text default '',

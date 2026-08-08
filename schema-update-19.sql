@@ -1,6 +1,6 @@
 -- ============================================================
 -- Update 19: Business Directory — a real `businesses` table (not just the
--- existing "business_categories" field on a profile), so an Eendragter can
+-- existing "business_categories" field on a profile), so an Old Boy can
 -- list an actual company/practice with its own logo, category, contact
 -- details and map pin, and admins can feature/promote listings.
 -- Run this in Supabase SQL Editor. Safe to re-run.

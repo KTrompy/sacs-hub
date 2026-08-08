@@ -25,7 +25,7 @@ create policy "Members can view badges"
 insert into public.badges (key, name, description, sort_order) values
   ('profile_complete', 'Profile Pro', 'Filled out every section of your profile.', 1),
   ('first_post', 'First Post', 'Shared your first update with the house.', 2),
-  ('joined_group', 'Group Member', 'Joined your first Eendrag group.', 3),
+  ('joined_group', 'Group Member', 'Joined your first SACS group.', 3),
   ('event_goer', 'Event Goer', 'RSVP''d to an alumni event.', 4),
   ('photo_sharer', 'Photo Sharer', 'Added a photo to an album.', 5),
   ('mentor_connect', 'Mentor Connect', 'Joined the mentoring programme as a mentor or mentee.', 6)

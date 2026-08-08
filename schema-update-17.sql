@@ -1,6 +1,6 @@
 -- ============================================================
 -- Update 17: last_seen heartbeat — powers the "Recently online" sort and
--- the green online dot in the Eendragters directory.
+-- the green online dot in the Old Boys directory.
 -- Run this in Supabase SQL Editor. Safe to re-run.
 -- ============================================================
 

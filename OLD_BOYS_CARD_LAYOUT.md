@@ -1,8 +1,8 @@
-# Eendragers Card Layout Update
+# Old Boys Card Layout Update
 
 ## Changes Made
 
-Converted the Eendragers directory from a horizontal row list layout to a responsive card grid layout with **3 columns on desktop**.
+Converted the Old Boys directory from a horizontal row list layout to a responsive card grid layout with **3 columns on desktop**.
 
 ### Files Updated
 

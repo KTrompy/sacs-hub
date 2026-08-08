@@ -12,7 +12,7 @@
 -- Migration 0  (schema-update-0.sql)
 -- ============================================================
 -- ============================================================
--- Update 0: Baseline (tables, functions and triggers that the Eendrag
+-- Update 0: Baseline (tables, functions and triggers that the SACS
 --                    project set up via the Supabase Dashboard on day one
 --                    and were never captured as SQL).
 --
@@ -103,7 +103,7 @@ create policy "Users can update own profile"
 
 -- ---------- Helper functions used by later migrations' RLS ----------
 
--- `is_approved` was Dashboard-only on Eendrag; baseline here.
+-- `is_approved` was Dashboard-only on SACS; baseline here.
 -- `is_admin` is CREATE OR REPLACEd by a later migration; the plpgsql stub
 -- below tolerates the column not existing until then.
 -- `is_participant` is first CALLED in mig 29 but not CREATED until mig 51.
@@ -1548,7 +1548,7 @@ create index if not exists photos_album_idx on public.photos (album_id, created_
 -- ============================================================
 -- ============================================================
 -- Update 17: last_seen heartbeat — powers the "Recently online" sort and
--- the green online dot in the Eendragters directory.
+-- the green online dot in the Old Boys directory.
 -- Run this in Supabase SQL Editor. Safe to re-run.
 -- ============================================================
 
@@ -1742,7 +1742,7 @@ grant execute on function public.mentoring_match_count(bigint) to authenticated;
 -- ============================================================
 -- ============================================================
 -- Update 19: Business Directory — a real `businesses` table (not just the
--- existing "business_categories" field on a profile), so an Eendragter can
+-- existing "business_categories" field on a profile), so an Old Boy can
 -- list an actual company/practice with its own logo, category, contact
 -- details and map pin, and admins can feature/promote listings.
 -- Run this in Supabase SQL Editor. Safe to re-run.
@@ -1873,7 +1873,7 @@ create policy "Members can view badges"
 insert into public.badges (key, name, description, sort_order) values
   ('profile_complete', 'Profile Pro', 'Filled out every section of your profile.', 1),
   ('first_post', 'First Post', 'Shared your first update with the house.', 2),
-  ('joined_group', 'Group Member', 'Joined your first Eendrag group.', 3),
+  ('joined_group', 'Group Member', 'Joined your first SACS group.', 3),
   ('event_goer', 'Event Goer', 'RSVP''d to an alumni event.', 4),
   ('photo_sharer', 'Photo Sharer', 'Added a photo to an album.', 5),
   ('mentor_connect', 'Mentor Connect', 'Joined the mentoring programme as a mentor or mentee.', 6)
@@ -2386,7 +2386,7 @@ create policy "Users can delete own job attachments"
 -- ============================================================
 -- Migration 27  (schema-update-27.sql)
 -- ============================================================
--- Update 27: Merchandise (Eendrag store)
+-- Update 27: Merchandise (SACS store)
 -- Run this in Supabase SQL Editor. Safe to re-run.
 --
 -- This is an official, admin-curated store (hoodies, mugs, caps, etc.) —
@@ -3091,7 +3091,7 @@ alter table public.profiles drop column if exists business_categories;
 -- ============================================================
 
 -- ---------- FIX services_offered COLUMN TYPE ----------
--- On the original Eendrag DB, services_offered was mistakenly created as
+-- On the original SACS DB, services_offered was mistakenly created as
 -- plain `text`. This block converts it to `text[]`. On a fresh install
 -- (like sacs-hub) migration 12 already declares it as text[], so the
 -- conversion is a no-op — the DO block below detects the current type
@@ -3619,7 +3619,7 @@ grant execute on function public.admin_delete_member(uuid) to authenticated;
 -- Background: a Google/social signup gets an auth.users row (and, via
 -- the handle_new_user trigger, a profiles row) the moment they complete
 -- the OAuth redirect — before FinishSignup.jsx has collected their
--- name, years in Eendrag, address, or consent. That row shows up in
+-- name, years in SACS, address, or consent. That row shows up in
 -- Admin > Pending approval immediately, indistinguishable from someone
 -- who's actually finished signing up, because admin_list_members()
 -- never returned consented_at and the "Admins can update any profile"
@@ -5292,7 +5292,7 @@ create policy "Members can file reports" on public.reports
 -- ============================================================
 -- Migration 54  (schema-update-54.sql)
 -- ============================================================
--- schema-update-54.sql — Eendrag legends (home-page spotlight)
+-- schema-update-54.sql — SACS legends (home-page spotlight)
 --
 -- A small, admin-curated hall of fame: notable old boys, shown as a photo
 -- mosaic on Home. Deliberately NOT derived from `profiles` — the people this
@@ -6179,7 +6179,7 @@ grant select, insert, update, delete on public.mentorship_sessions to authentica
    nothing in the app can read them.
 
    That matters for exactly the thing this site gates on — an admin
-   verifying a signup against Eendrag residence records needs the legal
+   verifying a signup against SACS residence records needs the legal
    first name, which is precisely the one that gets replaced when someone
    fills in "Preferred first name".
    ------------------------------------------------------------------ */
@@ -6217,7 +6217,7 @@ where u.id = p.id
    2. Declined signups.
 
    An admin could approve or permanently delete, and nothing in between.
-   Someone who isn't an Eendragter therefore sat on the "we're verifying
+   Someone who isn't an Old Boy therefore sat on the "we're verifying
    you" screen indefinitely, being told an answer was coming that never
    would — or got deleted with no explanation and signed straight up
    again, back into the same queue.

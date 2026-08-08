@@ -7,7 +7,7 @@
 -- Background: a Google/social signup gets an auth.users row (and, via
 -- the handle_new_user trigger, a profiles row) the moment they complete
 -- the OAuth redirect — before FinishSignup.jsx has collected their
--- name, years in Eendrag, address, or consent. That row shows up in
+-- name, years in SACS, address, or consent. That row shows up in
 -- Admin > Pending approval immediately, indistinguishable from someone
 -- who's actually finished signing up, because admin_list_members()
 -- never returned consented_at and the "Admins can update any profile"

@@ -1,5 +1,5 @@
 -- ============================================================
--- Update 0: Baseline (tables, functions and triggers that the Eendrag
+-- Update 0: Baseline (tables, functions and triggers that the SACS
 --                    project set up via the Supabase Dashboard on day one
 --                    and were never captured as SQL).
 --
@@ -90,7 +90,7 @@ create policy "Users can update own profile"
 
 -- ---------- Helper functions used by later migrations' RLS ----------
 
--- `is_approved` was Dashboard-only on Eendrag; baseline here.
+-- `is_approved` was Dashboard-only on SACS; baseline here.
 -- `is_admin` is CREATE OR REPLACEd by a later migration; the plpgsql stub
 -- below tolerates the column not existing until then.
 -- `is_participant` is first CALLED in mig 29 but not CREATED until mig 51.

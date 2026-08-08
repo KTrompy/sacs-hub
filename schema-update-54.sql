@@ -1,4 +1,4 @@
--- schema-update-54.sql — Eendrag legends (home-page spotlight)
+-- schema-update-54.sql — SACS legends (home-page spotlight)
 --
 -- A small, admin-curated hall of fame: notable old boys, shown as a photo
 -- mosaic on Home. Deliberately NOT derived from `profiles` — the people this

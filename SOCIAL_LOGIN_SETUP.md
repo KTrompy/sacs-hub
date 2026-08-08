@@ -10,7 +10,7 @@ https://nshvaejjkknugfuyailz.supabase.co/auth/v1/callback
 
 ## 1. Google
 
-1. Go to https://console.cloud.google.com → create a project (e.g. "Eendrag Alumni").
+1. Go to https://console.cloud.google.com → create a project (e.g. "SACS Alumni").
 2. APIs & Services → OAuth consent screen → External → fill in app name, support email, and your site's domain. Add scopes `email` and `profile`.
 3. APIs & Services → Credentials → Create credentials → OAuth client ID → Web application.
    - **Authorized redirect URI: paste the callback URL above — exactly, character for character.** The `Error 400: redirect_uri_mismatch` you saw means the URI saved in the Google console doesn't match this URL. Common causes: a trailing slash, `http` instead of `https`, your site's own domain instead of the Supabase callback, or it was left blank. Fix: Credentials → your OAuth client → Authorized redirect URIs → set it to the callback URL above and save (can take a few minutes to propagate).
@@ -34,6 +34,6 @@ When you have a domain + Resend account:
 ## How the new flow works
 
 - **Sign in**: email+password or a social button. Simple.
-- **Join (form)**: 3 steps — details (name, email×2, password with strength meter), Eendrag years (from–to), consent (opt in/out + data consent + Turnstile). On submit the account is created, profile filled, and the user lands on a locked "your details are being verified" screen.
+- **Join (form)**: 3 steps — details (name, email×2, password with strength meter), SACS years (from–to), consent (opt in/out + data consent + Turnstile). On submit the account is created, profile filled, and the user lands on a locked "your details are being verified" screen.
 - **Join (social)**: after OAuth redirect, a "Nearly done" screen collects name (prefilled), years, and consent, then the same locked screen.
 - **Approval**: Admin → Pending approval → Approve. On the member's next visit (or "Check my status") they get the trimmed profile wizard (name/years questions removed — already collected), then the app.

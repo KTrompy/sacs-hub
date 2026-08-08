@@ -1,6 +1,6 @@
 # SACS Alumni Hub
 
-A community platform for SACS (South African College Schools) Old Boys: a feed, an alumni directory with an interactive map, 1:1 realtime messaging, events, jobs, a business directory, mentoring, and a "Notable Old Boys" spotlight. Built with React (Vite) + Supabase, forked from the sister project [eendrag-hub](../eendrag-hub) and rebranded/extended for SACS.
+A community platform for SACS (South African College Schools) Old Boys: a feed, an alumni directory with an interactive map, 1:1 realtime messaging, events, jobs, a business directory, mentoring, and a "Notable Old Boys" spotlight. Built with React (Vite) + Supabase, forked from an earlier sister project (see [../eendrag-hub](../eendrag-hub) on disk) and rebranded/extended for SACS.
 
 Intended production domain: **sacsalumni.org** (not purchased yet — deploys to a `vercel.app` URL until it is).
 
@@ -16,12 +16,12 @@ Intended production domain: **sacsalumni.org** (not purchased yet — deploys to
 - **Events** — list + calendar view, RSVPs, iCal export
 - **Jobs / Business Directory** — postings and listings with an interactive map
 - **Mentoring** — flash + structured mentorship matching
-- **Notable Old Boys** — admin-curated spotlight on the home page (formerly "Legends"/"Hoek van Helde" in the Eendrag original)
+- **Notable Old Boys** — admin-curated spotlight on the home page (formerly "Legends"/"Hoek van Helde" in the original version)
 - **Admin page** — approve/decline members, promote admins, moderate content, curate Notable Old Boys, view the activity log
 
 ## Project state
 
-- **Supabase**: project `sstftccywbijcuzpipuo`, bootstrapped via migrations (not the old `schema.sql` copy-paste flow — see project memory / migration history for the full trail). RLS is enabled everywhere; `profile_details` holds sensitive membership fields separately from `profiles` because `profiles` still has a broad "any authenticated user can read" policy inherited from the Eendrag original.
+- **Supabase**: project `sstftccywbijcuzpipuo`, bootstrapped via migrations (not the old `schema.sql` copy-paste flow — see project memory / migration history for the full trail). RLS is enabled everywhere; `profile_details` holds sensitive membership fields separately from `profiles` because `profiles` still has a broad "any authenticated user can read" policy inherited from the original version.
 - **Admin account**: `sacsalumnihub@gmail.com`.
 - **Mapbox**: token already generated (see `.env`).
 - **Not yet set up**: Resend (transactional email — `send-approval-email` and `send-member-email` Edge Functions need a `RESEND_API_KEY` secret before they'll actually send anything), Cloudflare Turnstile (`VITE_TURNSTILE_SITE_KEY` is blank), custom domain.

@@ -1,7 +1,7 @@
 /* SACS Alumni Hub — design tokens
    Navy anchors (the shield), a baby-blue accent, black + white supply the
    discipline. NOTE: variable names kept as --orange/--maroon from the
-   Eendrag fork to minimise diff churn — they hold SACS blue/navy values now.
+   original fork to minimise diff churn — they hold SACS blue/navy values now.
    A future refactor can rename to --accent/--primary. */
 
 :root {
@@ -21,7 +21,7 @@
   --ok: #2C6E49;
   /* RGB channels of the brand colors, for rgba() washes/shadows/focus
      rings. Every translucent brand tint in this file must be built from
-     these — hardcoded channel triplets are how the old Eendrag orange
+     these — hardcoded channel triplets are how the original orange
      survived the rebrand in 29 shadows and washes. */
   --accent-rgb: 110, 195, 232;       /* --orange  #6EC3E8 */
   --accent-dark-rgb: 62, 157, 201;   /* --orange-dark #3E9DC9 */

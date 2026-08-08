@@ -1,4 +1,4 @@
--- Update 27: Merchandise (Eendrag store)
+-- Update 27: Merchandise (SACS store)
 -- Run this in Supabase SQL Editor. Safe to re-run.
 --
 -- This is an official, admin-curated store (hoodies, mugs, caps, etc.) —

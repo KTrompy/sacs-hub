@@ -2,7 +2,7 @@
 
 ## ✅ What Was Added
 
-The "Connection suggestions" box on the Eendragters (Directory) page now has a **toggle button with an arrow** on the right side that allows users to minimize and expand the section.
+The "Connection suggestions" box on the Old Boys (Directory) page now has a **toggle button with an arrow** on the right side that allows users to minimize and expand the section.
 
 ## 📋 Implementation Details
 
