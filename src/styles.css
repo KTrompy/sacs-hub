@@ -6605,6 +6605,16 @@ button.delete-danger svg { flex-shrink: 0; }
    this narrower column. Same pattern as .business-sidebar-map-section. */
 .events-map-widget .map-shell { margin-top: 0; }
 .events-map-widget .alumni-map { height: 320px; border-radius: var(--radius-sm); }
+/* Compact popup for the events map — the shared .map-popup sizing (built
+   for AlumniMap's roomier photo rows) reads oversized in this narrow
+   sidebar, so trim the padding/type scale down just for this popup. */
+.leaflet-popup.events-map-popup .leaflet-popup-content { margin: 8px 10px; }
+.leaflet-popup.events-map-popup .map-popup-title { font-size: var(--fs-2xs); margin-bottom: 5px; }
+.leaflet-popup.events-map-popup .map-popup-list { gap: 2px; max-height: 160px; }
+.leaflet-popup.events-map-popup .events-map-list-item { padding: 5px 2px; gap: 6px; }
+.leaflet-popup.events-map-popup .events-map-list-item strong { font-size: var(--fs-xs); }
+.leaflet-popup.events-map-popup .events-map-list-location { font-size: var(--fs-2xs); }
+.leaflet-popup.events-map-popup .events-map-list-item svg { width: 13px; height: 13px; }
 .events-map-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .events-map-list-item {
   display: flex;

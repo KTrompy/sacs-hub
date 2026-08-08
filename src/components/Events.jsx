@@ -49,7 +49,7 @@ function clusterKey(e) {
 function pinIcon(count) {
   return L.divIcon({
     className: 'alumni-pin-wrap',
-    html: `<div class="alumni-pin">${count > 1 ? count : '★'}</div>`,
+    html: `<div class="alumni-pin">${count}</div>`,
     iconSize: [count > 9 ? 36 : 30, count > 9 ? 36 : 30],
     iconAnchor: [count > 9 ? 18 : 15, count > 9 ? 18 : 15],
     popupAnchor: [0, -14],
@@ -657,7 +657,7 @@ export default function Events({ session, profile, onMessage }) {
                     const place = c.items[0].location || 'Unknown location'
                     return (
                       <Marker key={c.key} position={[c.lat, c.lng]} icon={pinIcon(c.items.length)}>
-                        <Popup maxWidth={280} minWidth={220}>
+                        <Popup maxWidth={200} minWidth={160} className="events-map-popup">
                           <div className="map-popup">
                             <div className="map-popup-title">{place}</div>
                             <ul className="map-popup-list">
