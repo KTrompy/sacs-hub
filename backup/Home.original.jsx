@@ -425,6 +425,20 @@ export default function Home({ session, profile, onMessage }) {
       if (cancelled) return
 
       // Retry canary for the auth-not-settled race described above.
+      //
+      // This used to check "community AND businesses both came back empty",
+      // which sounds reasonable but is wrong on a young site: with no business
+      // listings yet, that condition is true on *every single load*, so every
+      // visit to Home paid a 600 ms sleep plus a second full round of seven
+      // queries before rendering.
+      //
+      // `badges` is the better signal. It's a small fixed reference table with
+      // no per-user filtering, readable by any approved member — and Home only
+      // renders for approved members at all (App.jsx gates on it). So a
+      // non-empty badges result means the client's auth header really did make
+      // it onto the request; an empty one means nothing did, which is exactly
+      // the race. It can't be confused with "this community is genuinely
+      // empty" the way the old check could.
       if (!isRetry && (badgeDefs || []).length === 0) {
         await new Promise((r) => setTimeout(r, 600))
         if (!cancelled) await load(true)
@@ -468,23 +482,13 @@ export default function Home({ session, profile, onMessage }) {
           onDismiss={() => setShowNudge(false)}
         />
       )}
-
-      {/* ── Hero greeting ────────────────────────────────────────────
-          Apple principle: Purpose + Simplicity. Large, confident type
-          with breathing room. The avatar completion ring stays SACS-
-          branded. A subtitle gives context without cluttering. */}
       <div className="home-banner">
         <div className="home-banner-identity">
-          <ProgressRing pct={pct} size={isWide ? 56 : 44}>
-            <Avatar url={profile?.avatar_url} name={profile?.full_name} size={isWide ? 48 : 36} />
+          <ProgressRing pct={pct} size={isWide ? 48 : 36}>
+            <Avatar url={profile?.avatar_url} name={profile?.full_name} size={isWide ? 40 : 30} />
           </ProgressRing>
           <div className="home-banner-body">
             <h2 className="home-banner-title">{greeting()}, {firstName}</h2>
-            <p className="home-banner-subtitle">
-              {pct < 100
-                ? `Your profile is ${pct}% complete`
-                : 'Welcome back to the Old Boys network'}
-            </p>
           </div>
         </div>
         <div className="home-banner-cta">
@@ -503,32 +507,6 @@ export default function Home({ session, profile, onMessage }) {
         </div>
       </div>
 
-      {/* ── Featured event ───────────────────────────────────────────
-          Promoted from the sidebar to a full-width hero position —
-          Apple principle: Purpose (time-sensitive content gets visual
-          priority) + Craft (the date badge anchors attention). */}
-      {upcomingEvent && (
-        <div className="home-tabsection" id="home-section-events">
-          <div className="feed-widget home-event-widget">
-            <Link className="stretched-link" to={`/events/${upcomingEvent.id}`}>
-              <span className="sr-only">{`Open event: ${upcomingEvent.title}`}</span>
-            </Link>
-            <div className="home-event-date">
-              <span>{formatEventDate(upcomingEvent.event_date).month}</span>
-              <strong>{formatEventDate(upcomingEvent.event_date).day}</strong>
-            </div>
-            <div className="feed-widget-row-text">
-              <span className="home-event-label">Upcoming Event</span>
-              <strong>{upcomingEvent.title}</strong>
-              <span>{formatEventDate(upcomingEvent.event_date).full}{upcomingEvent.location ? ` · ${upcomingEvent.location}` : ''}</span>
-            </div>
-            <span className="home-event-arrow" aria-hidden="true">
-              <ChevronRightIcon />
-            </span>
-          </div>
-        </div>
-      )}
-
       <nav className="home-mobile-tabs" aria-label="Jump to home section">
         {MOBILE_TABS.map((t) => (
           <button
@@ -542,17 +520,20 @@ export default function Home({ session, profile, onMessage }) {
         ))}
       </nav>
 
+      {/* Sits below the jump-nav pills rather than above them: the pills are
+          the fastest route to the things people actually came for, and the
+          legends band is editorial. It renders nothing at all until an admin
+          has curated at least one entry (see LegendsBand), so this costs a
+          fresh install no vertical space. */}
       <LegendsBand />
 
       <div className="feed-layout home-feed-layout">
         <div className="feed-main">
-
-          {/* ── Recent posts ─────────────────────────────────────── */}
           <div className="home-tabsection" id="home-section-posts">
             <div className="feed-widget home-feed-widget">
               <div className="home-section-head">
-                <h3 className="feed-section-label">Recent Posts</h3>
-                <button type="button" className="feed-widget-viewall home-more-link" onClick={() => navigate('/feed')}>See all</button>
+                <h3 className="feed-section-label">Recent feed posts</h3>
+                <button type="button" className="feed-widget-viewall home-more-link" onClick={() => navigate('/feed')}>More posts</button>
               </div>
 
               {recentPosts.length === 0 ? (
@@ -564,12 +545,16 @@ export default function Home({ session, profile, onMessage }) {
                     const thumb = p.image_urls?.[0] || null
                     return (
                       <li key={p.id} className="home-post-preview">
+                        {/* Stretched link rather than a clickable <li> — see
+                            the note on the same pattern in Directory.jsx.
+                            This one also previously ignored Space, so it was
+                            only half-operable by keyboard. */}
                         <Link className="stretched-link" to={`/feed/${p.id}`}>
                           <span className="sr-only">
                             {`Open post by ${p.profiles?.full_name || 'an alumnus'}`}
                           </span>
                         </Link>
-                        <Avatar url={p.profiles?.avatar_url} name={p.profiles?.full_name} size={48} />
+                        <Avatar url={p.profiles?.avatar_url} name={p.profiles?.full_name} size={54} />
                         <div className="home-post-preview-body">
                           <div className="home-post-preview-header">
                             <div>
@@ -580,6 +565,11 @@ export default function Home({ session, profile, onMessage }) {
                               {p.profiles?.occupation && <p className="home-post-preview-occupation">{p.profiles.occupation}</p>}
                             </div>
                           </div>
+                          {/* Post title gets its own bold line, separate from
+                              the author's occupation above and the plain
+                              content excerpt below — otherwise it read as
+                              just more description text with nothing marking
+                              it as the post's actual title. */}
                           {p.title && <p className="home-post-preview-title">{p.title}</p>}
                           {text && <p className="home-post-preview-text">{text}</p>}
                         </div>
@@ -612,11 +602,10 @@ export default function Home({ session, profile, onMessage }) {
             </div>
           </div>
 
-          {/* ── Businesses near you ──────────────────────────────── */}
           <div className="home-tabsection" id="home-section-businesses">
             <div className="feed-widget home-feed-widget">
               <div className="home-section-head">
-                <h3 className="feed-section-label">Businesses Near You</h3>
+                <h3 className="feed-section-label">Businesses near me</h3>
               </div>
 
               {nearbyBusinesses.length === 0 ? (
@@ -657,21 +646,19 @@ export default function Home({ session, profile, onMessage }) {
                 </div>
               )}
 
-              <button type="button" className="feed-widget-viewall home-more-link home-business-viewall" onClick={() => navigate('/businesses')}>See all</button>
+              <button type="button" className="feed-widget-viewall home-more-link home-business-viewall" onClick={() => navigate('/businesses')}>More businesses</button>
             </div>
           </div>
         </div>
 
         <aside className="feed-sidebar">
-
-          {/* ── Your network ─────────────────────────────────────── */}
           <div className="home-tabsection" id="home-section-community">
             <div className="feed-widget home-community-widget">
               <div className="home-section-head" style={{ marginBottom: 4 }}>
-                <h3 className="feed-section-label" style={{ margin: 0 }}>Your Network</h3>
+                <h3 className="feed-section-label" style={{ margin: 0 }}>My Community</h3>
                 <button type="button" className="feed-widget-viewall home-more-link" onClick={() => navigate('/directory')}>All members</button>
               </div>
-              <p className="home-community-sub">People you might want to connect with</p>
+              <p className="home-community-sub">Strengthen Your Network</p>
               {community.length === 0 ? (
                 <p className="empty small">No suggestions yet.</p>
               ) : (
@@ -691,6 +678,12 @@ export default function Home({ session, profile, onMessage }) {
                         className="home-community-card"
                         title={[m.occupation, m.company].filter(Boolean).join(' @ ')}
                       >
+                        {/* Stretched link, so these open in a tab like any
+                            other result card. handleCommunityCardClick still
+                            runs on it — it calls preventDefault() when the
+                            pointer was dragging the carousel, which suppresses
+                            an accidental navigation exactly as it used to
+                            suppress an accidental click. */}
                         <Link
                           className="stretched-link"
                           to={`/people/${m.id}`}
@@ -699,7 +692,7 @@ export default function Home({ session, profile, onMessage }) {
                           <span className="sr-only">{`Open profile for ${m.full_name || 'alumnus'}`}</span>
                         </Link>
                         <div className="home-community-card-identity">
-                          <Avatar url={m.avatar_url} name={m.full_name} size={48} />
+                          <Avatar url={m.avatar_url} name={m.full_name} size={54} />
                           <span>{(m.full_name || 'Alumnus').split(' ')[0]}</span>
                         </div>
                         {m.industry && (
@@ -744,10 +737,31 @@ export default function Home({ session, profile, onMessage }) {
             </div>
           </div>
 
-          {/* ── Support card ─────────────────────────────────────── */}
+          <div className="home-tabsection" id="home-section-events">
+            {upcomingEvent && (
+              <div className="feed-widget home-event-widget">
+                {/* Was focusable but had no key handler at all, so keyboard
+                    users could land on it and never open it. A link fixes
+                    both that and the missing open-in-new-tab. */}
+                <Link className="stretched-link" to={`/events/${upcomingEvent.id}`}>
+                  <span className="sr-only">{`Open event: ${upcomingEvent.title}`}</span>
+                </Link>
+                <div className="home-event-date">
+                  <span>{formatEventDate(upcomingEvent.event_date).month}</span>
+                  <strong>{formatEventDate(upcomingEvent.event_date).day}</strong>
+                </div>
+                <div className="feed-widget-row-text">
+                  <span className="feed-section-label" style={{ margin: 0 }}>Upcoming Event</span>
+                  <strong>{upcomingEvent.title}</strong>
+                  <span>{formatEventDate(upcomingEvent.event_date).full}{upcomingEvent.location ? ` · ${upcomingEvent.location}` : ''}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="feed-widget home-donate-card">
             <h3>Support SACS</h3>
-            <p>Every gift helps keep SACS strong for the Old Boys who come after us.</p>
+            <p>Every gift, big or small, helps keep SACS strong for the Old Boys who come after us. Give to whichever cause resonates with you most.</p>
             <button type="button" className="btn primary wide" onClick={() => navigate('/donate')}>Give now</button>
           </div>
         </aside>
@@ -757,7 +771,9 @@ export default function Home({ session, profile, onMessage }) {
 }
 
 // Circular completion ring drawn around the avatar (SVG stroke-dasharray),
-// in SACS' own blue/navy rather than the reference screenshot's green.
+// in SACS' own orange/maroon rather than the reference screenshot's
+// green — Kyle chose to keep brand colors here, matching everything else
+// (ring shape/position, pill, layout) exactly.
 function ProgressRing({ pct, size = 64, strokeWidth = 3, children }) {
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
