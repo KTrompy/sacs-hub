@@ -542,12 +542,6 @@ export default function Home({ session, profile, onMessage }) {
         ))}
       </nav>
 
-      {/* Sits below the jump-nav rather than above it — the pills are the
-          fastest route to what people actually came for; the Legends band
-          is editorial. It renders nothing until an admin has curated at
-          least one entry, so a fresh install spends no space on it. */}
-      <LegendsBand />
-
       <div className="feed-layout home-feed-layout">
         <div className="feed-main">
 
@@ -762,6 +756,14 @@ export default function Home({ session, profile, onMessage }) {
           </div>
         </aside>
       </div>
+
+      {/* Moved to the bottom of the page (2026-09-06) — Kyle wants the
+          jump-nav pills leading straight into the feed/community content,
+          with the Legends editorial band as a closing note instead of the
+          first thing after the nav. It still renders nothing until an
+          admin has curated at least one entry, so a fresh install spends
+          no space on it. */}
+      <LegendsBand />
     </section>
   )
 }
