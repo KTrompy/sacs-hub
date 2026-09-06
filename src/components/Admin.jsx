@@ -404,11 +404,14 @@ export default function Admin({ session }) {
         ))}
       </div>
 
-      {/* Consistent section header: the tab's name repeated as a heading (so
-          you always know where you are, even scrolled down) plus its one-line
-          explainer. The handbook skips it — it has its own hero. */}
+      {/* Consistent section header: a tracked eyebrow naming the group
+          (People/Content/Shop/Site) above the tab's own name — so you always
+          know both where you are and what kind of tab it is, even scrolled
+          down — plus its one-line explainer. The handbook skips it, it has
+          its own hero. */}
       {activeTab && activeTab.id !== 'handbook' && (
         <div className="admin-section-head">
+          <span className="admin-section-eyebrow">{activeTab.group}</span>
           <h3>{activeTab.label}</h3>
           {activeTab.help && <p>{activeTab.help}</p>}
         </div>
@@ -519,6 +522,7 @@ function AttentionPanel({ loading, readyToApprove, unfinished, unconfirmed, open
   if (items.length === 0) {
     return (
       <div className="admin-attention clear">
+        <div className="admin-attention-accent" aria-hidden="true" />
         <span className="admin-attention-icon" aria-hidden="true">✓</span>
         <div>
           <strong>Nothing needs you right now.</strong>
@@ -533,6 +537,7 @@ function AttentionPanel({ loading, readyToApprove, unfinished, unconfirmed, open
 
   return (
     <div className="admin-attention">
+      <div className="admin-attention-accent" aria-hidden="true" />
       <strong className="admin-attention-title">Needs your attention</strong>
       <ul>
         {items.map((it) => (

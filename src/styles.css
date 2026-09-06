@@ -7387,12 +7387,13 @@ button.delete-danger svg { flex-shrink: 0; }
   margin-bottom: 22px;
 }
 /* Stat cards are buttons: each one jumps to the tab its number lives on.
-   Hover lift + border shift signal the clickability without shouting. */
+   Flat until you're actually pointing at it — a hairline border and a
+   soft lift only appear on hover, the same "quiet until touched" rule
+   Home's collection tiles use, instead of a permanent drop shadow. */
 .admin-stat-card {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
   padding: 14px 12px;
   text-align: center;
   font: inherit;
@@ -7400,11 +7401,12 @@ button.delete-danger svg { flex-shrink: 0; }
   transition: border-color 0.15s var(--ease), transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
 }
 .admin-stat-card:hover {
-  border-color: var(--orange);
+  border-color: var(--line-strong);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-lift);
+  box-shadow: var(--shadow-card);
 }
 .admin-stat-card.highlight { border-color: var(--orange); background: var(--orange-soft); }
+.admin-stat-card.highlight:hover { border-color: var(--orange-dark); }
 .admin-stat-value {
   display: block;
   font-family: var(--display);
@@ -7422,20 +7424,18 @@ button.delete-danger svg { flex-shrink: 0; }
   margin-top: 2px;
 }
 
-/* Grouped tab bar: four labelled clusters (People / Content / Shop / Site)
-   inside one card, so eleven tabs read as four small decisions. Pill-style
-   active state — clearer at a glance than an underline when tabs wrap onto
-   two lines on smaller screens. */
+/* Grouped tab strip: four labelled clusters (People / Content / Shop / Site)
+   so eleven tabs read as four small decisions. Sits directly on the page —
+   a hairline underneath does the separating, not a boxed card — with
+   pill-style active state for the tabs themselves (a legitimate chip-row
+   use, same as Home's filter chips). */
 .admin-tabbar {
   display: flex;
-  gap: var(--sp-5);
+  gap: var(--sp-6);
   flex-wrap: wrap;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
-  padding: 10px 14px 12px;
-  margin-bottom: 20px;
+  padding: 0 0 18px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--line);
 }
 .admin-tabgroup { display: flex; flex-direction: column; gap: 5px; }
 .admin-tabgroup + .admin-tabgroup { border-left: 1px solid var(--line); padding-left: var(--sp-5); }
@@ -7484,17 +7484,24 @@ button.delete-danger svg { flex-shrink: 0; }
   margin: 18px 0 8px;
 }
 .admin-list-heading:first-child { margin-top: 0; }
-.admin-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.admin-list { list-style: none; margin: 0; padding: 0; }
+/* Rows are told apart by a hairline and space, not a stacked card — same
+   treatment as Home's post list. Padding is offset by a matching negative
+   margin so the hover wash still reaches the row's full width. */
 .admin-row {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
-  padding: 14px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 16px 10px;
+  margin: 0 -10px;
   display: flex;
   align-items: center;
   gap: 12px;
+  transition: background 0.15s var(--ease);
 }
+.admin-row:last-child { border-bottom-color: transparent; }
+.admin-row:hover { background: var(--paper); }
 .admin-row-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .admin-row-name { font-weight: 700; color: var(--ink); }
 .admin-row-meta { font-size: var(--fs-xs); color: var(--ink-soft); }
@@ -7543,22 +7550,36 @@ button.delete-danger svg { flex-shrink: 0; }
    green when there isn't — a row of zeroes still reads as a to-do list, an
    explicit "nothing needs you" does not. */
 .admin-attention {
-  background: var(--orange-soft);
-  border: 1px solid var(--orange);
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px 16px;
-  margin-bottom: 18px;
+  padding: 14px 16px 14px 22px;
+  margin-bottom: 20px;
+  overflow: hidden;
 }
+/* A 3px accent bar carries the "notice me" signal instead of a filled
+   colour panel — same device as Home's featured-event banner, so an
+   admin sees one confident line rather than a warning box. */
+.admin-attention-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--orange);
+}
+.admin-attention.clear .admin-attention-accent { background: var(--ok); }
 .admin-attention-title {
   display: block;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: var(--orange-dark);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
-.admin-attention ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.admin-attention ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .admin-attention li {
   display: flex;
   align-items: center;
@@ -7570,8 +7591,6 @@ button.delete-danger svg { flex-shrink: 0; }
 }
 .admin-attention li.soft { font-weight: 500; color: var(--ink-soft); }
 .admin-attention.clear {
-  background: rgba(44, 110, 73, 0.07);
-  border-color: rgba(44, 110, 73, 0.3);
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -7629,12 +7648,23 @@ button.delete-danger svg { flex-shrink: 0; }
 
 /* Section header shown above every tab's content: the tab's name as a
    heading plus its one-line explainer, in one consistent place. */
-.admin-section-head { margin: 0 0 16px; }
+.admin-section-head { margin: 4px 0 22px; }
+.admin-section-eyebrow {
+  display: block;
+  margin: 0 0 5px;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--orange-dark);
+}
 .admin-section-head h3 {
   font-family: var(--display);
   font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--maroon);
-  margin: 0 0 4px;
+  margin: 0 0 6px;
 }
 .admin-section-head p {
   margin: 0;
