@@ -8836,6 +8836,15 @@ button.delete-danger svg { flex-shrink: 0; }
 }
 .home-event:hover .home-event-chevron { opacity: 1; transform: translateX(3px); }
 
+/* Space the event banner off from the dashboard grid below it — on
+   desktop the mobile tab-nav (which normally supplies this gap) is
+   hidden, so without this the event card and Recent posts/Your
+   network sit flush against each other. */
+.home-tabsection#home-section-events { margin-bottom: 32px; }
+@media (max-width: 720px) {
+  .home-tabsection#home-section-events { margin-bottom: 20px; }
+}
+
 /* ---------- Section headers --------------------------------------
    A small tracked eyebrow above a Georgia title reads as a magazine
    section break — hierarchy from type and space, not a colored bar
