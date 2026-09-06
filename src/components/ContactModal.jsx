@@ -89,11 +89,6 @@ export default function ContactModal({ target, draftText, profile, onClose }) {
           </div>
 
           <div className="modal-body">
-            <p className="apply-modal-hint">
-              This sends {firstName} an email through SACS Alumni Hub. Reply-To is set to your
-              own address, so if they hit reply it goes straight to your inbox.
-            </p>
-
             <label className="field">
               <span>Subject</span>
               <input
