@@ -479,7 +479,7 @@ export default function Home({ session, profile, onMessage }) {
             <Avatar url={profile?.avatar_url} name={profile?.full_name} size={isWide ? 48 : 36} />
           </ProgressRing>
           <div className="home-banner-body">
-            <h2 className="home-banner-title">{greeting()}, {firstName}</h2>
+            <h2 className="home-banner-title">{greeting()}, {firstName}!</h2>
             <p className="home-banner-subtitle">
               {pct < 100
                 ? `Your profile is ${pct}% complete`
