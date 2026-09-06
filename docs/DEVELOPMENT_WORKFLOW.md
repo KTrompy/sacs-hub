@@ -205,9 +205,11 @@ The profile system has two tables and two components:
 ## 7. Working with Realtime
 
 Supabase Realtime is used for:
-- **Messages** — new message inserts, scoped to the user's conversations
 - **Notifications** — new notification inserts, scoped to the user
 - **Posts** — new post inserts (feed live updates)
+
+(There is no realtime messaging feature — contacting a member sends a single email via the
+`send-contact-email` Edge Function, with nothing to subscribe to. See DECISIONS.md ADR-015.)
 
 ### Pattern
 ```javascript
@@ -229,7 +231,7 @@ return () => { supabase.removeChannel(channel) }
 
 ### Rules
 - **Always scope subscriptions** — unscoped subscriptions fire for every user's activity, causing N queries per insert
-- **Debounce refetches** — a burst of messages shouldn't fire N separate queries
+- **Debounce refetches** — a burst of inserts shouldn't fire N separate queries
 - **Clean up on unmount** — remove the channel in the useEffect cleanup
 
 ---

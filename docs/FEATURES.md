@@ -124,19 +124,29 @@ Social feed with rich-text posts (WYSIWYG editor), up to 4 images per post, like
 
 ---
 
-## 6. Direct Messaging
+## 6. Contact via Email
 
 **Status:** IMPLEMENTED
 
-LinkedIn-style floating message widget (bottom-right bubble with unread badge). Thread list with search, real-time message delivery via Supabase Realtime, typing indicators (broadcast channel, 3s timeout), quick emoji reactions, day separators, paginated message history (40 per page). Opens from any "Message" button throughout the app.
+Replaces the earlier real-time DM feature (removed schema-update-63). Every "Message" button
+throughout the app opens a one-shot compose dialog (subject + message) instead of a chat thread.
+Sending calls the `send-contact-email` Edge Function, which relays the message to the recipient
+through Resend, with Reply-To set to the sender's own address so replies land directly in the
+sender's inbox. Nothing is stored — no thread, no history, no database row — the moment the email
+is sent, the interaction only exists in the two people's actual inboxes.
 
 **Key files:**
-- `src/components/FloatingMessages.jsx` — floating widget wrapper, unread count
-- `src/components/Messages.jsx` — thread list + conversation view, typing indicators, reactions
+- `src/components/ContactModal.jsx` — the compose dialog (subject, message, send)
+- `supabase/functions/send-contact-email/index.ts` — looks up the recipient's email server-side
+  (never exposed to the sender's browser) and calls the Resend API
+- `src/App.jsx` — `openMessage(targetProfile, draftText)` opens the modal; unchanged call
+  signature from every "Message" button across the app
 
-**Database tables:** `conversations`, `conversation_participants`, `messages`, `message_reactions`
+**Database tables:** none.
 
-**Known issues / gaps:** None discovered.
+**Known issues / gaps:** Requires `RESEND_API_KEY` to be set as an Edge Function secret and a
+verified sending domain in Resend — without it, sends fail with "Email sending is not configured
+yet". No rate limiting on how many contact emails a member can send.
 
 ---
 
@@ -284,14 +294,14 @@ Photo albums with multiple image uploads. Discovered via database tables and sto
 
 **Status:** IMPLEMENTED
 
-Bell icon in header with unread badge (server-counted). Dropdown shows recent notifications (30 per page). Real-time via Supabase insert subscription (scoped to user's conversations, debounced). Click-through routing by entity type (post → feed, event → events, job → jobs, member → admin, mentorship → mentoring, conversation → messages).
+Bell icon in header with unread badge (server-counted). Dropdown shows recent notifications (30 per page). Real-time via Supabase insert subscription. Click-through routing by entity type (post → feed, event → events, job → jobs, member → admin, mentorship → mentoring).
 
 **Key files:**
 - `src/components/NotificationBell.jsx` — bell + dropdown, realtime subscription
 
 **Database tables:** `notifications`, `notification_preferences`
 
-**Notification categories (Settings):** message received, post activity (like/comment), event RSVP, event comment.
+**Notification categories (Settings):** post activity (like/comment), event RSVP, event comment.
 
 ---
 
@@ -330,8 +340,8 @@ Full profile editor with sections: personal info, SACS record, professional deta
 
 Three-tab settings page:
 1. **Account** — change password, delete account (with Turnstile challenge when configured)
-2. **Notifications** — per-category toggle (message, post activity, event RSVP, event comment)
-3. **Privacy** — visibility controls for phone, email, location, messaging (all/hide)
+2. **Notifications** — per-category toggle (post activity, event RSVP, event comment)
+3. **Privacy** — visibility controls for phone, email, location (all/hide)
 
 **Key files:**
 - `src/components/Settings.jsx` — settings tabs, password change, account deletion, notification prefs, privacy controls

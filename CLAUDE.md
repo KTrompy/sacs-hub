@@ -5,7 +5,7 @@
 
 ## Project Overview
 
-SACS Alumni Hub is a private community platform for SACS (South African College Schools) Old Boys. Members sign up, are verified against school records by an admin, and then access a directory, feed, messaging, events, jobs, business directory, mentoring, merch shop, and Notable Old Boys spotlight.
+SACS Alumni Hub is a private community platform for SACS (South African College Schools) Old Boys. Members sign up, are verified against school records by an admin, and then access a directory, feed, member-to-member email contact, events, jobs, business directory, mentoring, merch shop, and Notable Old Boys spotlight.
 
 **Live at:** Vercel (currently `*.vercel.app`; intended domain `sacsalumni.org`)
 **Admin account:** sacsalumnihub@gmail.com
@@ -48,7 +48,7 @@ Supabase (backend-as-a-service)
   ├── Auth                 — signup, sessions, password reset
   ├── Storage              — avatars, CVs, images (10 buckets)
   ├── Edge Functions       — account deletion, admin emails
-  └── Realtime             — live message/post delivery
+  └── Realtime             — live post delivery (feed only — see DECISIONS.md ADR-015)
 ```
 
 **No server-side rendering. No API routes. No middleware.** Every data operation goes directly from the browser to Supabase via the JS client.

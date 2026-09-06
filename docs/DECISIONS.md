@@ -64,12 +64,12 @@
 
 **Decision:** Use Supabase (hosted PostgreSQL + Auth + Storage + Realtime + Edge Functions) as the entire backend. No custom API server.
 
-**Context:** The app needs auth, a relational database, file storage, and real-time messaging. Supabase provides all four under one SDK.
+**Context:** The app needs auth, a relational database, file storage, and realtime updates for the feed. Supabase provides all four under one SDK.
 
 **Reasoning:**
 - One SDK, one dashboard, one billing relationship.
 - Row Level Security (RLS) enforces authorization at the database layer — no middleware to write or maintain.
-- Realtime subscriptions for messages and posts with no WebSocket server to manage.
+- Realtime subscriptions for posts with no WebSocket server to manage.
 - Edge Functions (Deno) handle the few operations that need server-side logic (account deletion, email sending).
 - Auth handles email/password, Google OAuth, email confirmation, and password recovery.
 
@@ -272,3 +272,17 @@
 **Trade-offs:**
 - Legal content is hardcoded in a React component rather than a CMS — updates require a code deploy.
 - The notice should be reviewed by a legal professional periodically.
+
+---
+
+## ADR-015: Real-time DM replaced with one-shot email contact
+
+**Decision:** Remove the floating real-time messaging feature (Messages.jsx, FloatingMessages.jsx, and the `conversations`/`conversation_participants`/`messages`/`message_reactions` tables — schema-update-63) in favor of a compose-and-send email flow (`ContactModal.jsx` → `send-contact-email` Edge Function → Resend).
+
+**Context:** The in-app inbox required its own database schema, RLS policies, realtime subscriptions, and notification wiring to maintain — a lot of surface area for a feature that, for a small alumni community, doesn't need to be synchronous chat. Every "Message" button already led to a specific person for a specific reason (about a job, a listing, an event); a real email reaches people who don't have the site open, which an in-app-only inbox never could.
+
+**Reasoning:**
+- Every "Message" button across the app already calls `onMessage(targetProfile, draftText)` — keeping that exact signature meant only `App.jsx` and the modal itself had to change, not the ~15 pages that trigger it.
+- No database row is created per message — nothing to moderate, migrate, or leak in a future breach. The "message" only exists in the two people's real inboxes.
+- Resend's Reply-To header does the job a full inbox would have: the recipient can reply and reach the sender directly, without either party's email address being shown in the UI.
+- Trade-off accepted: no message history inside the app, no read receipts, no typing indicators. For a community site where most contact is a one-off "hey, saw your job posting," that's an acceptable loss.

@@ -22,7 +22,6 @@ const ENTITY_TAB = {
   job: 'jobs',
   member: 'admin',
   mentorship: 'mentoring',
-  conversation: null,
 }
 
 // Bell + dropdown in the header. Polls once on mount, then stays live via
@@ -145,7 +144,6 @@ export default function NotificationBell({ session, onNavigate }) {
     // the specific post/event this notification is about (e.g. /feed/:id)
     // instead of just landing generically on that tab's top.
     if (tab) onNavigate?.(tab, n.entity_type, n.entity_id)
-    else onNavigate?.('messages')
   }
 
   return (

@@ -2942,6 +2942,7 @@ button.delete-danger svg { flex-shrink: 0; }
 }
 @keyframes rise-in { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
 .modal-confirm { max-width: 420px; }
+.modal-contact { max-width: 520px; }
 .modal-header {
   padding: 16px 20px;
   border-bottom: 1px solid var(--line);

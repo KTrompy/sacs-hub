@@ -2,7 +2,7 @@
 
 ## Overview
 
-SACS Alumni Hub is a private community platform for alumni of South African College Schools (SACS). It provides a directory, social feed, messaging, events, jobs, a business directory, mentoring, a merch shop, and a Notable Old Boys spotlight. The site is gated: anyone can sign up, but all content is locked behind admin approval verified against school records.
+SACS Alumni Hub is a private community platform for alumni of South African College Schools (SACS). It provides a directory, social feed, member-to-member email contact, events, jobs, a business directory, mentoring, a merch shop, and a Notable Old Boys spotlight. The site is gated: anyone can sign up, but all content is locked behind admin approval verified against school records.
 
 ## Technology Stack
 
@@ -75,8 +75,7 @@ sacs-hub/
 │       ├── BusinessDetail.jsx   — Individual business page
 │       ├── Mentoring.jsx        — Mentor matching + workspace
 │       ├── MentorshipWorkspace.jsx — Active mentorship management
-│       ├── Messages.jsx         — DM conversations (used by FloatingMessages)
-│       ├── FloatingMessages.jsx — Floating message panel (always available)
+│       ├── ContactModal.jsx     — Compose-email dialog opened by any "Message" button
 │       ├── Profile.jsx          — Self-editable profile (~1,800 lines)
 │       ├── PersonProfile.jsx    — Read-only view of another member
 │       ├── Settings.jsx         — Account settings, privacy, deletion
@@ -145,7 +144,7 @@ All routing is client-side via `react-router-dom`. `vercel.json` rewrites all pa
 
 ### Code Splitting
 
-Route-level code splitting via `React.lazy()`. Eagerly loaded: Auth, Home, People, header chrome (notifications, messages, dialogs). Everything else loads on first navigation. Vite's `manualChunks` splits vendor code into three cached bundles: `vendor-react`, `vendor-leaflet`, `vendor-supabase`.
+Route-level code splitting via `React.lazy()`. Eagerly loaded: Auth, Home, People, header chrome (notifications, dialogs). Everything else loads on first navigation. Vite's `manualChunks` splits vendor code into three cached bundles: `vendor-react`, `vendor-leaflet`, `vendor-supabase`.
 
 ### Layout
 
@@ -154,7 +153,7 @@ Route-level code splitting via `React.lazy()`. Eagerly loaded: Auth, Home, Peopl
 
 ### State Management
 
-No external state library. All state is React `useState` + `useEffect`, lifted to `App.jsx` for cross-cutting concerns (session, profile, messages, navigation guards). Props are passed down; no context except `CartContext` (merch shop) and `ToastProvider`.
+No external state library. All state is React `useState` + `useEffect`, lifted to `App.jsx` for cross-cutting concerns (session, profile, the contact-email modal, navigation guards). Props are passed down; no context except `CartContext` (merch shop) and `ToastProvider`.
 
 ### Forms
 
@@ -182,23 +181,29 @@ const { data, error } = await supabase.from('profiles').select('*').eq('id', use
 const { error } = await supabase.from('posts').insert({ author_id: userId, content })
 
 // RPC (server-side function)
-const { data } = await supabase.rpc('get_or_create_conversation', { other_user: targetId })
+const { data } = await supabase.rpc('is_approved')
+
+// Edge Function (server-side, needs a secret like RESEND_API_KEY)
+const { data, error } = await supabase.functions.invoke('send-contact-email', {
+  body: { recipient_id: targetId, subject, message },
+})
 ```
 
 ### Server Actions (Edge Functions)
 
-Four Edge Functions in `supabase/functions/`, deployed via `supabase functions deploy`:
+Five Edge Functions in `supabase/functions/`, deployed via `supabase functions deploy`:
 
 1. **`delete-account`** — Self-service: verifies caller's JWT, purges storage, deletes auth user via Admin API
 2. **`admin-delete-member`** — Admin: verifies caller is admin via `is_admin()` RPC, then same purge+delete
 3. **`send-approval-email`** — Sends "you're verified" email via Resend when admin approves
 4. **`send-member-email`** — Admin-to-member email via Resend
+5. **`send-contact-email`** — Member-to-member email via Resend, triggered by the "Message" button anywhere in the app (see FEATURES.md § Contact via Email)
 
 All share `_shared/accountCleanup.ts` for CORS, JSON responses, and the `purgeAndDeleteUser()` flow.
 
 ### Realtime
 
-Supabase Realtime is enabled on `messages` and `posts` tables. The Messages component subscribes to new messages in active conversations. The Feed subscribes to new posts.
+Supabase Realtime is enabled on the `posts` table. The Feed subscribes to new posts. (There is no realtime messaging feature anymore — contacting a member sends a single email via `send-contact-email`, with nothing to subscribe to.)
 
 ## Data Flow
 
@@ -228,7 +233,7 @@ User fills form, clicks Save
 User clicks "Delete my account" in Settings
   → supabase.functions.invoke('delete-account')
   → Edge Function: verify JWT → purge all storage buckets → admin.deleteUser()
-  → CASCADE deletes profile, posts, messages, jobs, events, etc.
+  → CASCADE deletes profile, posts, jobs, events, etc.
   → Client signs out
 ```
 

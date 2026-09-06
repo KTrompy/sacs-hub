@@ -1,17 +1,17 @@
 # SACS Alumni Hub
 
-A community platform for SACS (South African College Schools) Old Boys: a feed, an alumni directory with an interactive map, 1:1 realtime messaging, events, jobs, a business directory, mentoring, and a "Notable Old Boys" spotlight. Built with React (Vite) + Supabase, forked from an earlier sister project (see [../eendrag-hub](../eendrag-hub) on disk) and rebranded/extended for SACS.
+A community platform for SACS (South African College Schools) Old Boys: a feed, an alumni directory with an interactive map, member-to-member email contact, events, jobs, a business directory, mentoring, and a "Notable Old Boys" spotlight. Built with React (Vite) + Supabase, forked from an earlier sister project (see [../eendrag-hub](../eendrag-hub) on disk) and rebranded/extended for SACS.
 
 Intended production domain: **sacsalumni.org** (not purchased yet — deploys to a `vercel.app` URL until it is).
 
 ## What's inside
 
 - **Auth** — email/password and social signup (Supabase Auth), with a 3-step signup wizard
-- **Approval gate** — anyone can sign up, but the directory, feed, and messaging only unlock once an admin approves them
+- **Approval gate** — anyone can sign up, but the directory, feed, and member contact only unlock once an admin approves them
 - **Feed** — text posts with likes, comments, reactions, edit/delete, typing indicators and read receipts
 - **Directory** — searchable Old Boys list with class-year, industry, location and skills filters
 - **Alumni map** — a pin per city, powered by Mapbox (`VITE_MAPBOX_TOKEN`)
-- **Messages** — 1:1 DMs with realtime delivery, reactions, edit/delete
+- **Contact via email** — any "Message" button opens a compose dialog that emails the recipient through Resend, Reply-To set to the sender
 - **Profiles** — self-editable directory entries, photos, CVs, and a SACS-specific "membership details" section (title, ID/passport, membership category, communication preferences — see `profile_details` table)
 - **Events** — list + calendar view, RSVPs, iCal export
 - **Jobs / Business Directory** — postings and listings with an interactive map

@@ -13,7 +13,7 @@ import useModal from '../useModal.js'
 //     session and therefore before the router's protected routes exist.
 // Update the "Last updated" date below whenever the content changes —
 // POPIA notices are meant to reflect current practice, not history.
-const LAST_UPDATED = '6 August 2026'
+const LAST_UPDATED = '6 September 2026'
 
 export function PrivacyPolicyContent() {
   return (
@@ -39,9 +39,12 @@ export function PrivacyPolicyContent() {
         to place you on the alumni map, occupation, employer, industry,
         LinkedIn profile, a bio, a CV upload, and business or mentoring
         details if you fill those sections in. We also keep a record of
-        posts, event RSVPs, job listings, direct messages and business
-        listings you create, and a last-seen timestamp used for the
-        "recently online" indicator.
+        posts, event RSVPs, job listings and business listings you create,
+        and a last-seen timestamp used for the "recently online" indicator.
+        When you email another member through the site (the "Message"
+        button on a profile, post or listing), the subject and message text
+        pass through Resend, our email delivery provider, to reach them —
+        we don't store the content of those emails ourselves.
       </p>
 
       <h3>Why we process it</h3>
@@ -57,14 +60,18 @@ export function PrivacyPolicyContent() {
       <h3>Who else sees it</h3>
       <p>
         Other approved members see whatever your privacy settings (Settings
-        → Privacy) allow — you control who can see your phone number, email,
-        location and who can message you. Site admins can see full profiles
+        → Privacy) allow — you control who can see your phone number, email
+        and location. Any approved member can email you using the
+        "Message" button on your profile, a post, or a listing you've
+        created. Site admins can see full profiles
         in order to run the platform and moderate content. We use a small
         number of external processors to operate the site: Supabase (hosted
         in Frankfurt, Germany) for the database, authentication and file
         storage; Mapbox for map tiles and turning addresses into map
-        coordinates; Cloudflare Turnstile for bot protection at signup; and
-        Google, only if you choose to sign in with a Google account. None of
+        coordinates; Cloudflare Turnstile for bot protection at signup;
+        Resend for delivering emails sent through the site (account emails
+        and messages you send other members); and Google, only if you
+        choose to sign in with a Google account. None of
         these processors use your data for anything other than providing
         that service to the Hub.
       </p>
@@ -78,7 +85,7 @@ export function PrivacyPolicyContent() {
       <h3>How long we keep it</h3>
       <p>
         For as long as your account exists. If you delete your account (or
-        ask an admin to), your profile, posts, messages, uploaded files and
+        ask an admin to), your profile, posts, uploaded files and
         other account data are permanently removed — this can't be undone,
         and there's no separate backup copy kept for marketing or analytics
         purposes.

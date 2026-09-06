@@ -96,7 +96,7 @@ export default function AdminHandbook() {
         </ol>
         <Callout tone="good" title="The single most important habit">
           Never approve someone you can't place. An approved account can read every member's
-          profile, message anyone privately, and post to the feed. Approval is the only wall
+          profile, email anyone privately, and post to the feed. Approval is the only wall
           between the alumni community and the internet. It takes one WhatsApp to a classmate to check.
         </Callout>
         <h4>What you are <em>not</em> responsible for</h4>
@@ -117,7 +117,7 @@ export default function AdminHandbook() {
         <dl className="hb-dl">
           <dt>Approve</dt>
           <dd>
-            Lets that person into the site. They can immediately see the directory, message members
+            Lets that person into the site. They can immediately see the directory, email members
             and post. Reversible — see <em>Un-approve</em>.
           </dd>
           <dt>“Hasn't finished signing up”</dt>
@@ -148,8 +148,8 @@ export default function AdminHandbook() {
           <dt className="hb-dt-danger">Delete account</dt>
           <dd>
             <strong>Permanent. There is no undo and no backup of it.</strong> It removes their
-            login, profile, posts, comments, job listings, events, RSVPs, business listings,
-            messages and uploaded files. Use <em>Un-approve</em> unless the person has genuinely
+            login, profile, posts, comments, job listings, events, RSVPs, business listings
+            and uploaded files. Use <em>Un-approve</em> unless the person has genuinely
             asked to be erased or is a spam account. When in doubt, un-approve and sleep on it.
           </dd>
         </dl>
@@ -211,7 +211,7 @@ export default function AdminHandbook() {
           <dt>An argument in the comments</dt>
           <dd>
             Let members disagree. Step in for personal attacks, not for strong opinions. Remove the
-            comment, message the person privately, and only escalate to un-approving if it repeats.
+            comment, email the person privately, and only escalate to un-approving if it repeats.
           </dd>
           <dt>Someone using the site to sell things</dt>
           <dd>
@@ -225,8 +225,9 @@ export default function AdminHandbook() {
           </dd>
           <dt>A member asks for someone else's contact details</dt>
           <dd>
-            Don't hand them over. Point them at the messaging feature — that's exactly what it's
-            for, and it lets the other person choose whether to reply.
+            Don't hand them over. Point them at the <em>Message</em> button on that person's profile —
+            it sends an email without exposing anyone's address, and lets the other person
+            choose whether to reply.
           </dd>
           <dt>Someone has died</dt>
           <dd>

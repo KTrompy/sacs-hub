@@ -46,7 +46,7 @@ The central user table. One row per member, FK to `auth.users`.
 | consented_at | timestamptz | Privacy consent timestamp |
 | details_completed_at | timestamptz | Membership details completion |
 | onboarding_complete | boolean | First-run profile setup done |
-| privacy_phone/email/location/messages | text | Privacy levels: 'all', 'mentoring', 'hide' |
+| privacy_phone/email/location | text | Privacy levels: 'all', 'mentoring', 'hide' |
 | seeking_mentor | boolean | Open to being mentored |
 | mentee_goals | text[] | What they want from mentoring |
 | mentee_note | text | Mentee introduction |
@@ -88,37 +88,10 @@ Social feed posts.
 | content | text | 1–2000 chars |
 | created_at | timestamptz | |
 
-#### `conversations`
-DM conversation containers.
-
-| Column | Type |
-|---|---|
-| id | bigint PK |
-| created_at | timestamptz |
-
-#### `conversation_participants`
-| Column | Type | Notes |
-|---|---|---|
-| conversation_id | bigint FK → conversations | |
-| user_id | uuid FK → profiles | |
-| last_read_at | timestamptz | For unread badge |
-| PK | (conversation_id, user_id) | |
-
-#### `messages`
-DM messages within conversations.
-
-| Column | Type | Notes |
-|---|---|---|
-| id | bigint PK | |
-| conversation_id | bigint FK → conversations | |
-| sender_id | uuid FK → profiles | |
-| content | text | 1–4000 chars (or deleted) |
-| edited_at | timestamptz | Null until edited |
-| deleted_at | timestamptz | Soft-delete |
-| created_at | timestamptz | |
-
-#### `message_reactions`
-Emoji reactions on messages (schema-update-33).
+_Removed in schema-update-63: `conversations`, `conversation_participants`, `messages`,
+`message_reactions` — the old real-time DM feature stored nothing but those threads, and
+nothing replaces them. Contacting a member now sends a one-off email (`send-contact-email`
+Edge Function via Resend) with no database row at all — see FEATURES.md § Contact via Email._
 
 #### `events`
 | Column | Type | Notes |
@@ -209,7 +182,7 @@ In-app notification bell (schema-update-9).
 |---|---|---|
 | id | bigint PK | |
 | user_id | uuid FK → profiles | Recipient |
-| type | text | like, comment, rsvp, message, mentoring_request, etc. |
+| type | text | like, comment, rsvp, mentoring_request, etc. |
 | entity_type | text | post, event, job, mentorship |
 | entity_id | text | ID of the related entity |
 | actor_id | uuid FK → profiles | Who triggered it |
@@ -281,9 +254,6 @@ auth.users  ←─ profiles (1:1, ON DELETE CASCADE)
                   ├── posts (1:many)
                   │     ├── post_likes (many:many)
                   │     └── post_comments (1:many)
-                  ├── conversations ←→ conversation_participants (many:many)
-                  │     └── messages (1:many)
-                  │           └── message_reactions (1:many)
                   ├── events (1:many, via created_by)
                   │     ├── event_rsvps (many:many)
                   │     └── event_comments (1:many)
@@ -305,7 +275,6 @@ RLS is enabled on **every** table. Key patterns:
 ### Read Access
 - **All content tables** (posts, events, jobs, businesses, etc.): `SELECT` requires `is_approved()` — unapproved users see nothing.
 - **profiles**: approved users can see all profiles; unapproved users can see only their own row (`id = auth.uid()`).
-- **messages**: only conversation participants can read messages (`is_participant()`).
 - **job_applications**: only the job poster and the applicant can see applications.
 
 ### Write Access
@@ -344,21 +313,16 @@ All buckets namespace objects under `<user-id>/`. Storage cleanup on account del
 |---|---|
 | `is_approved()` | Returns true if current user is approved. Used in nearly every RLS policy. |
 | `is_admin()` | Returns true if current user is admin. |
-| `is_participant(conv_id, uid)` | Checks conversation membership (avoids RLS recursion). |
 | `handle_new_user()` | Trigger: creates profile row on auth signup. Swallows errors to never block signup. |
 | `ensure_profile()` | RPC: creates missing profile row if handle_new_user failed. |
-| `get_or_create_conversation(other_user)` | RPC: finds or creates a 1:1 DM conversation. |
-| `edit_message(msg_id, new_content)` | RPC: edits a message (sets edited_at). |
-| `delete_message(msg_id)` | RPC: soft-deletes a message (sets deleted_at). |
 | `admin_list_members()` | RPC: SECURITY DEFINER, returns all members with emails for Admin panel. |
-| `last_messages_for_conversations(conv_ids)` | RPC: batch-loads last message per conversation. |
 | `place_merch_order(items, buyer_note)` | RPC: atomic order placement with stock validation. |
-| `notify_post_like/comment/rsvp/message/etc.` | Triggers: insert notifications on relevant events. |
+| `notify_post_like/comment/rsvp/etc.` | Triggers: insert notifications on relevant events. |
 | `notify_admins_new_signup()` | Trigger: notifies admins when someone finishes signup. |
 
 ## Realtime
 
-Enabled on `messages` and `posts` tables via `supabase_realtime` publication.
+Enabled on `posts` table via `supabase_realtime` publication. (The old `messages`/`message_reactions` realtime subscriptions were removed with schema-update-63 — contact emails have no realtime component.)
 
 ## Migration System
 

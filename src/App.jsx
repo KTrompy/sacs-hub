@@ -9,7 +9,7 @@ import PendingVerification from './components/PendingVerification.jsx'
 import Home from './components/Home.jsx'
 import People from './components/People.jsx'
 import { Avatar } from './components/Directory.jsx'
-import FloatingMessages from './components/FloatingMessages.jsx'
+import ContactModal from './components/ContactModal.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
 import ConfirmDialog from './components/ConfirmDialog.jsx'
 import { CartProvider, useCart } from './components/CartContext.jsx'
@@ -97,9 +97,8 @@ const MOBILE_TABS = [
 export default function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
-  const [dmTarget, setDmTarget] = useState(null) // profile to open a DM with
-  const [dmDraft, setDmDraft] = useState('') // optional prefilled first message
-  const [messagesOpen, setMessagesOpen] = useState(false)
+  const [contactTarget, setContactTarget] = useState(null) // profile to email
+  const [contactDraft, setContactDraft] = useState('') // optional prefilled opener
   const [navOpen, setNavOpen] = useState(false) // mobile hamburger menu
   // True the instant Supabase fires PASSWORD_RECOVERY (someone clicked the
   // reset-password link from Auth.jsx's "Forgot password?" flow) — that
@@ -492,9 +491,13 @@ export default function App() {
   }, [profile, checkedFirstRun]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function openMessage(targetProfile, draftText = '') {
-    setDmTarget(targetProfile)
-    setDmDraft(draftText)
-    setMessagesOpen(true)
+    setContactTarget(targetProfile)
+    setContactDraft(draftText)
+  }
+
+  function closeContactModal() {
+    setContactTarget(null)
+    setContactDraft('')
   }
 
   // Used by the notification bell to jump straight to whatever the
@@ -502,7 +505,6 @@ export default function App() {
   // one is available (matching NotificationBell's ENTITY_TAB mapping),
   // rather than just landing generically at the top of that tab.
   function handleNotificationNavigate(target, entityType, entityId) {
-    if (target === 'messages') { setMessagesOpen(true); return }
     if (entityId && entityType === 'post') { goTo(`/feed/${entityId}`); return }
     if (entityId && entityType === 'event') { goTo(`/events/${entityId}`); return }
     if (entityId && entityType === 'job') { goTo(`/jobs/${entityId}`); return }
@@ -632,15 +634,6 @@ export default function App() {
 
           <div className="masthead-actions">
             <CartHeaderButton onClick={() => goTo('/shop/cart')} />
-
-            <button type="button"
-              className="header-icon-btn"
-              onClick={() => setMessagesOpen((o) => !o)}
-              aria-label="Messages"
-              title="Messages"
-            >
-              <MessagesIcon />
-            </button>
 
             <NotificationBell session={session} onNavigate={handleNotificationNavigate} />
 
@@ -899,19 +892,14 @@ export default function App() {
         </>
       )}
 
-      <FloatingMessages
-        session={session}
-        profile={profile}
-        open={messagesOpen}
-        onOpenChange={setMessagesOpen}
-        initialTarget={dmTarget}
-        initialDraft={dmDraft}
-        onTargetConsumed={() => { setDmTarget(null); setDmDraft('') }}
-        onBrowseDirectory={() => {
-          setMessagesOpen(false)
-          goTo('/directory')
-        }}
-      />
+      {contactTarget && (
+        <ContactModal
+          target={contactTarget}
+          draftText={contactDraft}
+          profile={profile}
+          onClose={closeContactModal}
+        />
+      )}
 
       {confirmingSignOut && (
         <ConfirmDialog
@@ -1188,13 +1176,6 @@ function SignOutIcon() {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <path d="M16 17l5-5-5-5" />
       <path d="M21 12H9" />
-    </svg>
-  )
-}
-function MessagesIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   )
 }
