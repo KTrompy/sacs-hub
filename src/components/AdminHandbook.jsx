@@ -1,4 +1,4 @@
-import { useState } from 'react'
+
 
 /*
  * The Admin Handbook — the "how to run this site" manual, kept inside the
@@ -26,16 +26,17 @@ import { useState } from 'react'
    reader knows the gap is known about rather than an oversight. */
 const TODO = (text) => <span className="hb-todo">TODO: {text}</span>
 
-function Section({ id, title, summary, children, openByDefault = false }) {
-  const [open, setOpen] = useState(openByDefault)
+// Now a plain conditional pane rather than an accordion: which section is
+// shown is decided by the two-pane HandbookPage's left nav (`active`), not
+// by a local toggle, so the nav and the content in the right pane can never
+// fall out of sync. `title`/`summary`/`openByDefault` are still passed at
+// each call site below (kept for the section metadata mirrored in
+// HandbookPage's nav list) but are no longer read here.
+function Section({ id, children, active }) {
+  if (!active) return null
   return (
-    <section className={open ? 'hb-section open' : 'hb-section'} id={id}>
-      <button type="button" className="hb-section-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span className="hb-section-title">{title}</span>
-        <span className="hb-section-summary">{summary}</span>
-        <span className="hb-chevron" aria-hidden="true">{open ? '−' : '+'}</span>
-      </button>
-      {open && <div className="hb-section-body">{children}</div>}
+    <section className="hb-section open" id={id}>
+      <div className="hb-section-body">{children}</div>
     </section>
   )
 }
@@ -49,24 +50,13 @@ function Callout({ tone = 'note', title, children }) {
   )
 }
 
-export default function AdminHandbook() {
+export default function AdminHandbook({ activeId }) {
   return (
     <div className="admin-handbook">
-      <div className="hb-intro">
-        <h3>Running SACS Alumni Hub</h3>
-        <p>
-          This is the whole job, written down. It assumes you've never touched the technical side
-          of a website — you don't need to. Nearly everything is done from the tabs above this one.
-          Read the first two sections now; come back to the rest when you need them.
-        </p>
-        <p className="hb-intro-note">
-          If you're handing this site over to someone else, point them here first.
-        </p>
-      </div>
 
       {/* ------------------------------------------------------------------ */}
       <Section
-        id="hb-job"
+        id="hb-job" active={activeId === 'hb-job'}
         title="1. What the job actually is"
         summary="About 10 minutes a week"
         openByDefault
@@ -109,7 +99,7 @@ export default function AdminHandbook() {
 
       {/* ------------------------------------------------------------------ */}
       <Section
-        id="hb-tools"
+        id="hb-tools" active={activeId === 'hb-tools'}
         title="2. Every button on this page, and what it does"
         summary="Read before you click anything with a red label"
       >
@@ -193,7 +183,7 @@ export default function AdminHandbook() {
 
       {/* ------------------------------------------------------------------ */}
       <Section
-        id="hb-judgement"
+        id="hb-judgement" active={activeId === 'hb-judgement'}
         title="3. Judgement calls, decided in advance"
         summary="What to do about the awkward ones"
       >
@@ -243,7 +233,7 @@ export default function AdminHandbook() {
 
       {/* ------------------------------------------------------------------ */}
       <Section
-        id="hb-broken"
+        id="hb-broken" active={activeId === 'hb-broken'}
         title="4. When something breaks"
         summary="What to try, and when to stop"
       >
@@ -301,7 +291,7 @@ export default function AdminHandbook() {
 
       {/* ------------------------------------------------------------------ */}
       <Section
-        id="hb-where"
+        id="hb-where" active={activeId === 'hb-where'}
         title="5. Where the site actually lives"
         summary="The four services behind it, in plain English"
       >
@@ -378,7 +368,7 @@ export default function AdminHandbook() {
 
       {/* ------------------------------------------------------------------ */}
       <Section
-        id="hb-handover"
+        id="hb-handover" active={activeId === 'hb-handover'}
         title="6. Handover checklist"
         summary="Do all of this before you stop being the admin"
         openByDefault
@@ -438,7 +428,7 @@ export default function AdminHandbook() {
 
       {/* ------------------------------------------------------------------ */}
       <Section
-        id="hb-unfinished"
+        id="hb-unfinished" active={activeId === 'hb-unfinished'}
         title="7. Known gaps and unfinished business"
         summary="Things a new admin will otherwise discover the hard way"
       >
@@ -477,7 +467,7 @@ export default function AdminHandbook() {
 
       {/* ------------------------------------------------------------------ */}
       <Section
-        id="hb-tech"
+        id="hb-tech" active={activeId === 'hb-tech'}
         title="8. For whoever inherits the code"
         summary="Skip this unless you're technical"
       >

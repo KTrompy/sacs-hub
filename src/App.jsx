@@ -130,6 +130,14 @@ export default function App() {
 
   const navigate = useNavigate()
   const location = useLocation()
+  // The new Admin application (src/components/admin/*) is a full,
+  // self-contained shell with its own sidebar/topbar — it manages its own
+  // navigation and spacing, so the site's own left sidebar and cover-photo
+  // hero would just be a second, redundant rail above/beside it. Both are
+  // skipped for any /admin/* route; nothing else about the surrounding
+  // masthead (logo, notifications, sign-out) changes, and no other route is
+  // affected by this check.
+  const isAdminRoute = location.pathname.startsWith('/admin')
 
   // Guards against losing unsaved profile edits. `profileDirty` mirrors
   // whether the profile form currently has unsaved changes; `profileSaveRef`
@@ -691,16 +699,19 @@ export default function App() {
           lives at /SACS2.jpg in public/. No
           text overlay (matches the reference exactly — just the photo;
           brand name/motto already live in the header next to the logo). */}
-      <div className="hero-banner">
-        <img src="/SACS2.jpg" alt="" className="hero-banner-img" />
-        <div className="hero-banner-overlay" />
-      </div>
+      {!isAdminRoute && (
+        <div className="hero-banner">
+          <img src="/SACS2.jpg" alt="" className="hero-banner-img" />
+          <div className="hero-banner-overlay" />
+        </div>
+      )}
 
-      <div className="app-body">
+      <div className={isAdminRoute ? 'app-body admin-app-body' : 'app-body'}>
         {/* Persistent left sidebar on desktop (see .sidebar in styles.css).
             Hidden on mobile in favour of the existing bottom tab bar —
             navOpen/hamburger are currently unused on mobile (kept as-is
             from before this rework, harmless if never toggled there). */}
+        {!isAdminRoute && (
         <aside className="sidebar" aria-label="Main">
           <nav className="sidebar-nav">
             {primaryNavTabs.map((t) => {
@@ -757,9 +768,10 @@ export default function App() {
             </button>
           </div>
         </aside>
+        )}
 
-        <div className="app-main">
-          <main className="content">
+        <div className={isAdminRoute ? 'app-main admin-app-main' : 'app-main'}>
+          <main className={isAdminRoute ? 'content admin-content' : 'content'}>
             {/* Covers the brief fetch of a lazy route's chunk on first visit.
                 Deliberately the same "Loading…" treatment the auth/profile
                 gates above use, so a first navigation to Jobs looks like every
@@ -788,7 +800,7 @@ export default function App() {
               <Route path="/donate" element={<Donate />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route
-                path="/admin"
+                path="/admin/*"
                 element={profile?.is_admin ? <Admin session={session} /> : <Navigate to="/home" replace />}
               />
               <Route
