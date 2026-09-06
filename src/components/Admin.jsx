@@ -124,7 +124,7 @@ const COUNT_TABLES = [
 ]
 
 export default function Admin({ session }) {
-  const [subtab, setSubtab] = useState('pending')
+  const [subtab, setSubtab] = useState('overview')
   const [members, setMembers] = useState([])
   const [loadingMembers, setLoadingMembers] = useState(true)
   const [memberError, setMemberError] = useState(null)
@@ -346,35 +346,57 @@ export default function Admin({ session }) {
         it's the whole role written down.
       </p>
 
-      {/* The point of this strip: someone opening this page should be able to
-          tell in one glance whether they need to do anything, without reading
-          seven tabs to find out. When there's nothing outstanding it says so
-          explicitly rather than showing a row of zeroes that still looks like
-          homework. */}
-      <AttentionPanel
-        loading={loadingMembers}
-        readyToApprove={readyToApprove.length}
-        unfinished={unfinished}
-        unconfirmed={unconfirmedCount}
-        openReports={openReportsCount}
-        adminCount={adminCount}
-        onGo={setSubtab}
-      />
+      {subtab === 'overview' && (
+        <div className="admin-overview">
+          {/* The point of this strip: someone opening this page should be able
+              to tell in one glance whether they need to do anything, without
+              reading ten tabs to find out. When there's nothing outstanding it
+              says so explicitly rather than showing a row of zeroes that still
+              looks like homework. */}
+          <AttentionPanel
+            loading={loadingMembers}
+            readyToApprove={readyToApprove.length}
+            unfinished={unfinished}
+            unconfirmed={unconfirmedCount}
+            openReports={openReportsCount}
+            adminCount={adminCount}
+            onGo={setSubtab}
+          />
 
-      {/* Every card is also a shortcut: clicking it opens the tab where that
-          number lives, so the overview doubles as navigation. */}
-      <div className="admin-stats-row">
-        <StatCard label="Members" value={members.length} hint="Everyone with an account, approved or not." onClick={() => setSubtab('members')} />
-        <StatCard label="Pending" value={pending.length} highlight={pending.length > 0} hint="Signed up but not yet let in." onClick={() => setSubtab('pending')} />
-        <StatCard label="Open reports" value={openReportsCount} highlight={openReportsCount > 0} hint="Flags from members you haven't ruled on." onClick={() => setSubtab('reports')} />
-        <StatCard label="Posts" value={counts.posts} hint="Total posts on the feed." onClick={() => setSubtab('posts')} />
-        <StatCard label="Jobs" value={counts.jobs} hint="Job listings, open and closed." onClick={() => setSubtab('jobs')} />
-        <StatCard label="Events" value={counts.events} hint="Events, past and upcoming." onClick={() => setSubtab('events')} />
-        <StatCard label="Businesses" value={counts.businesses} hint="Alumni businesses listed." onClick={() => setSubtab('businesses')} />
-        <StatCard label="Merch orders" value={counts.merchOrders} hint="Total shop orders placed, any status." onClick={() => setSubtab('merch')} />
-      </div>
+          {/* Two tiers of number, not eight equal cards. Pending and Open
+              reports represent outstanding work, so they keep the bigger card
+              treatment. Everything else is a fact worth knowing, not a task —
+              it recedes into a quiet inline strip instead of competing for
+              the same attention. Every number is still a shortcut to its
+              tab, same as before. */}
+          <div className="admin-stats-row">
+            <StatCard label="Pending" value={pending.length} highlight={pending.length > 0} hint="Signed up but not yet let in." onClick={() => setSubtab('pending')} />
+            <StatCard label="Open reports" value={openReportsCount} highlight={openReportsCount > 0} hint="Flags from members you haven't ruled on." onClick={() => setSubtab('reports')} />
+          </div>
+          <ul className="admin-stats-quiet">
+            <StatQuiet label="Members" value={members.length} hint="Everyone with an account, approved or not." onClick={() => setSubtab('members')} />
+            <StatQuiet label="Posts" value={counts.posts} hint="Total posts on the feed." onClick={() => setSubtab('posts')} />
+            <StatQuiet label="Jobs" value={counts.jobs} hint="Job listings, open and closed." onClick={() => setSubtab('jobs')} />
+            <StatQuiet label="Events" value={counts.events} hint="Events, past and upcoming." onClick={() => setSubtab('events')} />
+            <StatQuiet label="Businesses" value={counts.businesses} hint="Alumni businesses listed." onClick={() => setSubtab('businesses')} />
+            <StatQuiet label="Merch orders" value={counts.merchOrders} hint="Total shop orders placed, any status." onClick={() => setSubtab('merch')} />
+          </ul>
+        </div>
+      )}
 
       <div className="admin-tabbar" role="tablist" aria-label="Admin sections">
+        <div className="admin-tabgroup admin-tabgroup-overview">
+          <div className="admin-tabgroup-tabs">
+            <button type="button"
+              role="tab"
+              aria-selected={subtab === 'overview'}
+              className={subtab === 'overview' ? 'admin-tab-overview on' : 'admin-tab-overview'}
+              onClick={() => setSubtab('overview')}
+            >
+              Overview
+            </button>
+          </div>
+        </div>
         {TAB_GROUPS.map((group) => (
           <div className="admin-tabgroup" key={group}>
             <span className="admin-tabgroup-label" aria-hidden="true">{group}</span>
@@ -564,6 +586,20 @@ function StatCard({ label, value, highlight, hint, onClick }) {
       <span className="admin-stat-label">{label}</span>
       {hint && <span className="admin-stat-hint">{hint}</span>}
     </button>
+  )
+}
+
+/* Quiet counterpart to StatCard for the Overview's informational numbers —
+   same data, same "click to jump to that tab" behaviour, just without
+   competing visually with Pending/Open reports above it. */
+function StatQuiet({ label, value, hint, onClick }) {
+  return (
+    <li>
+      <button type="button" className="admin-stat-quiet" title={hint} onClick={onClick}>
+        <span className="admin-stat-quiet-value">{value === null || value === undefined ? '–' : value}</span>
+        <span className="admin-stat-quiet-label">{label}</span>
+      </button>
+    </li>
   )
 }
 
@@ -916,10 +952,10 @@ function ReportsModeration({ onCountChange }) {
         </>
       )}
       {resolved.length > 0 && (
-        <>
+        <div className="admin-resolved-group">
           <h3 className="admin-list-heading">Resolved</h3>
           <ReportList items={resolved} onSetStatus={setStatus} navigate={navigate} />
-        </>
+        </div>
       )}
     </>
   )
@@ -1143,15 +1179,19 @@ function MembersTable({ loading, members, myId, onSetApproved, onSetAdmin, onDel
                   )}
                   {/* Permanent, and there's no undo — the confirm dialog
                       spells out what goes with it. Blocked on your own row;
-                      admin_delete_member refuses it server-side too. */}
-                  <button type="button"
-                    className="btn danger small"
-                    onClick={() => askDelete(m)}
-                    disabled={isMe || busy}
-                    title={isMe ? "Use Settings to delete your own account" : undefined}
-                  >
-                    {busy ? 'Working…' : 'Delete account'}
-                  </button>
+                      admin_delete_member refuses it server-side too. Set apart
+                      from the actions above with its own divider so a quick
+                      click can't land on it by muscle memory. */}
+                  <span className="admin-danger-zone">
+                    <button type="button"
+                      className="btn danger small"
+                      onClick={() => askDelete(m)}
+                      disabled={isMe || busy}
+                      title={isMe ? "Use Settings to delete your own account" : undefined}
+                    >
+                      {busy ? 'Working…' : 'Delete account'}
+                    </button>
+                  </span>
                 </div>
               </li>
             )
@@ -1294,7 +1334,7 @@ function ActivityLog() {
       {shown.length === 0 ? (
         <EmptyState icon="search" message="Nothing of that kind has happened yet." />
       ) : (
-        <ul className="admin-list">
+        <ul className="admin-list admin-activity-list">
           {shown.map((a) => {
             const meta = ACTION_TEXT[a.action] || { verb: a.action.replace(/_/g, ' '), tone: 'warn' }
             return (
@@ -1867,6 +1907,7 @@ function LegendForm({ session, initial, onCancel, onSaved }) {
 
   return (
     <form className="admin-legend-form" onSubmit={save}>
+      <h4 className="form-section-label">About them</h4>
       <div className="field-row">
         <label className="field"><span>Full name *</span>
           <input value={form.name} onChange={(e) => set('name', e.target.value)} maxLength={80} placeholder="Jan van der Merwe" />
@@ -1889,6 +1930,7 @@ function LegendForm({ session, initial, onCancel, onSaved }) {
         </label>
       </div>
 
+      <h4 className="form-section-label">The tile</h4>
       <label className="field"><span>Claim to fame *</span>
         <input
           value={form.headline}
@@ -1902,6 +1944,7 @@ function LegendForm({ session, initial, onCancel, onSaved }) {
         twice what the two smaller ones do, so keep it tight.
       </p>
 
+      <h4 className="form-section-label">Photo</h4>
       <label className="field"><span>Photo *</span></label>
       <p className="form-hint" style={{ marginTop: -8 }}>
         Landscape works best — the tile crops to fill, and a portrait-shaped photo loses the top of
@@ -1919,9 +1962,10 @@ function LegendForm({ session, initial, onCancel, onSaved }) {
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={pickPhoto} />
       </div>
 
-      <label className="field" style={{ marginTop: 14 }}><span>The story</span>
+      <h4 className="form-section-label">The story</h4>
+      <label className="field"><span>Long-form write-up</span>
         <textarea
-          rows={8}
+          rows={10}
           value={form.story}
           onChange={(e) => set('story', e.target.value)}
           placeholder={'Shown when someone opens the tile. Leave a blank line between paragraphs.'}
@@ -1937,6 +1981,7 @@ function LegendForm({ session, initial, onCancel, onSaved }) {
         </label>
       </div>
 
+      <h4 className="form-section-label">Visibility</h4>
       <label className="checkbox-row">
         <input type="checkbox" checked={form.active} onChange={(e) => set('active', e.target.checked)} />
         <span>Show on the home page</span>

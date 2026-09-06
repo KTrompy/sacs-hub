@@ -7739,6 +7739,103 @@ button.delete-danger svg { flex-shrink: 0; }
   .admin-tabgroup + .admin-tabgroup { border-left: none; padding-left: 0; border-top: 1px solid var(--line); padding-top: var(--sp-3); }
 }
 
+/* ---------- Admin Overview (landing view) ----------
+   The Attention panel and all eight stat cards used to render above every
+   single tab, all the time — a to-do strip and a wall of numbers stacked on
+   top of whatever section the admin actually opened. They now live only on
+   a dedicated Overview tab (the page's default landing view), so the other
+   ten tabs open straight into their own content instead. */
+.admin-overview { margin-bottom: 4px; }
+.admin-tab-overview {
+  font-weight: 700;
+  color: var(--maroon);
+  border: 1px solid var(--line) !important;
+  background: var(--card) !important;
+}
+.admin-tab-overview:hover { background: var(--orange-soft) !important; border-color: var(--orange) !important; }
+.admin-tab-overview.on { background: var(--maroon) !important; color: #fff; border-color: var(--maroon) !important; }
+
+/* Two tiers of number, not eight equal cards: Pending and Open reports are
+   outstanding work, so they keep the bigger card treatment above. Everything
+   else is a fact worth knowing, not a task, so it recedes into a quiet
+   inline strip beneath — same information, clearer priority. Each number is
+   still a shortcut to its own tab. */
+.admin-stats-row { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 14px; }
+.admin-stats-quiet {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+.admin-stats-quiet li { display: contents; }
+.admin-stat-quiet {
+  background: none;
+  border: none;
+  border-right: 1px solid var(--line);
+  padding: 2px 20px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.admin-stats-quiet li:first-child .admin-stat-quiet { padding-left: 0; }
+.admin-stats-quiet li:last-child .admin-stat-quiet { border-right: none; }
+.admin-stat-quiet:hover .admin-stat-quiet-value { color: var(--orange-dark); }
+.admin-stat-quiet-value { font-family: var(--display); font-weight: 700; font-size: var(--fs-lg); color: var(--maroon); transition: color 0.12s var(--ease); }
+.admin-stat-quiet-label { font-size: var(--fs-xs); color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; }
+@media (max-width: 720px) {
+  .admin-stats-quiet { flex-direction: column; gap: 8px; }
+  .admin-stat-quiet { border-right: none; padding: 0; }
+}
+
+/* Sets Delete account apart from the ordinary actions beside it on the
+   Members tab, so a quick click can't land on the one irreversible button
+   by muscle memory alone. */
+.admin-danger-zone { padding-left: 10px; margin-left: 2px; border-left: 1px solid var(--line); display: inline-flex; }
+
+/* Resolved reports stay visible for reference but recede — "Needs review"
+   is the only section that represents work still to do. */
+.admin-resolved-group { opacity: 0.72; transition: opacity 0.15s var(--ease); }
+.admin-resolved-group:hover, .admin-resolved-group:focus-within { opacity: 1; }
+
+/* A literal connecting line down the Activity Log's dots, so the read-only
+   record reads as one continuous timeline rather than a plain list. */
+.admin-activity-list { position: relative; padding-left: 2px; }
+.admin-activity-list::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--line);
+}
+.admin-activity-list .admin-activity-dot { position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--paper); }
+
+/* Small tracked label used to group a long form into readable sections
+   (Legends, Merch products) — same device as the section eyebrow above the
+   tab body, reused here for "what part of the form is this." */
+.form-section-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--orange-dark);
+  margin: 22px 0 8px;
+}
+.form-section-label:first-child { margin-top: 0; }
+
+/* The Orders/Products switch reuses the filter-pill component but is really
+   a workspace switch, not a filter — a touch more size and weight than an
+   ordinary pill row says so. */
+.merch-view-toggle { margin-bottom: 18px; }
+.merch-view-toggle button { font-size: var(--fs-base); padding: 7px 18px; }
+
 /* ---------- Admin handbook ----------
    Long-form documentation living inside the app, on the theory that a
    handover document nobody can find is the same as no handover document.
@@ -10881,6 +10978,8 @@ button.delete-danger svg { flex-shrink: 0; }
   border: 1px dashed var(--line-strong);
   background: var(--paper);
 }
+.admin-legend-thumb { width: 64px; height: 48px; border-radius: var(--radius); }
+.admin-legend-preview { width: 220px; }
 
 /* ---------- Mobile ----------
 

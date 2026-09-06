@@ -17,7 +17,7 @@ export default function MerchAdmin({ session }) {
 
   return (
     <>
-      <div className="filter-radio-row pill-row">
+      <div className="filter-radio-row pill-row merch-view-toggle">
         <button type="button" className={view === 'orders' ? 'on' : ''} onClick={() => setView('orders')}>Orders</button>
         <button type="button" className={view === 'products' ? 'on' : ''} onClick={() => setView('products')}>Products</button>
       </div>
@@ -385,6 +385,7 @@ function ProductForm({ session, initial, onCancel, onSaved }) {
       <button type="button" className="profile-back-btn" onClick={onCancel}>‹ Products</button>
 
       <form onSubmit={save} className="admin-legend-form merch-product-form">
+        <h4 className="form-section-label">Product details</h4>
         <label className="field"><span>Name *</span>
           <input value={product.name} onChange={(e) => set('name', e.target.value)} maxLength={120} required />
         </label>
@@ -393,19 +394,20 @@ function ProductForm({ session, initial, onCancel, onSaved }) {
           <textarea rows={3} value={product.description} onChange={(e) => set('description', e.target.value)} maxLength={1000} />
         </label>
 
-        <div className="field-row">
-          <label className="field"><span>Category</span>
-            <div className="select-wrap">
-              <select value={product.category} onChange={(e) => set('category', e.target.value)}>
-                {MERCH_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </label>
-          <label className="field"><span>Base price (R) *</span>
-            <input type="number" min="0" step="0.01" value={product.base_price} onChange={(e) => set('base_price', e.target.value)} required />
-          </label>
-        </div>
+        <label className="field"><span>Category</span>
+          <div className="select-wrap">
+            <select value={product.category} onChange={(e) => set('category', e.target.value)}>
+              {MERCH_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </label>
 
+        <h4 className="form-section-label">Pricing</h4>
+        <label className="field"><span>Base price (R) *</span>
+          <input type="number" min="0" step="0.01" value={product.base_price} onChange={(e) => set('base_price', e.target.value)} required />
+        </label>
+
+        <h4 className="form-section-label">Appearance</h4>
         <label className="field"><span>Photo</span></label>
         <div className="job-logo-picker">
           {preview
@@ -419,6 +421,7 @@ function ProductForm({ session, initial, onCancel, onSaved }) {
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={pickImage} />
         </div>
 
+        <h4 className="form-section-label">Storefront</h4>
         <label className="checkbox-row">
           <input type="checkbox" checked={product.active} onChange={(e) => set('active', e.target.checked)} />
           <span>Visible in the shop</span>
