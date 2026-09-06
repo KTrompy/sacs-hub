@@ -3453,6 +3453,166 @@ button.delete-danger svg { flex-shrink: 0; }
 }
 .apply-modal-file-remove:hover { color: var(--danger); }
 
+/* ---------- Contact modal (ContactModal.jsx) ----------
+   The one-shot "email a member" composer. Scoped entirely under
+   .modal-contact / .contact-modal-* so nothing here touches the shared
+   .modal chrome that every other dialog in the app still uses — this is a
+   deliberately calmer, more personal treatment for the single flow where
+   you're addressing one specific person, not a restyle of modals in
+   general. */
+.modal-contact {
+  border-top: none;
+}
+.contact-modal-header {
+  background: var(--card);
+  color: var(--ink);
+  align-items: center;
+  padding: 18px 20px;
+}
+.contact-modal-recipient {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.contact-modal-recipient .avatar,
+.contact-modal-recipient .avatar-fallback {
+  border-width: 1px;
+}
+.contact-modal-recipient-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.contact-modal-eyebrow {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.contact-modal-header h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--fs-xl);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.contact-modal-close {
+  background: none;
+  border: none;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ink-soft);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.contact-modal-close:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
+.contact-modal-close:disabled { opacity: 0.4; cursor: default; }
+.contact-modal-close:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+.modal-contact .modal-body { padding: 22px 24px 6px; }
+
+/* Subject reads as metadata, not content — a quiet underline rather than a
+   boxed field, so the message below it carries the visual weight. */
+.contact-modal-subject { margin-bottom: 20px; }
+.contact-modal-subject input {
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 6px 0 8px;
+  background: transparent;
+  font-size: var(--fs-md);
+}
+.contact-modal-subject input:focus {
+  box-shadow: none;
+  border-bottom: 2px solid var(--orange);
+  padding-bottom: 7px;
+}
+
+.contact-modal-message { margin-bottom: 4px; }
+.contact-modal-textarea {
+  resize: vertical;
+  min-height: 160px;
+  font-size: var(--fs-lg);
+  line-height: 1.55;
+  border-color: var(--line);
+}
+.contact-modal-textarea:disabled { background: var(--paper); color: var(--ink-soft); }
+.contact-modal-counter {
+  display: block;
+  text-align: right;
+  font-size: var(--fs-xs);
+  color: var(--ink-soft);
+  margin-top: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  transition: color 0.15s ease;
+}
+.contact-modal-counter.is-low { color: var(--orange-dark); font-weight: 600; }
+
+.contact-modal-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 4px;
+  padding: 10px 12px;
+  background: rgba(163, 51, 39, 0.08);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+.contact-modal-error svg { margin-top: 2px; }
+
+.contact-modal-footer {
+  background: var(--card);
+  border-top: 1px solid var(--line);
+}
+.contact-modal-cancel { border-color: transparent; }
+.contact-modal-cancel:hover:not(:disabled) { background: var(--paper); color: var(--maroon); }
+.contact-modal-send {
+  min-width: 108px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.contact-modal-send.is-sent {
+  background: var(--ok);
+  opacity: 1;
+}
+.contact-modal-send svg { margin: 0; animation: contact-send-pop 0.3s var(--ease); }
+
+.contact-modal-spinner {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  animation: contact-spin 0.7s linear infinite;
+}
+@keyframes contact-spin { to { transform: rotate(360deg); } }
+@keyframes contact-send-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-modal-spinner { animation: none; border-top-color: rgba(255, 255, 255, 0.45); }
+  .contact-modal-send svg { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .contact-modal-header { padding: 16px; }
+  .modal-contact .modal-body { padding: 18px 16px 4px; }
+  .contact-modal-footer { padding: 12px 16px; }
+}
+
 /* ---------- Job applications list (JobApplications.jsx) ---------- */
 .job-detail-applications-section {
   margin-top: 28px;
