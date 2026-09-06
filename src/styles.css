@@ -8554,127 +8554,132 @@ button.delete-danger svg { flex-shrink: 0; }
 
 /* ===========================================================
    Home dashboard
-   =========================================================== */
-/* Simplified banner: identity (ring + greeting + one-line status) on the
-   left, a single bold primary CTA on the right — no more three competing
-   action tiles. Badges/completion status move into a quiet secondary line
-   under the greeting instead of their own tile. */
-/* ============================================================
-   Home dashboard — Apple-design treatment
-   ============================================================
-   Principles applied: Purpose (clear hierarchy, nothing without a
-   reason), Simplicity (shadow-based depth instead of heavy borders,
-   generous whitespace), Craft (spring-like transitions, press
-   feedback, refined typography with size-specific tracking),
-   Familiarity (same content, more natural spatial relationships).
-   SACS brand palette preserved throughout. */
+   ===========================================================
+   Editorial, not widget-heavy: sections sit directly on the page and
+   are told apart by type, space and hairlines rather than stacked
+   white cards. A card only appears for things that are genuinely
+   items in a collection (a business, a suggested connection) — and
+   even then it stays flat until you're actually pointing at it.
+   Buttons are rounded rectangles, not pills, except where they're
+   supposed to look like Twitter/App‑Store filter chips (the mobile
+   jump-nav uses plain underlined text tabs instead). SACS navy/blue/
+   cream palette, Georgia/Inter type and the shared spacing, type-scale
+   and radius tokens throughout — nothing new introduced. */
 
-/* ---------- Spring-like easing for home interactions ----------
-   Apple's critically-damped spring approximated as a cubic-bezier —
-   fast out of the gate, smooth settle, no bounce. Used on all
-   interactive transitions in this section. */
-
-/* ---------- Hero greeting ------------------------------------ */
-.home-banner {
+/* ---------- Hero ----------------------------------------------
+   The one section that gets a raised, tinted surface. A flat navy
+   wash (no gradient) built from --primary-rgb — quiet enough to sit
+   on the cream page, present enough to read as a masthead rather
+   than a widget. Everything below this relies on type, space and
+   hairlines instead of card chrome. */
+.home-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 28px 4px 24px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--line);
+  background: rgba(var(--primary-rgb), 0.035);
+  border-radius: var(--radius-xl);
+  padding: 32px 32px;
+  margin-bottom: 32px;
 }
 .home-progress-ring { position: relative; flex-shrink: 0; }
 .home-progress-ring svg { position: absolute; top: 0; left: 0; }
 .home-progress-ring-inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .home-progress-ring-inner .avatar { border: none; }
 
-.home-banner-identity { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.home-banner-body { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.home-banner-title {
+.home-hero-identity { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.home-hero-text { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.home-hero-greeting {
   margin: 0;
   font-family: var(--display);
   font-weight: 700;
-  font-size: var(--fs-2xl);
-  line-height: 1.15;
-  letter-spacing: -0.015em;
+  font-size: clamp(28px, 4vw, 37px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   color: var(--maroon);
   word-break: break-word;
 }
-.home-banner-subtitle {
+.home-hero-subtitle {
   margin: 0;
   font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--ink-soft);
   line-height: 1.4;
 }
-.home-banner-cta { flex-shrink: 0; --cta-icon-color: #ffffff; }
-.home-banner-cta .btn {
+/* Icons in the CTA read white against the solid accent fill regardless of
+   their own default color (see RefreshIcon/ShareIcon in Home.jsx). */
+.home-hero-cta { flex-shrink: 0; --cta-icon-color: #ffffff; }
+.home-hero-cta .btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 10px 22px;
+  gap: 8px;
+  padding: 12px 24px;
   font-size: var(--fs-sm);
-  font-weight: 600;
-  border-radius: var(--radius-pill);
-  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.25s var(--ease);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
 }
-.home-banner-cta .btn:active {
-  transform: scale(0.97);
-}
+.home-hero-cta .btn:active { transform: scale(0.97); }
 
 @media (max-width: 720px) {
-  .home-banner {
+  .home-hero {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 18px 8px 18px;
-    gap: 14px;
-    margin-bottom: 4px;
+    padding: 24px 20px;
+    gap: 16px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-lg);
   }
-  .home-banner-identity { flex-direction: column; text-align: center; gap: 10px; }
-  .home-banner-body { align-items: center; }
-  .home-banner-title { text-align: center; font-size: var(--fs-xl); letter-spacing: -0.01em; }
-  .home-banner-cta { width: 100%; }
-  .home-banner-cta .btn { width: 100%; justify-content: center; }
+  .home-hero-identity { flex-direction: column; text-align: center; gap: 12px; }
+  .home-hero-text { align-items: center; }
+  .home-hero-cta { width: 100%; }
+  .home-hero-cta .btn { width: 100%; justify-content: center; }
 }
 
-/* ---------- Featured event (promoted, full-width) ------------ */
-.home-event-widget {
+/* ---------- Featured event --------------------------------------
+   A slim, flat banner rather than a boxed promo — a 3px accent bar
+   carries the "notice me" signal instead of a gradient fill, so it
+   reads as one confident line rather than another competing card. */
+.home-event {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 18px;
-  cursor: pointer;
-  padding: 20px 24px;
-  border: none;
+  padding: 18px 22px 18px 26px;
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--orange-soft) 0%, rgba(110, 195, 232, 0.08) 100%);
-  box-shadow: 0 1px 3px rgba(0, 47, 95, 0.06);
-  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  background: var(--card);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s var(--ease);
 }
-.home-event-widget:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 47, 95, 0.1);
+.home-event-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--orange);
 }
-.home-event-widget:active {
-  transform: translateY(0) scale(0.995);
+.home-event:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-1px);
 }
+.home-event:active { transform: translateY(0); }
+.home-event:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .home-event-date {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
-  border-radius: var(--radius);
-  background: #fff;
+  border-radius: var(--radius-sm);
+  background: var(--paper);
   color: var(--maroon);
-  box-shadow: 0 1px 4px rgba(0, 47, 95, 0.08);
 }
 .home-event-date span {
   font-size: var(--fs-2xs);
@@ -8683,8 +8688,9 @@ button.delete-danger svg { flex-shrink: 0; }
   text-transform: uppercase;
   color: var(--orange-dark);
 }
-.home-event-date strong { font-size: var(--fs-2xl); line-height: 1; letter-spacing: -0.02em; }
-.home-event-label {
+.home-event-date strong { font-size: var(--fs-xl); line-height: 1; letter-spacing: -0.02em; }
+.home-event-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.home-event-eyebrow {
   font-family: var(--display);
   font-size: var(--fs-xs);
   font-weight: 700;
@@ -8692,133 +8698,91 @@ button.delete-danger svg { flex-shrink: 0; }
   letter-spacing: 0.05em;
   color: var(--orange-dark);
 }
-.home-event-arrow {
+.home-event-title { font-size: var(--fs-lg); color: var(--maroon); }
+.home-event-meta { font-size: var(--fs-sm); color: var(--ink-soft); }
+.home-event-chevron {
   margin-left: auto;
   flex-shrink: 0;
   color: var(--ink-soft);
   opacity: 0.5;
-  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
 }
-.home-event-widget:hover .home-event-arrow {
-  opacity: 1;
-  transform: translateX(3px);
-}
+.home-event:hover .home-event-chevron { opacity: 1; transform: translateX(3px); }
 
-/* ---------- Section headers ---------------------------------- */
+/* ---------- Section headers --------------------------------------
+   A small tracked eyebrow above a Georgia title reads as a magazine
+   section break — hierarchy from type and space, not a colored bar
+   or a boxed label. */
 .home-section-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
-/* Override the shared .feed-section-label's border-left accent —
-   Apple style favors weight + size hierarchy, not colored bars. */
-.home-section-head .feed-section-label,
-.home-community-widget > .home-section-head .feed-section-label {
-  font-family: var(--display);
-  font-size: var(--fs-lg);
+.home-section-eyebrow {
+  display: block;
+  margin: 0 0 4px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
-  letter-spacing: -0.005em;
-  text-transform: none;
-  padding-left: 0;
-  border-left: none;
-  color: var(--maroon);
-  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--orange-dark);
 }
-.home-more-link {
-  border-top: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: auto !important;
-  font-size: var(--fs-sm) !important;
+.home-section-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--maroon);
+}
+.home-section-link {
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 3px;
+  background: none;
+  border: none;
+  padding: 2px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--orange-dark);
   transition: color 0.2s var(--ease);
 }
-.home-more-link:hover { color: var(--maroon); }
+.home-section-link:hover { color: var(--maroon); text-decoration: underline; }
+.home-business-viewall { display: block; margin-top: 8px; align-self: auto; }
 
-/* ---------- Home card containers ----------------------------- */
-/* Apple principle: Craft. Shadow-based depth replaces hard borders;
-   larger radius gives cards a softer, more tactile presence. */
-.home-feed-widget {
-  padding: 24px 24px 14px;
-  border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0, 47, 95, 0.05), 0 4px 16px rgba(0, 47, 95, 0.04);
-}
-.home-feed-widget .home-section-head { margin-bottom: 8px; }
-.home-feed-layout .feed-widget-viewall { font-size: var(--fs-sm); padding: 14px 4px 8px; }
-.home-feed-layout .empty.small { font-size: var(--fs-base); padding: 12px 0; }
+/* ---------- Home layout grid --------------------------------------
+   No enclosing widget cards — sections sit directly on the page,
+   separated by generous space instead of stacked boxes. */
+.home-feed-layout .feed-main { display: flex; flex-direction: column; gap: 40px; }
+.home-feed-layout .feed-sidebar { display: flex; flex-direction: column; gap: 36px; }
 
-/* ---------- Home layout grid --------------------------------- */
-.home-feed-layout {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 24px;
-}
-.home-feed-layout .feed-main { display: flex; flex-direction: column; gap: 20px; }
-.home-feed-layout .feed-sidebar { gap: 18px; }
-
-/* ---------- Recent posts ------------------------------------- */
-.home-post-preview-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+/* ---------- Recent posts -------------------------------------- */
+.home-posts-list { list-style: none; margin: 0; padding: 0; }
 .home-carousel-dots { display: none; }
 
-.home-post-preview {
+.home-post-row {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  padding: 16px;
-  background: var(--card);
+  padding: 16px 10px;
+  margin: 0 -10px;
   border: 1px solid transparent;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.25s var(--ease), box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
+  border-radius: var(--radius-sm);
+  border-bottom: 1px solid var(--line);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
 }
-/* Apple principle: Response. Highlight is continuous — shadow lift
-   on hover, subtle scale-down on press. */
-.home-post-preview:hover {
-  background: var(--orange-soft);
-  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.1);
-  transform: translateY(-1px);
-}
-.home-post-preview:active {
-  transform: translateY(0) scale(0.995);
-  box-shadow: none;
-}
-.home-post-preview-body { flex: 1; min-width: 0; }
-.home-post-preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 100%;
-}
-.home-post-preview-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--fs-md);
-  color: var(--ink);
-}
-.home-post-preview-head strong {
-  color: var(--ink);
-  font-size: var(--fs-md);
-  font-weight: 600;
-  letter-spacing: -0.005em;
-}
-.home-post-preview-occupation {
-  margin: 3px 0 0;
-  font-size: var(--fs-sm);
-  color: var(--ink-soft);
-  line-height: 1.4;
-}
-.home-post-preview-title {
-  margin: 6px 0 0;
-  font-size: var(--fs-base);
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.4;
-}
-.home-post-preview-text {
+.home-post-row:last-child { border-bottom-color: transparent; }
+.home-post-row:hover { background: var(--paper); }
+.home-post-body { flex: 1; min-width: 0; }
+.home-post-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+.home-post-name { display: flex; align-items: center; gap: 6px; font-size: var(--fs-md); color: var(--ink); }
+.home-post-name strong { color: var(--ink); font-size: var(--fs-md); font-weight: 600; letter-spacing: -0.005em; }
+.home-post-occupation { margin: 3px 0 0; font-size: var(--fs-sm); color: var(--ink-soft); line-height: 1.4; }
+.home-post-title { margin: 6px 0 0; font-size: var(--fs-base); font-weight: 700; color: var(--ink); line-height: 1.4; }
+.home-post-text {
   margin: 5px 0 0;
   font-size: var(--fs-sm);
   color: var(--ink-soft);
@@ -8828,53 +8792,46 @@ button.delete-danger svg { flex-shrink: 0; }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.home-post-preview-thumb {
-  flex-shrink: 0;
-  width: 68px;
-  height: 68px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--paper);
-}
-.home-post-preview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.home-post-thumb { flex-shrink: 0; width: 60px; height: 60px; border-radius: var(--radius-sm); overflow: hidden; background: var(--paper); }
+.home-post-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 @media (max-width: 480px) {
-  .home-post-preview-thumb { width: 52px; height: 52px; }
+  .home-post-thumb { width: 48px; height: 48px; }
 }
 
-/* ---------- Businesses near you ------------------------------ */
-.home-business-grid {
+/* ---------- Businesses near you --------------------------------
+   Flat at rest, a card only appears once you're actually pointing
+   at it — border and shadow both animate in on hover/focus instead
+   of sitting there permanently. */
+.home-businesses-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 14px;
 }
-.home-business-card {
+.home-business-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
   align-items: flex-start;
   text-align: left;
   background: var(--card);
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: var(--radius);
-  padding: 18px;
-  cursor: pointer;
-  transition: box-shadow 0.3s var(--ease), transform 0.3s var(--ease), border-color 0.3s var(--ease);
+  padding: 16px;
+  transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s var(--ease);
   min-width: 0;
   box-sizing: border-box;
 }
-.home-business-card:hover {
-  border-color: transparent;
-  box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.08);
-  transform: translateY(-2px);
+.home-business-tile:hover {
+  border-color: var(--line);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-1px);
 }
-.home-business-card:active {
-  transform: translateY(0) scale(0.99);
-  box-shadow: 0 1px 4px rgba(var(--primary-rgb), 0.06);
-}
-.home-business-card-head { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; }
-.home-business-card-head .job-logo { width: 44px; height: 44px; font-size: var(--fs-lg); border-radius: var(--radius-sm); }
-.home-business-card-head strong {
+.home-business-tile:active { transform: translateY(0); box-shadow: none; }
+.home-business-head { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; }
+.home-business-head .job-logo { width: 44px; height: 44px; font-size: var(--fs-lg); border-radius: var(--radius-sm); }
+.home-business-head strong {
   font-size: var(--fs-md);
   font-weight: 600;
   color: var(--maroon);
@@ -8894,30 +8851,18 @@ button.delete-danger svg { flex-shrink: 0; }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.home-business-location {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-size: var(--fs-xs);
-  color: var(--ink-soft);
-}
-.home-business-viewall { display: block; margin-top: 4px !important; }
+.home-business-location { display: flex; align-items: center; gap: 6px; margin: 0; font-size: var(--fs-xs); color: var(--ink-soft); }
 
 @media (max-width: 640px) {
-  .home-business-grid { grid-template-columns: 1fr; }
+  .home-businesses-grid { grid-template-columns: 1fr; }
 }
 
-/* ---------- My Community / Your Network ---------------------- */
-.home-community-sub {
-  margin: 0 0 14px;
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  color: var(--ink-soft);
-}
-
-.home-community-carousel { position: relative; }
-.home-community-grid {
+/* ---------- Your network ----------------------------------------
+   Minimal tiles: a name and an industry tag, with the message
+   affordance reduced to a small icon rather than a full colored
+   pill on every card — one thing to notice, not two. */
+.home-network-carousel { position: relative; }
+.home-network-scroller {
   display: flex;
   gap: 10px;
   overflow-x: auto;
@@ -8928,46 +8873,37 @@ button.delete-danger svg { flex-shrink: 0; }
   touch-action: pan-x pan-y;
   cursor: grab;
 }
-.home-community-grid:active { cursor: grabbing; }
-.home-community-grid::-webkit-scrollbar { display: none; }
+.home-network-scroller:active { cursor: grabbing; }
+.home-network-scroller::-webkit-scrollbar { display: none; }
 
-.home-community-card {
+.home-network-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 16px 14px;
-  border: 1px solid var(--line);
+  gap: 8px;
+  padding: 16px 12px;
+  border: 1px solid transparent;
   border-radius: var(--radius);
   background: var(--card);
-  transition: box-shadow 0.3s var(--ease), transform 0.3s var(--ease), border-color 0.3s var(--ease);
+  transition: box-shadow 0.25s var(--ease), border-color 0.25s var(--ease), transform 0.25s var(--ease);
   min-width: 0;
-  flex: 0 0 108px;
+  flex: 0 0 100px;
   scroll-snap-align: start;
-  cursor: pointer;
 }
-.home-community-card:hover {
-  border-color: transparent;
-  box-shadow: 0 4px 14px rgba(var(--accent-dark-rgb), 0.12);
-  transform: translateY(-2px);
+.home-network-item:hover {
+  border-color: var(--line);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-1px);
 }
-.home-community-card:active {
-  transform: translateY(0) scale(0.98);
-}
-.home-community-card-identity {
+.home-network-identity {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transition: opacity 0.2s var(--ease);
 }
-.home-community-card-identity:hover { opacity: 0.85; }
-.home-community-card-identity span {
+.home-network-identity span {
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
@@ -8978,13 +8914,13 @@ button.delete-danger svg { flex-shrink: 0; }
   text-align: center;
   line-height: 1.2;
 }
-.home-community-industry {
+.home-network-tag {
   font-size: var(--fs-2xs);
   color: var(--ink-soft);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  margin: -4px 0 0 0;
+  margin: -2px 0 0 0;
   text-align: center;
   line-height: 1.3;
   display: -webkit-box;
@@ -8997,33 +8933,35 @@ button.delete-danger svg { flex-shrink: 0; }
   padding: 0 3px;
   overflow-wrap: break-word;
 }
-/* Apple principle: Craft. The message button uses a softer pill
-   shape with a slightly translucent background — not loud, but
-   unmistakably interactive. Scale on press for tactile feedback. */
-.home-community-message-btn {
-  width: 100%;
-  background: var(--orange);
+.home-network-message-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--maroon);
+  opacity: 0.7;
+  transition: opacity 0.2s var(--ease), background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.home-network-item:hover .home-network-message-btn,
+.home-network-message-btn:hover,
+.home-network-message-btn:focus-visible {
+  opacity: 1;
+}
+.home-network-message-btn:hover {
+  background: var(--maroon);
+  border-color: var(--maroon);
   color: #fff;
-  border: none;
-  border-radius: var(--radius-pill);
-  padding: 6px 10px;
-  font-size: var(--fs-2xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  transition: background 0.25s var(--ease), transform 0.2s var(--ease), box-shadow 0.25s var(--ease);
-  cursor: pointer;
-  margin-top: auto;
 }
-.home-community-message-btn:hover {
-  background: var(--orange-dark);
-  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.3);
-}
-.home-community-message-btn:active {
-  transform: scale(0.95);
-}
+.home-network-message-btn:active { transform: scale(0.9); }
 
-.home-community-scroll-btn {
+.home-network-nav-btn {
   position: absolute;
   top: 41px;
   width: 30px;
@@ -9037,127 +8975,119 @@ button.delete-danger svg { flex-shrink: 0; }
   -webkit-backdrop-filter: blur(8px);
   color: var(--maroon);
   box-shadow: 0 2px 8px rgba(0, 47, 95, 0.12);
-  cursor: pointer;
   transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.25s var(--ease);
 }
-.home-community-scroll-btn:hover {
+.home-network-nav-btn:hover {
   background: var(--orange);
   color: #fff;
   box-shadow: 0 3px 12px rgba(var(--accent-rgb), 0.25);
   transform: scale(1.05);
 }
-.home-community-scroll-btn:active {
-  transform: scale(0.95);
-}
-.home-community-scroll-btn-next { right: 4px; }
-.home-community-scroll-btn-prev { left: 4px; }
+.home-network-nav-btn:active { transform: scale(0.95); }
+.home-network-nav-btn-next { right: 4px; }
+.home-network-nav-btn-prev { left: 4px; }
 
-.home-community-online {
-  margin-top: 16px;
-  padding-top: 16px;
+.home-network-online {
+  margin-top: 18px;
+  padding-top: 18px;
   border-top: 1px solid var(--line);
 }
-.home-community-online .whos-online {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  margin: 0;
-}
+.home-network-online .whos-online { background: none; border: none; box-shadow: none; padding: 0; margin: 0; }
 
-/* ---------- Donate / Support card ---------------------------- */
-/* Apple principle: Simplicity. A gentle gradient wash instead of a
-   plain bordered box; the text is trimmed to one line of copy so it
-   reads as a quiet nudge, not a plea. */
-.home-donate-card {
-  text-align: center;
-  padding: 28px 22px;
-  border: none !important;
-  border-radius: var(--radius-lg) !important;
-  background: linear-gradient(160deg, rgba(0, 47, 95, 0.03) 0%, rgba(110, 195, 232, 0.08) 100%) !important;
-  box-shadow: none !important;
+/* ---------- Support -----------------------------------------------
+   A quiet aside, not an ad unit — plain type above the hairline that
+   already separates it from the network list, and a secondary
+   (not solid-accent) button so it reads as a considerate nudge. */
+.home-support {
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
 }
-.home-donate-card h3 {
-  margin: 0 0 8px;
+.home-support h3 {
+  margin: 0 0 6px;
   font-family: var(--display);
-  font-size: var(--fs-lg);
+  font-size: var(--fs-md);
   font-weight: 700;
-  text-transform: none;
-  letter-spacing: -0.01em;
   color: var(--maroon);
 }
-.home-donate-card p {
-  margin: 0 0 16px;
+.home-support p {
+  margin: 0 0 14px;
   font-size: var(--fs-sm);
   color: var(--ink-soft);
   line-height: 1.55;
 }
-.home-donate-card .btn {
-  border-radius: var(--radius-pill);
+
+/* ---------- Focus states for custom (non-.btn) controls --------- */
+.home-tab:focus-visible,
+.home-section-link:focus-visible,
+.home-network-message-btn:focus-visible,
+.home-network-nav-btn:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
 }
 
-/* ---------- Community widget card treatment ------------------- */
-.home-community-widget {
-  border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0, 47, 95, 0.05), 0 4px 16px rgba(0, 47, 95, 0.04);
-}
-
-/* ---------- Mobile section nav ------------------------------- */
-.home-mobile-tabs { display: none; }
+/* ---------- Mobile jump-nav --------------------------------------
+   Plain text tabs with a hairline underneath, not a chip row — a
+   press flashes the accent underline since this jumps to a section
+   rather than tracking which one is currently in view. */
+.home-tabs { display: none; }
 @media (max-width: 720px) {
-  .home-mobile-tabs {
+  .home-tabs {
     display: flex;
-    gap: 8px;
+    gap: 20px;
     overflow-x: auto;
-    padding: 10px 0 12px;
-    margin-bottom: 14px;
+    padding: 12px 2px 12px;
+    margin-bottom: 12px;
     position: sticky;
     top: 64px;
     z-index: 30;
     background: var(--paper);
+    border-bottom: 1px solid var(--line);
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent 100%);
     mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent 100%);
   }
-  .home-mobile-tab {
+  .home-tab {
+    position: relative;
     flex-shrink: 0;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
-    padding: 8px 18px;
-    font-size: var(--fs-xs);
+    background: none;
+    border: none;
+    padding: 4px 1px 12px;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--ink-soft);
     white-space: nowrap;
-    transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+    transition: color 0.2s var(--ease);
   }
-  .home-mobile-tab:hover {
-    border-color: var(--orange);
-    color: var(--maroon);
+  .home-tab::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: transparent;
+    transition: background 0.2s var(--ease);
   }
-  .home-mobile-tab:active {
-    background: var(--maroon);
-    border-color: var(--maroon);
-    color: #fff;
-    transform: scale(0.96);
-  }
+  .home-tab:hover { color: var(--maroon); }
+  .home-tab:active { color: var(--maroon); }
+  .home-tab:active::after { background: var(--orange); }
   .home-tabsection { scroll-margin-top: 112px; }
 
   /* Mobile section reorder — posts, community, businesses, events,
-     donate. The event is now above the grid in the JSX, so it
-     naturally appears first regardless of order. display:contents on
-     the column wrappers drops their boxes so order works across them. */
-  .home-feed-layout { display: flex; flex-direction: column; align-items: stretch; gap: 26px; }
+     support. The event is above the grid in the JSX, so it naturally
+     appears first regardless of order. display:contents on the column
+     wrappers drops their boxes so order works across them. */
+  .home-feed-layout { display: flex; flex-direction: column; align-items: stretch; gap: 32px; }
   .home-feed-layout .feed-main,
   .home-feed-layout .feed-sidebar { display: contents; }
   .home-feed-layout #home-section-posts { order: 1; }
   .home-feed-layout #home-section-community { order: 2; }
   .home-feed-layout #home-section-businesses { order: 3; }
-  .home-feed-layout .home-donate-card { order: 5; }
+  .home-feed-layout .home-support { order: 5; }
 
   /* Mobile carousels — single-card swipe with dots */
-  .home-post-preview-list,
-  .home-business-grid {
+  .home-posts-list,
+  .home-businesses-grid {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -9167,26 +9097,26 @@ button.delete-danger svg { flex-shrink: 0; }
     gap: 0;
     scrollbar-width: none;
   }
-  .home-post-preview-list::-webkit-scrollbar,
-  .home-business-grid::-webkit-scrollbar { display: none; }
+  .home-posts-list::-webkit-scrollbar,
+  .home-businesses-grid::-webkit-scrollbar { display: none; }
 
-  .home-community-scroll-btn { display: none; }
+  .home-network-nav-btn { display: none; }
 
-  .home-business-grid .home-business-card {
+  .home-businesses-grid .home-business-tile {
     flex: 0 0 100%;
     width: 100%;
     scroll-snap-align: start;
     scroll-snap-stop: always;
   }
 
-  .home-post-preview-list .home-post-preview {
+  .home-posts-list .home-post-row {
     flex: 0 0 calc(100% - 14px);
     width: calc(100% - 14px);
     margin-right: 14px;
     scroll-snap-align: start;
     scroll-snap-stop: always;
   }
-  .home-post-preview-list .home-post-preview:last-child { margin-right: 0; }
+  .home-posts-list .home-post-row:last-child { margin-right: 0; }
 
   .home-carousel-dots {
     display: flex;
@@ -9216,28 +9146,24 @@ button.delete-danger svg { flex-shrink: 0; }
 }
 
 /* ---------- Reduced motion ----------------------------------- */
-/* Apple principle: Accessibility. Reduced-motion users get
-   opacity/color transitions only — no slides, no lifts, no springs.
-   Spring-like transforms are replaced with instant crossfades. */
 @media (prefers-reduced-motion: reduce) {
-  .home-event-widget,
-  .home-post-preview,
-  .home-business-card,
-  .home-community-card,
-  .home-community-message-btn,
-  .home-community-scroll-btn,
-  .home-banner-cta .btn,
-  .home-mobile-tab {
+  .home-event,
+  .home-post-row,
+  .home-business-tile,
+  .home-network-item,
+  .home-network-message-btn,
+  .home-network-nav-btn,
+  .home-hero-cta .btn,
+  .home-tab {
     transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease !important;
     transform: none !important;
   }
-  .home-event-widget:hover,
-  .home-post-preview:hover,
-  .home-business-card:hover,
-  .home-community-card:hover {
+  .home-event:hover,
+  .home-business-tile:hover,
+  .home-network-item:hover {
     transform: none !important;
   }
-  .home-event-widget:hover .home-event-arrow {
+  .home-event:hover .home-event-chevron {
     transform: none;
   }
   .home-carousel-dot {
@@ -10490,26 +10416,20 @@ button.delete-danger svg { flex-shrink: 0; }
 .person-card,
 .mentor-card,
 .business-card,
-.home-post-preview,
-.home-business-card,
-.home-community-card,
-.home-event-widget {
+.home-post-row,
+.home-business-tile,
+.home-network-item {
   position: relative;
 }
 .person-card:has(.stretched-link:focus-visible),
 .mentor-card:has(.stretched-link:focus-visible),
 .job-card:has(.stretched-link:focus-visible),
-.home-post-preview:has(.stretched-link:focus-visible),
-.home-business-card:has(.stretched-link:focus-visible),
-.home-community-card:has(.stretched-link:focus-visible),
-.home-event-widget:has(.stretched-link:focus-visible) {
+.home-post-row:has(.stretched-link:focus-visible),
+.home-business-tile:has(.stretched-link:focus-visible),
+.home-network-item:has(.stretched-link:focus-visible) {
   border-color: var(--orange);
 }
-.home-post-preview:has(.stretched-link:hover) {
-  background: var(--orange-soft);
-  border-color: var(--orange);
-}
-.home-community-message-btn { position: relative; z-index: 2; }
+.home-network-message-btn { position: relative; z-index: 2; }
 .mentor-card:has(.stretched-link:hover) {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
@@ -10590,7 +10510,7 @@ button.delete-danger svg { flex-shrink: 0; }
    ========================================================================== */
 
 .legends-band {
-  margin: 0 0 18px;
+  margin: 0 0 32px;
 }
 
 .legends-head {
@@ -10929,7 +10849,7 @@ button.delete-danger svg { flex-shrink: 0; }
   }
   .legends-carousel::-webkit-scrollbar { display: none; }
   /* Visible gap between slides, same trick the posts carousel uses (see
-     .home-post-preview-list .home-post-preview): width is shaved down by the
+     .home-posts-list .home-post-row): width is shaved down by the
      gap and pushed over with margin-right rather than the container's `gap`
      property, so each slide + its margin still adds up to exactly one
      clientWidth. A plain container gap would throw off scrollToSlide's

@@ -28,7 +28,7 @@ const COMPLETION_FIELDS = [
 // that sit side-by-side on desktop. On mobile every section still renders
 // (nothing is hidden), the pills just act as a jump nav: tap one and the
 // page smooth-scrolls to that section, same idea as an in-page anchor
-// link. See .home-mobile-tabs in styles.css for the sticky/peek styling
+// link. See .home-tabs in styles.css for the sticky/underline styling
 // and .home-tabsection's scroll-margin-top for the landing offset.
 const MOBILE_TABS = [
   { id: 'posts', label: 'Recent feed posts' },
@@ -99,7 +99,7 @@ function formatEventDate(iso) {
 }
 
 export default function Home({ session, profile, onMessage }) {
-  // Greeting banner's avatar/ring shrink on mobile only (see home-banner
+  // Greeting hero's avatar/ring shrink on mobile only (see home-hero
   // CSS) — this is set via JS rather than CSS alone because ProgressRing's
   // SVG dimensions come from a `size` prop, not a stylesheet value.
   const isWide = useIsWide(721)
@@ -191,7 +191,7 @@ export default function Home({ session, profile, onMessage }) {
   const scrollCommunity = (dir) => {
     const el = communityScrollRef.current
     if (!el) return
-    const card = el.querySelector('.home-community-card')
+    const card = el.querySelector('.home-network-item')
     const step = card ? card.getBoundingClientRect().width + 10 : 112
     el.scrollBy({ left: dir * step, behavior: 'smooth' })
   }
@@ -224,7 +224,7 @@ export default function Home({ session, profile, onMessage }) {
   // Mobile-only "Recent feed posts" carousel: one post per screen,
   // swipe/scroll horizontally between them, with dot indicators below
   // showing which post you're on. Desktop keeps the plain stacked list
-  // (see .home-post-preview-list base rule vs. its max-width:720px
+  // (see .home-posts-list base rule vs. its max-width:720px
   // override in styles.css) — postsScrollRef/postIndex only matter once
   // that override turns the list into a horizontal scroll-snap strip.
   const postsScrollRef = useRef(null)
@@ -469,25 +469,26 @@ export default function Home({ session, profile, onMessage }) {
         />
       )}
 
-      {/* ── Hero greeting ────────────────────────────────────────────
-          Apple principle: Purpose + Simplicity. Large, confident type
-          with breathing room. The avatar completion ring stays SACS-
-          branded. A subtitle gives context without cluttering. */}
-      <div className="home-banner">
-        <div className="home-banner-identity">
-          <ProgressRing pct={pct} size={isWide ? 56 : 44}>
-            <Avatar url={profile?.avatar_url} name={profile?.full_name} size={isWide ? 48 : 36} />
+      {/* ── Hero ─────────────────────────────────────────────────
+          The only surface on this page that gets a raised, tinted
+          background — a quiet navy wash rather than a hard card, just
+          enough to read as a masthead. Everything below relies on
+          type, space and hairlines instead of boxes. */}
+      <div className="home-hero">
+        <div className="home-hero-identity">
+          <ProgressRing pct={pct} size={isWide ? 60 : 48}>
+            <Avatar url={profile?.avatar_url} name={profile?.full_name} size={isWide ? 52 : 40} />
           </ProgressRing>
-          <div className="home-banner-body">
-            <h2 className="home-banner-title">{greeting()}, {firstName}!</h2>
-            <p className="home-banner-subtitle">
+          <div className="home-hero-text">
+            <h2 className="home-hero-greeting">{greeting()}, {firstName}</h2>
+            <p className="home-hero-subtitle">
               {pct < 100
                 ? `Your profile is ${pct}% complete`
                 : 'Welcome back to the Old Boys network'}
             </p>
           </div>
         </div>
-        <div className="home-banner-cta">
+        <div className="home-hero-cta">
           {pct < 100 ? (
             <button type="button"
               className="btn primary"
@@ -503,38 +504,37 @@ export default function Home({ session, profile, onMessage }) {
         </div>
       </div>
 
-      {/* ── Featured event ───────────────────────────────────────────
-          Promoted from the sidebar to a full-width hero position —
-          Apple principle: Purpose (time-sensitive content gets visual
-          priority) + Craft (the date badge anchors attention). */}
+      {/* ── Featured event ───────────────────────────────────────
+          A slim, flat banner instead of a boxed promo card — a thin
+          accent bar carries the "notice me" signal instead of a
+          gradient fill, so it reads as one line of the page rather
+          than another widget competing for attention. */}
       {upcomingEvent && (
         <div className="home-tabsection" id="home-section-events">
-          <div className="feed-widget home-event-widget">
-            <Link className="stretched-link" to={`/events/${upcomingEvent.id}`}>
-              <span className="sr-only">{`Open event: ${upcomingEvent.title}`}</span>
-            </Link>
+          <Link className="home-event" to={`/events/${upcomingEvent.id}`}>
+            <span className="home-event-accent" aria-hidden="true" />
             <div className="home-event-date">
               <span>{formatEventDate(upcomingEvent.event_date).month}</span>
               <strong>{formatEventDate(upcomingEvent.event_date).day}</strong>
             </div>
-            <div className="feed-widget-row-text">
-              <span className="home-event-label">Upcoming Event</span>
-              <strong>{upcomingEvent.title}</strong>
-              <span>{formatEventDate(upcomingEvent.event_date).full}{upcomingEvent.location ? ` · ${upcomingEvent.location}` : ''}</span>
+            <div className="home-event-body">
+              <span className="home-event-eyebrow">Upcoming event</span>
+              <strong className="home-event-title">{upcomingEvent.title}</strong>
+              <span className="home-event-meta">{formatEventDate(upcomingEvent.event_date).full}{upcomingEvent.location ? ` · ${upcomingEvent.location}` : ''}</span>
             </div>
-            <span className="home-event-arrow" aria-hidden="true">
+            <span className="home-event-chevron" aria-hidden="true">
               <ChevronRightIcon />
             </span>
-          </div>
+          </Link>
         </div>
       )}
 
-      <nav className="home-mobile-tabs" aria-label="Jump to home section">
+      <nav className="home-tabs" aria-label="Jump to home section">
         {MOBILE_TABS.map((t) => (
           <button
             key={t.id}
             type="button"
-            className="home-mobile-tab"
+            className="home-tab"
             onClick={() => jumpToSection(t.id)}
           >
             {t.label}
@@ -542,6 +542,10 @@ export default function Home({ session, profile, onMessage }) {
         ))}
       </nav>
 
+      {/* Sits below the jump-nav rather than above it — the pills are the
+          fastest route to what people actually came for; the Legends band
+          is editorial. It renders nothing until an admin has curated at
+          least one entry, so a fresh install spends no space on it. */}
       <LegendsBand />
 
       <div className="feed-layout home-feed-layout">
@@ -549,116 +553,116 @@ export default function Home({ session, profile, onMessage }) {
 
           {/* ── Recent posts ─────────────────────────────────────── */}
           <div className="home-tabsection" id="home-section-posts">
-            <div className="feed-widget home-feed-widget">
-              <div className="home-section-head">
-                <h3 className="feed-section-label">Recent Posts</h3>
-                <button type="button" className="feed-widget-viewall home-more-link" onClick={() => navigate('/feed')}>See all</button>
+            <div className="home-section-head">
+              <div>
+                <span className="home-section-eyebrow">From the feed</span>
+                <h3 className="home-section-title">Recent posts</h3>
               </div>
-
-              {recentPosts.length === 0 ? (
-                <p className="empty small">No posts yet — be the first to share something.</p>
-              ) : (
-                <ul className="home-post-preview-list" ref={postsScrollRef} onScroll={updatePostIndex}>
-                  {recentPosts.map((p) => {
-                    const text = p.content && p.content !== '(no text)' ? truncate(plainText(p.content)) : ''
-                    const thumb = p.image_urls?.[0] || null
-                    return (
-                      <li key={p.id} className="home-post-preview">
-                        <Link className="stretched-link" to={`/feed/${p.id}`}>
-                          <span className="sr-only">
-                            {`Open post by ${p.profiles?.full_name || 'an alumnus'}`}
-                          </span>
-                        </Link>
-                        <Avatar url={p.profiles?.avatar_url} name={p.profiles?.full_name} size={48} />
-                        <div className="home-post-preview-body">
-                          <div className="home-post-preview-header">
-                            <div>
-                              <span className="home-post-preview-head">
-                                {p.pinned && <PinIcon />}
-                                <strong>{p.profiles?.full_name || 'Alumnus'}</strong>
-                              </span>
-                              {p.profiles?.occupation && <p className="home-post-preview-occupation">{p.profiles.occupation}</p>}
-                            </div>
-                          </div>
-                          {p.title && <p className="home-post-preview-title">{p.title}</p>}
-                          {text && <p className="home-post-preview-text">{text}</p>}
-                        </div>
-                        {thumb && (
-                          <div className="home-post-preview-thumb">
-                            <img src={thumb} alt="" />
-                          </div>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-
-              {recentPosts.length > 1 && (
-                <div className="home-carousel-dots" role="tablist" aria-label="Recent posts">
-                  {recentPosts.map((p, i) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className={i === postIndex ? 'home-carousel-dot active' : 'home-carousel-dot'}
-                      role="tab"
-                      aria-selected={i === postIndex}
-                      aria-label={`Post ${i + 1} of ${recentPosts.length}`}
-                      onClick={() => scrollToPost(i)}
-                    />
-                  ))}
-                </div>
-              )}
+              <button type="button" className="home-section-link" onClick={() => navigate('/feed')}>See all</button>
             </div>
+
+            {recentPosts.length === 0 ? (
+              <p className="empty small">No posts yet — be the first to share something.</p>
+            ) : (
+              <ul className="home-posts-list" ref={postsScrollRef} onScroll={updatePostIndex}>
+                {recentPosts.map((p) => {
+                  const text = p.content && p.content !== '(no text)' ? truncate(plainText(p.content)) : ''
+                  const thumb = p.image_urls?.[0] || null
+                  return (
+                    <li key={p.id} className="home-post-row">
+                      <Link className="stretched-link" to={`/feed/${p.id}`}>
+                        <span className="sr-only">
+                          {`Open post by ${p.profiles?.full_name || 'an alumnus'}`}
+                        </span>
+                      </Link>
+                      <Avatar url={p.profiles?.avatar_url} name={p.profiles?.full_name} size={44} />
+                      <div className="home-post-body">
+                        <div className="home-post-top">
+                          <span className="home-post-name">
+                            {p.pinned && <PinIcon />}
+                            <strong>{p.profiles?.full_name || 'Alumnus'}</strong>
+                          </span>
+                          {p.profiles?.occupation && <p className="home-post-occupation">{p.profiles.occupation}</p>}
+                        </div>
+                        {p.title && <p className="home-post-title">{p.title}</p>}
+                        {text && <p className="home-post-text">{text}</p>}
+                      </div>
+                      {thumb && (
+                        <div className="home-post-thumb">
+                          <img src={thumb} alt="" />
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            {recentPosts.length > 1 && (
+              <div className="home-carousel-dots" role="tablist" aria-label="Recent posts">
+                {recentPosts.map((p, i) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={i === postIndex ? 'home-carousel-dot active' : 'home-carousel-dot'}
+                    role="tab"
+                    aria-selected={i === postIndex}
+                    aria-label={`Post ${i + 1} of ${recentPosts.length}`}
+                    onClick={() => scrollToPost(i)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* ── Businesses near you ──────────────────────────────── */}
+          {/* ── Businesses near you ─────────────────────────────── */}
           <div className="home-tabsection" id="home-section-businesses">
-            <div className="feed-widget home-feed-widget">
-              <div className="home-section-head">
-                <h3 className="feed-section-label">Businesses Near You</h3>
+            <div className="home-section-head">
+              <div>
+                <span className="home-section-eyebrow">The directory</span>
+                <h3 className="home-section-title">Businesses near you</h3>
               </div>
-
-              {nearbyBusinesses.length === 0 ? (
-                <p className="empty small">No businesses listed yet.</p>
-              ) : (
-                <div className="home-business-grid" ref={businessesScrollRef} onScroll={updateBusinessIndex}>
-                  {nearbyBusinesses.map((b) => (
-                    <div key={b.id} className="home-business-card">
-                      <Link className="stretched-link" to={`/businesses/${b.id}`}>
-                        <span className="sr-only">{`Open ${b.name}`}</span>
-                      </Link>
-                      <div className="home-business-card-head">
-                        <BusinessLogo url={b.logo_url} name={b.name} />
-                        <strong>{b.name}</strong>
-                      </div>
-                      <p className="home-business-excerpt">{truncate(plainText(b.description), 90)}</p>
-                      <p className="home-business-location">
-                        <LocationDotIcon /> {[b.city, b.country].filter(Boolean).join(', ') || 'Location not set'}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {nearbyBusinesses.length > 1 && (
-                <div className="home-carousel-dots" role="tablist" aria-label="Businesses near me">
-                  {nearbyBusinesses.map((b, i) => (
-                    <button
-                      key={b.id}
-                      type="button"
-                      className={i === businessIndex ? 'home-carousel-dot active' : 'home-carousel-dot'}
-                      role="tab"
-                      aria-selected={i === businessIndex}
-                      aria-label={`Business ${i + 1} of ${nearbyBusinesses.length}`}
-                      onClick={() => scrollToBusiness(i)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              <button type="button" className="feed-widget-viewall home-more-link home-business-viewall" onClick={() => navigate('/businesses')}>See all</button>
             </div>
+
+            {nearbyBusinesses.length === 0 ? (
+              <p className="empty small">No businesses listed yet.</p>
+            ) : (
+              <div className="home-businesses-grid" ref={businessesScrollRef} onScroll={updateBusinessIndex}>
+                {nearbyBusinesses.map((b) => (
+                  <div key={b.id} className="home-business-tile">
+                    <Link className="stretched-link" to={`/businesses/${b.id}`}>
+                      <span className="sr-only">{`Open ${b.name}`}</span>
+                    </Link>
+                    <div className="home-business-head">
+                      <BusinessLogo url={b.logo_url} name={b.name} />
+                      <strong>{b.name}</strong>
+                    </div>
+                    <p className="home-business-excerpt">{truncate(plainText(b.description), 90)}</p>
+                    <p className="home-business-location">
+                      <LocationDotIcon /> {[b.city, b.country].filter(Boolean).join(', ') || 'Location not set'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {nearbyBusinesses.length > 1 && (
+              <div className="home-carousel-dots" role="tablist" aria-label="Businesses near me">
+                {nearbyBusinesses.map((b, i) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    className={i === businessIndex ? 'home-carousel-dot active' : 'home-carousel-dot'}
+                    role="tab"
+                    aria-selected={i === businessIndex}
+                    aria-label={`Business ${i + 1} of ${nearbyBusinesses.length}`}
+                    onClick={() => scrollToBusiness(i)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <button type="button" className="home-section-link home-business-viewall" onClick={() => navigate('/businesses')}>See all businesses</button>
           </div>
         </div>
 
@@ -666,89 +670,91 @@ export default function Home({ session, profile, onMessage }) {
 
           {/* ── Your network ─────────────────────────────────────── */}
           <div className="home-tabsection" id="home-section-community">
-            <div className="feed-widget home-community-widget">
-              <div className="home-section-head" style={{ marginBottom: 4 }}>
-                <h3 className="feed-section-label" style={{ margin: 0 }}>Your Network</h3>
-                <button type="button" className="feed-widget-viewall home-more-link" onClick={() => navigate('/directory')}>All members</button>
+            <div className="home-section-head">
+              <div>
+                <span className="home-section-eyebrow">Suggested for you</span>
+                <h3 className="home-section-title">Your network</h3>
               </div>
-              <p className="home-community-sub">People you might want to connect with</p>
-              {community.length === 0 ? (
-                <p className="empty small">No suggestions yet.</p>
-              ) : (
-                <div className="home-community-carousel">
-                  <div
-                    className="home-community-grid"
-                    ref={communityScrollRef}
-                    onScroll={updateCommunityScrollState}
-                    onPointerDown={handleCommunityPointerDown}
-                    onPointerMove={handleCommunityPointerMove}
-                    onPointerUp={endCommunityDrag}
-                    onPointerLeave={endCommunityDrag}
-                  >
-                    {community.map((m) => (
-                      <div
-                        key={m.id}
-                        className="home-community-card"
-                        title={[m.occupation, m.company].filter(Boolean).join(' @ ')}
+              <button type="button" className="home-section-link" onClick={() => navigate('/directory')}>All members</button>
+            </div>
+            {community.length === 0 ? (
+              <p className="empty small">No suggestions yet.</p>
+            ) : (
+              <div className="home-network-carousel">
+                <div
+                  className="home-network-scroller"
+                  ref={communityScrollRef}
+                  onScroll={updateCommunityScrollState}
+                  onPointerDown={handleCommunityPointerDown}
+                  onPointerMove={handleCommunityPointerMove}
+                  onPointerUp={endCommunityDrag}
+                  onPointerLeave={endCommunityDrag}
+                >
+                  {community.map((m) => (
+                    <div
+                      key={m.id}
+                      className="home-network-item"
+                      title={[m.occupation, m.company].filter(Boolean).join(' @ ')}
+                    >
+                      <Link
+                        className="stretched-link"
+                        to={`/people/${m.id}`}
+                        onClick={(e) => handleCommunityCardClick(e, () => {})}
                       >
-                        <Link
-                          className="stretched-link"
-                          to={`/people/${m.id}`}
-                          onClick={(e) => handleCommunityCardClick(e, () => {})}
-                        >
-                          <span className="sr-only">{`Open profile for ${m.full_name || 'alumnus'}`}</span>
-                        </Link>
-                        <div className="home-community-card-identity">
-                          <Avatar url={m.avatar_url} name={m.full_name} size={48} />
-                          <span>{(m.full_name || 'Alumnus').split(' ')[0]}</span>
-                        </div>
-                        {m.industry && (
-                          <p className="home-community-industry">{m.industry}</p>
-                        )}
-                        <button
-                          type="button"
-                          className="home-community-message-btn"
-                          onClick={(e) => handleCommunityCardClick(e, () => onMessage?.(m, buildIcebreaker(profile, m)))}
-                        >
-                          Message
-                        </button>
+                        <span className="sr-only">{`Open profile for ${m.full_name || 'alumnus'}`}</span>
+                      </Link>
+                      <div className="home-network-identity">
+                        <Avatar url={m.avatar_url} name={m.full_name} size={44} />
+                        <span>{(m.full_name || 'Alumnus').split(' ')[0]}</span>
                       </div>
-                    ))}
-                  </div>
-                  {communityScrollState.canBack && (
-                    <button
-                      type="button"
-                      className="home-community-scroll-btn home-community-scroll-btn-prev"
-                      onClick={() => scrollCommunity(-1)}
-                      aria-label="Show previous suggested connections"
-                    >
-                      <ChevronLeftIcon />
-                    </button>
-                  )}
-                  {communityScrollState.canForward && (
-                    <button
-                      type="button"
-                      className="home-community-scroll-btn home-community-scroll-btn-next"
-                      onClick={() => scrollCommunity(1)}
-                      aria-label="Show more suggested connections"
-                    >
-                      <ChevronRightIcon />
-                    </button>
-                  )}
+                      {m.industry && (
+                        <p className="home-network-tag">{m.industry}</p>
+                      )}
+                      <button
+                        type="button"
+                        className="home-network-message-btn"
+                        aria-label={`Message ${m.full_name || 'this alumnus'}`}
+                        title="Message"
+                        onClick={(e) => handleCommunityCardClick(e, () => onMessage?.(m, buildIcebreaker(profile, m)))}
+                      >
+                        <MessageIcon />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              <div className="home-community-online">
-                <WhosOnline session={session} onOpenProfile={(id) => navigate(`/people/${id}`)} />
+                {communityScrollState.canBack && (
+                  <button
+                    type="button"
+                    className="home-network-nav-btn home-network-nav-btn-prev"
+                    onClick={() => scrollCommunity(-1)}
+                    aria-label="Show previous suggested connections"
+                  >
+                    <ChevronLeftIcon />
+                  </button>
+                )}
+                {communityScrollState.canForward && (
+                  <button
+                    type="button"
+                    className="home-network-nav-btn home-network-nav-btn-next"
+                    onClick={() => scrollCommunity(1)}
+                    aria-label="Show more suggested connections"
+                  >
+                    <ChevronRightIcon />
+                  </button>
+                )}
               </div>
+            )}
+
+            <div className="home-network-online">
+              <WhosOnline session={session} onOpenProfile={(id) => navigate(`/people/${id}`)} />
             </div>
           </div>
 
-          {/* ── Support card ─────────────────────────────────────── */}
-          <div className="feed-widget home-donate-card">
+          {/* ── Support ─────────────────────────────────────────── */}
+          <div className="home-support">
             <h3>Support SACS</h3>
             <p>Every gift helps keep SACS strong for the Old Boys who come after us.</p>
-            <button type="button" className="btn primary wide" onClick={() => navigate('/donate')}>Give now</button>
+            <button type="button" className="btn ghost wide" onClick={() => navigate('/donate')}>Give now</button>
           </div>
         </aside>
       </div>
@@ -832,6 +838,14 @@ function ImageIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-soft)', flexShrink: 0 }}>
       <path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z" />
       <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  )
+}
+
+function MessageIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   )
 }
