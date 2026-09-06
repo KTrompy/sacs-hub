@@ -551,8 +551,12 @@ export default function Home({ session, profile, onMessage }) {
       <div className="feed-layout home-feed-layout">
         <div className="feed-main">
 
-          {/* ── Recent posts ─────────────────────────────────────── */}
-          <div className="home-tabsection" id="home-section-posts">
+          {/* ── Recent posts ───────────────────────────────────────
+              The one main-column section that sits on its own quiet
+              card — a subtle navy-tinted surface (not stark white),
+              in the same family as the hero wash, so this block reads
+              as slightly more “grounded” than Businesses/Network. */}
+          <div className="home-tabsection home-card" id="home-section-posts">
             <div className="home-section-head">
               <div>
                 <span className="home-section-eyebrow">From the feed</span>

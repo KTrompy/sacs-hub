@@ -8758,6 +8758,21 @@ button.delete-danger svg { flex-shrink: 0; }
 .home-feed-layout .feed-main { display: flex; flex-direction: column; gap: 40px; }
 .home-feed-layout .feed-sidebar { display: flex; flex-direction: column; gap: 36px; }
 
+/* ---------- Grounded card surface (used by Recent posts only) ----
+   A quiet, non-white surface for sections that should read as a
+   touch more "held" than the rest of the page — same navy-tint
+   family as the hero wash, just lighter, so it doesn't compete with
+   it. Applied selectively, not to every section: most of Home still
+   relies on space and hairlines rather than a card underneath it. */
+.home-card {
+  background: rgba(var(--primary-rgb), 0.025);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+@media (max-width: 720px) {
+  .home-card { padding: 20px 16px; }
+}
+
 /* ---------- Recent posts -------------------------------------- */
 .home-posts-list { list-style: none; margin: 0; padding: 0; }
 .home-carousel-dots { display: none; }
@@ -10510,7 +10525,7 @@ button.delete-danger svg { flex-shrink: 0; }
    ========================================================================== */
 
 .legends-band {
-  margin: 0 0 32px;
+  margin: 0 0 22px;
 }
 
 .legends-head {
@@ -10596,7 +10611,16 @@ button.delete-danger svg { flex-shrink: 0; }
   background: var(--maroon-dark);
   isolation: isolate;
 }
-.legend-tile-hero { min-height: 344px; }
+.legend-tile-hero { min-height: 220px; }
+/* Scoped to the Home stack only — .legend-tile itself is shared with
+   LegendsHall's full grid (schema-update-54's listing page), which still
+   wants the taller default. Kyle asked for the Home band to take up less
+   room; the two stacked tiles shrink here, the hero above shrinks via the
+   base .legend-tile-hero rule (Home/mobile-carousel-only — LegendsHall
+   never renders a hero tile). */
+.legends-stack .legend-tile { min-height: 112px; }
+.legends-stack .legend-tile-body { padding: 10px; }
+.legends-stack .legend-tile-headline { -webkit-line-clamp: 1; margin-bottom: 3px; }
 
 .legend-tile-photo {
   position: absolute;
@@ -10687,9 +10711,9 @@ button.delete-danger svg { flex-shrink: 0; }
   color: rgba(255, 255, 255, 0.72);
 }
 
-.legend-tile-hero .legend-tile-body { padding: 16px; }
-.legend-tile-hero .legend-tile-name { font-size: var(--fs-2xl); margin-bottom: 7px; }
-.legend-tile-hero .legend-tile-headline { font-size: var(--fs-base); line-height: 1.5; -webkit-line-clamp: 3; margin-bottom: 10px; }
+.legend-tile-hero .legend-tile-body { padding: 13px; }
+.legend-tile-hero .legend-tile-name { font-size: var(--fs-xl); margin-bottom: 5px; }
+.legend-tile-hero .legend-tile-headline { font-size: var(--fs-base); line-height: 1.45; -webkit-line-clamp: 2; margin-bottom: 6px; }
 .legend-tile-hero .legend-tile-meta { font-size: var(--fs-xs); }
 
 /* ---------- The modal ---------- */
@@ -10863,7 +10887,7 @@ button.delete-danger svg { flex-shrink: 0; }
     scroll-snap-stop: always;
   }
   .legends-carousel-slide:last-child { margin-right: 0; }
-  .legends-carousel .legend-tile-hero { min-height: 300px; }
+  .legends-carousel .legend-tile-hero { min-height: 210px; }
   .legend-tile-hero .legend-tile-name { font-size: var(--fs-xl); }
   .legend-tile-hero .legend-tile-headline { font-size: var(--fs-sm); -webkit-line-clamp: 2; }
   /* Own visibility rule rather than relying on the shared .home-carousel-dots
