@@ -11674,6 +11674,8 @@ button.stretched-link {
 
 /* ---------- Data table ---------- */
 .adm-table-wrap { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-radius); overflow: hidden; overflow-x: auto; }
+.adm-table th.adm-col-select, .adm-table td.adm-col-select { width: 36px; text-align: center; padding-left: 14px; padding-right: 0; }
+.adm-table input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--orange); cursor: pointer; }
 .adm-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .adm-table thead th {
   text-align: left;

@@ -17,9 +17,11 @@ const SETTINGS_TABS = [
 
 // Real categories only — these are the notification types SACS Hub
 // actually generates today (see the notify_* triggers in schema-update-9).
-// No group-invite / business / admin-broadcast rows, because those
-// features don't send notifications yet — adding them here would just be
-// UI with nothing behind it.
+// No group-invite / business rows, because those features don't send
+// notifications yet — adding them here would just be UI with nothing
+// behind it. Admin broadcast emails ARE real (schema-update-66) but
+// aren't a bell/Platform notification like the rest of this table, so
+// they get their own toggle below rather than a row here.
 const NOTIF_CATEGORIES = [
   { key: 'notify_post_activity', label: 'Someone likes or comments on your post' },
   { key: 'notify_event_rsvp', label: "Someone RSVPs to an event you created" },
@@ -502,7 +504,7 @@ function NotificationsTab({ session }) {
       .eq('user_id', session.user.id)
       .maybeSingle()
       .then(({ data }) => {
-        setPrefs(data || { notify_post_activity: true, notify_event_rsvp: true, notify_event_comment: true })
+        setPrefs(data || { notify_post_activity: true, notify_event_rsvp: true, notify_event_comment: true, notify_admin_broadcast: true })
         setLoading(false)
       })
   }, [session.user.id])
@@ -546,6 +548,16 @@ function NotificationsTab({ session }) {
             <Toggle checked={!!prefs[c.key]} onChange={() => toggle(c.key)} />
           </div>
         ))}
+      </div>
+
+      <h3>Committee emails</h3>
+      <p className="hint">Real emails to your inbox, not a Platform notification — the Alumni committee occasionally emails a filtered group of members directly (an update, a reminder, a call for something). This is the only "Email" toggle that does anything today.</p>
+      <div className="checkbox-row">
+        <Toggle
+          checked={!!prefs.notify_admin_broadcast}
+          onChange={() => toggle('notify_admin_broadcast')}
+        />
+        <label>Emails from the Alumni committee</label>
       </div>
     </div>
   )

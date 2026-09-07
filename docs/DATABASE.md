@@ -189,7 +189,10 @@ In-app notification bell (schema-update-9).
 | created_at | timestamptz | |
 
 #### `notification_preferences`
-Per-user notification settings (schema-update-21).
+Per-user notification settings (schema-update-21). `notify_admin_broadcast` (schema-update-66,
+default `true`) is the exception among these columns — it's a real email opt-out for the
+Admin -> Members broadcast feature, not an in-app bell/Platform preference like the rest of the
+table; see FEATURES.md § Admin Panel and § Contact via Email.
 
 #### `badges`
 Static badge catalogue (schema-update-20). Earned status computed client-side.

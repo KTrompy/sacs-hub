@@ -358,7 +358,7 @@ Three-tab settings page:
 
 Full administration interface for committee members (`is_admin = true`). Organized into four groups:
 
-**People:** Pending approval (approve/decline new signups, triggers approval email Edge Function), Members (search, filter by status, un-approve, admin-delete via Edge Function), Reports (review member-flagged content).
+**People:** Pending approval (approve/decline new signups, triggers approval email Edge Function), Members (search, filter by status, un-approve, admin-delete via Edge Function, select any number of filtered/searched members and send them a broadcast email via Edge Function), Reports (review member-flagged content).
 
 **Content:** Posts (browse/delete), Jobs (browse/delete), Events (browse/delete), Businesses (browse/delete/feature-pin).
 
@@ -372,11 +372,14 @@ Full administration interface for committee members (`is_admin = true`). Organiz
 - `src/components/MerchAdmin.jsx` — merch product and order management
 - `supabase/functions/send-approval-email/` — Edge Function: approval notification
 - `supabase/functions/send-member-email/` — Edge Function: admin-to-member email
+- `supabase/functions/send-broadcast-email/` — Edge Function: admin broadcast email to a selected group of members, batched through Resend, opted-out members skipped
 - `supabase/functions/admin-delete-member/` — Edge Function: full account deletion
 
-**Database tables:** `profiles`, `posts`, `jobs`, `events`, `businesses`, `reports`, `legends`, `merch_products`, `merch_variants`, `merch_orders`, `admin_actions`
+**Database tables:** `profiles`, `posts`, `jobs`, `events`, `businesses`, `reports`, `legends`, `merch_products`, `merch_variants`, `merch_orders`, `admin_actions`, `notification_preferences` (read-only, for the broadcast opt-out)
 
-**Security:** Admin status checked via `is_admin` column on `profiles`. Self-elevation prevented by a `BEFORE UPDATE` trigger. All admin actions logged to `admin_actions` by database triggers (immutable audit trail).
+**Security:** Admin status checked via `is_admin` column on `profiles`. Self-elevation prevented by a `BEFORE UPDATE` trigger. Most admin actions are logged to `admin_actions` by database triggers (immutable audit trail); `delete_member` and `send_broadcast_email` insert directly with the service-role key instead, since a service-role write has no `auth.uid()` for a trigger to key off.
+
+**Known issues / gaps (broadcast email):** Requires `RESEND_API_KEY` (see § Contact via Email). Recipients who've opted out (`notification_preferences.notify_admin_broadcast = false`, schema-update-66) can only manage that from Settings while logged in — there's no one-click unsubscribe link in the email itself, unlike a typical mailing-list tool. Capped at 1000 recipients per send as a safety rail against an accidental mass-select.
 
 **Route:** `/admin` (only visible in nav when `is_admin = true`)
 

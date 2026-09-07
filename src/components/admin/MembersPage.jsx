@@ -38,6 +38,8 @@ export default function MembersPage() {
   const [openMember, setOpenMember] = useState(null)
   const [confirmTarget, setConfirmTarget] = useState(null) // { member, action }
   const [emailOpen, setEmailOpen] = useState(false)
+  const [selected, setSelected] = useState(() => new Set())
+  const [broadcastOpen, setBroadcastOpen] = useState(false)
 
   const myId = session?.user?.id
   const active = FILTERS.find((f) => f.id === filter) || FILTERS[0]
@@ -47,6 +49,28 @@ export default function MembersPage() {
     if (!needle) return true
     return [m.full_name, m.email, m.city].filter(Boolean).join(' ').toLowerCase().includes(needle)
   })
+
+  // "Select all" only ever acts on the currently filtered/searched rows
+  // (`shown`) — selection itself is NOT reset when the filter changes, so
+  // an admin can filter to "Pending", tick a few, switch to "Admins", tick
+  // a few more, and send one email to the combined set.
+  const allShownSelected = shown.length > 0 && shown.every((m) => selected.has(m.id))
+  function toggleAllShown() {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (allShownSelected) shown.forEach((m) => next.delete(m.id))
+      else shown.forEach((m) => next.add(m.id))
+      return next
+    })
+  }
+  function toggleOne(id) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   function ask(member, action) { setConfirmTarget({ member, action }) }
   function runConfirmed() {
@@ -60,6 +84,27 @@ export default function MembersPage() {
   }
 
   const columns = [
+    {
+      key: 'select',
+      className: 'adm-col-select',
+      label: (
+        <input
+          type="checkbox"
+          checked={allShownSelected}
+          onChange={toggleAllShown}
+          aria-label="Select all shown members"
+        />
+      ),
+      render: (m) => (
+        <input
+          type="checkbox"
+          checked={selected.has(m.id)}
+          onClick={(e) => e.stopPropagation()}
+          onChange={() => toggleOne(m.id)}
+          aria-label={`Select ${m.full_name || m.email}`}
+        />
+      ),
+    },
     {
       key: 'name', label: 'Name',
       render: (m) => (
@@ -85,6 +130,11 @@ export default function MembersPage() {
       <PageHeader
         title="Members"
         description="Un-approve pauses access reversibly. Delete erases the account and everything they've posted, for good — keep it for spam and for people who've asked to be removed."
+        action={selected.size > 0 && (
+          <button type="button" className="btn primary small" onClick={() => setBroadcastOpen(true)}>
+            Email {selected.size} selected
+          </button>
+        )}
       />
 
       <Toolbar
@@ -105,7 +155,14 @@ export default function MembersPage() {
       )}
 
       {shown.length > 0 && (
-        <p className="adm-table-footnote">Showing {shown.length} of {members.length} member{members.length === 1 ? '' : 's'}.</p>
+        <p className="adm-table-footnote">
+          Showing {shown.length} of {members.length} member{members.length === 1 ? '' : 's'}.
+          {selected.size > 0 && (
+            <>
+              {' '}{selected.size} selected — <button type="button" className="link-btn" onClick={() => setSelected(new Set())}>clear</button>
+            </>
+          )}
+        </p>
       )}
 
       <Drawer
@@ -223,6 +280,32 @@ export default function MembersPage() {
           })}
           sentToast="Email sent."
           onClose={() => setEmailOpen(false)}
+        />
+      )}
+
+      {broadcastOpen && (
+        <EmailModal
+          eyebrow={`${selected.size} member${selected.size === 1 ? '' : 's'} selected`}
+          recipientName="Broadcast email"
+          placeholder="Write your announcement…"
+          onSend={async (subject, message) => {
+            const res = await supabase.functions.invoke('send-broadcast-email', {
+              body: { recipient_ids: Array.from(selected), subject, message },
+            })
+            // Only clear the selection once it's actually sent — a failed
+            // send (or one the admin cancels) shouldn't lose the group
+            // they just spent time building.
+            if (!res.error && !res.data?.error) setSelected(new Set())
+            return res
+          }}
+          sentToast={(data) => {
+            const parts = []
+            if (data?.sent) parts.push(`Sent to ${data.sent} member${data.sent === 1 ? '' : 's'}`)
+            if (data?.opted_out) parts.push(`${data.opted_out} opted out`)
+            if (data?.skipped_no_email) parts.push(`${data.skipped_no_email} had no email on file`)
+            return parts.length ? `${parts.join(' · ')}.` : 'Broadcast sent.'
+          }}
+          onClose={() => setBroadcastOpen(false)}
         />
       )}
     </>

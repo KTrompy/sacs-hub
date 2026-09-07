@@ -106,7 +106,8 @@ sacs-hub/
 │   │   ├── delete-account/index.ts    — Self-service account deletion
 │   │   ├── admin-delete-member/index.ts — Admin removes a member
 │   │   ├── send-approval-email/index.ts — Email on approval (needs Resend)
-│   │   └── send-member-email/index.ts   — Admin-to-member email (needs Resend)
+│   │   ├── send-member-email/index.ts   — Admin-to-member email (needs Resend)
+│   │   └── send-broadcast-email/index.ts — Admin -> selected members, batched (needs Resend)
 │   └── email-templates/
 │       ├── confirm-signup.html  — Supabase Auth confirmation email
 │       └── reset-password.html  — Supabase Auth reset email
@@ -191,15 +192,19 @@ const { data, error } = await supabase.functions.invoke('send-contact-email', {
 
 ### Server Actions (Edge Functions)
 
-Five Edge Functions in `supabase/functions/`, deployed via `supabase functions deploy`:
+Edge Functions in `supabase/functions/`, deployed via `supabase functions deploy` (this list was last
+counted at five and has grown since — treat it as "at least these", not exhaustive; `ls supabase/functions/`
+is the source of truth):
 
 1. **`delete-account`** — Self-service: verifies caller's JWT, purges storage, deletes auth user via Admin API
 2. **`admin-delete-member`** — Admin: verifies caller is admin via `is_admin()` RPC, then same purge+delete
 3. **`send-approval-email`** — Sends "you're verified" email via Resend when admin approves
 4. **`send-member-email`** — Admin-to-member email via Resend
 5. **`send-contact-email`** — Member-to-member email via Resend, triggered by the "Message" button anywhere in the app (see FEATURES.md § Contact via Email)
+6. **`send-directed-email`** — Admin-to-member and member-to-business email via Resend (the mailto: replacements that don't fit send-contact-email's or send-support-email's shape)
+7. **`send-broadcast-email`** — Admin -> a selected/filtered group of members, batched through Resend's `/emails/batch` (max 100/call), skipping anyone who's opted out via `notification_preferences.notify_admin_broadcast` (see FEATURES.md § Admin Panel)
 
-All share `_shared/accountCleanup.ts` for CORS, JSON responses, and the `purgeAndDeleteUser()` flow.
+All share the same CORS/JSON-response pattern; `delete-account` and `admin-delete-member` additionally share `_shared/accountCleanup.ts` for the `purgeAndDeleteUser()` flow.
 
 ### Realtime
 
