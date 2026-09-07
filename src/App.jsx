@@ -4,7 +4,6 @@ import { supabase, isAuthError } from './supabaseClient'
 import Auth from './components/Auth.jsx'
 import ResetPassword from './components/ResetPassword.jsx'
 import Onboarding from './components/onboarding/Onboarding.jsx'
-import ApprovalWelcome from './components/onboarding/ApprovalWelcome.jsx'
 import PendingVerification from './components/PendingVerification.jsx'
 import Home from './components/Home.jsx'
 import People from './components/People.jsx'
@@ -593,23 +592,6 @@ export default function App() {
   // so this screen is a real lock rather than just a screen.
   if (!profile.approved) {
     return <PendingVerification session={session} profile={profile} onProfileChange={setProfile} />
-  }
-
-  // First time seeing the full app post-approval. onboarding_complete is
-  // flipped the instant either button is pressed, so this can only ever
-  // show once — after that, Home's "Complete your profile" button re-
-  // triggers the same Profile-page highlighting on demand.
-  if (!profile.onboarding_complete) {
-    return (
-      <ApprovalWelcome
-        profile={profile}
-        onChoose={(dest) => {
-          supabase.from('profiles').update({ onboarding_complete: true }).eq('id', profile.id).then(() => {})
-          setProfile((p) => (p ? { ...p, onboarding_complete: true } : p))
-          if (dest === 'profile') navigate('/profile', { state: { highlightMissing: true, focusFirst: true } })
-        }}
-      />
-    )
   }
 
   const navTabs = profile?.is_admin ? [...TABS, ADMIN_TAB] : TABS
