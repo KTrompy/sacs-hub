@@ -1,7 +1,12 @@
 // Placeholder — no payment integration yet. When you're ready to accept
 // donations, hook up PayFast (SA-standard) or a Stripe Payment Link and
 // swap the "Get in touch" button for a real donate button.
+import { useState } from 'react'
+import { supabase } from '../supabaseClient'
+import EmailModal from './EmailModal.jsx'
+
 export default function Donate() {
+  const [emailOpen, setEmailOpen] = useState(false)
   return (
     <div className="donate-panel">
       <img src="/sacs-logo.png" alt="SACS logo" className="donate-logo" />
@@ -32,9 +37,19 @@ export default function Donate() {
         Reach out and we'll walk you through the options.
       </p>
 
-      <a className="btn primary" href="mailto:kyletrompeter0@gmail.com?subject=Supporting SACS">
+      <button type="button" className="btn primary" onClick={() => setEmailOpen(true)}>
         Get in touch
-      </a>
+      </button>
+      {emailOpen && (
+        <EmailModal
+          eyebrow="Contact"
+          recipientName="SACS Alumni admin team"
+          subjectDefault="Supporting SACS"
+          onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
+          sentToast="Email sent."
+          onClose={() => setEmailOpen(false)}
+        />
+      )}
 
       <p style={{ marginTop: 24, fontSize: 12, color: 'var(--ink-soft)' }}>
         Spectemur Agendo · Since 1829

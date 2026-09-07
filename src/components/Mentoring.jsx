@@ -15,11 +15,11 @@ import MentorProfile from './mentoring/MentorProfile.jsx'
 // OnboardingWizard.jsx, Overview.jsx, Discover.jsx, Relationships.jsx,
 // Workspace.jsx, MentoringProfile.jsx) is disconnected, not deleted, in case
 // there's ever a reason to look back at it.
-export default function Mentoring() {
+export default function Mentoring({ onMessage }) {
   return (
     <Routes>
       <Route index element={<MentorDirectory />} />
-      <Route path=":id" element={<MentorProfile />} />
+      <Route path=":id" element={<MentorProfile onMessage={onMessage} />} />
     </Routes>
   )
 }

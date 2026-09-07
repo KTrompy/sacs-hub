@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import useModal from '../useModal.js'
+import { supabase } from '../supabaseClient'
+import EmailModal from './EmailModal.jsx'
 
 // POPIA-facing privacy notice. Written to satisfy section 18 of the
 // Protection of Personal Information Act (South Africa) — what's collected,
@@ -15,7 +18,14 @@ import useModal from '../useModal.js'
 // POPIA notices are meant to reflect current practice, not history.
 const LAST_UPDATED = '6 September 2026'
 
-export function PrivacyPolicyContent() {
+// withEmailModal=true swaps the plain mailto: link for the floating
+// compose popup. Only the full page (<PrivacyPolicy/>, routed at /privacy)
+// passes this — it's only reachable once someone is signed in, same as
+// every other "email an admin" spot. <PrivacyPolicyModal/> is shown during
+// signup, before any session exists, so it keeps the plain mailto: link —
+// there's no account yet to authenticate the popup's send with.
+export function PrivacyPolicyContent({ withEmailModal = false }) {
+  const [emailOpen, setEmailOpen] = useState(false)
   return (
     <div className="privacy-policy-content">
       <p className="hint">Last updated {LAST_UPDATED}.</p>
@@ -114,10 +124,24 @@ export function PrivacyPolicyContent() {
       <h3>Contact / complaints</h3>
       <p>
         Questions, access requests or complaints about how your information
-        is handled: <a href="mailto:kyletrompeter0@gmail.com">kyletrompeter0@gmail.com</a>.
+        is handled: {withEmailModal ? (
+          <button type="button" className="link-btn" onClick={() => setEmailOpen(true)}>kyletrompeter0@gmail.com</button>
+        ) : (
+          <a href="mailto:kyletrompeter0@gmail.com">kyletrompeter0@gmail.com</a>
+        )}.
         If you're not satisfied with our response, you can also complain to
         South Africa's Information Regulator (<a href="https://inforegulator.org.za" target="_blank" rel="noopener noreferrer">inforegulator.org.za</a>).
       </p>
+      {withEmailModal && emailOpen && (
+        <EmailModal
+          eyebrow="Contact"
+          recipientName="SACS Alumni admin team"
+          subjectDefault="SACS Alumni — privacy question"
+          onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
+          sentToast="Email sent."
+          onClose={() => setEmailOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -127,7 +151,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="donate-panel privacy-policy-page">
       <h2>Privacy Policy</h2>
-      <PrivacyPolicyContent />
+      <PrivacyPolicyContent withEmailModal />
     </div>
   )
 }

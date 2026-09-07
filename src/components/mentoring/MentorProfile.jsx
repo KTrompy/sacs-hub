@@ -14,7 +14,7 @@ const FIELDS =
 // and a single obvious way to get in touch. No relationship state, no
 // request button — the mentoring "product" is the introduction, not
 // anything that happens inside this app afterwards.
-export default function MentorProfile() {
+export default function MentorProfile({ onMessage }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const [person, setPerson] = useState(null)
@@ -80,10 +80,7 @@ export default function MentorProfile() {
   const roleLine = [p.occupation, p.grad_year ? `Class of ${p.grad_year}` : null].filter(Boolean).join(' · ')
   const location = [p.city, p.country].filter(Boolean).join(', ')
   const linkedin = safeUrl(p.linkedin_url)
-  const mailtoHref = contact?.email
-    ? `mailto:${contact.email}?subject=${encodeURIComponent('Mentoring enquiry')}` +
-      `&body=${encodeURIComponent(`Hi ${firstName(p.full_name)},\n\nI found your profile on the Old Boys mentoring directory and would love to chat to you about your experience.\n\nThanks,\n`)}`
-    : null
+  const canEmail = !!contact?.email
 
   return (
     <div className="mtg-page page-shell mtg-profile-page">
@@ -127,8 +124,17 @@ export default function MentorProfile() {
 
       <div className="mtg-mentor-contact">
         <h3>Want to get in touch?</h3>
-        {mailtoHref ? (
-          <a href={mailtoHref} className="btn primary">Email {firstName(p.full_name)}</a>
+        {canEmail ? (
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => onMessage(
+              { id: p.id, full_name: p.full_name, avatar_url: p.avatar_url },
+              `Hi ${firstName(p.full_name)},\n\nI found your profile on the Old Boys mentoring directory and would love to chat to you about your experience.\n\nThanks,\n`
+            )}
+          >
+            Email {firstName(p.full_name)}
+          </button>
         ) : (
           <p className="hint">
             This member hasn't made their email visible.

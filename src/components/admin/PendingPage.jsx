@@ -4,6 +4,8 @@ import { useAdmin } from './AdminContext.jsx'
 import { Avatar } from '../Directory.jsx'
 import EmptyState from '../EmptyState.jsx'
 import Turnstile, { TURNSTILE_SITE_KEY } from '../Turnstile.jsx'
+import EmailModal from '../EmailModal.jsx'
+import { supabase } from '../../supabaseClient'
 
 function timeAgo(iso) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -201,6 +203,11 @@ function PendingCard({ member: m, busy, onApprove, onDecline, onResend }) {
   const finished = !!m.consented_at
   const confirmed = !!m.email_confirmed_at
   const roles = MEMBERSHIP_ROLE_LABELS.filter(([key]) => m[key])
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [nudgeOpen, setNudgeOpen] = useState(false)
+  const sendToThisMember = (subject, message) => supabase.functions.invoke('send-directed-email', {
+    body: { kind: 'admin_to_member', target_id: m.id, subject, message },
+  })
   return (
     <div className="adm-pending-card">
       <Avatar url={null} name={m.full_name} size={48} />
@@ -213,7 +220,7 @@ function PendingCard({ member: m, busy, onApprove, onDecline, onResend }) {
           {m.title && <span className="adm-pending-meta"> · {m.title}</span>}
         </span>
         <span className="adm-pending-meta">
-          <a href={`mailto:${m.email}`}>{m.email}</a>
+          <button type="button" className="link-btn" onClick={() => setEmailOpen(true)}>{m.email}</button>
           {m.grad_year ? ` · Class of '${String(m.grad_year).slice(-2)}` : ''}
           {m.city ? ` · ${m.city}` : ''}{m.province ? `, ${m.province}` : ''}{m.country ? `, ${m.country}` : ''}
         </span>
@@ -245,14 +252,31 @@ function PendingCard({ member: m, busy, onApprove, onDecline, onResend }) {
           <button type="button" className="btn primary small" onClick={onResend} disabled={busy}>{busy ? 'Sending…' : 'Resend confirmation'}</button>
         )}
         {!finished && (
-          <a
-            className="btn ghost small"
-            href={`mailto:${m.email}?subject=${encodeURIComponent('Finishing your SACS Alumni signup')}&body=${encodeURIComponent('Hi,\n\nYou started signing up for the SACS Alumni Hub but there are a couple of details still to fill in — it takes about thirty seconds. Just sign in again at https://www.sacsalumni.org and it will pick up where you left off.\n\nThanks,\nSACS Alumni')}`}
-          >
+          <button type="button" className="btn ghost small" onClick={() => setNudgeOpen(true)}>
             Nudge them
-          </a>
+          </button>
         )}
       </div>
+      {emailOpen && (
+        <EmailModal
+          eyebrow="New message"
+          recipientName={m.full_name || m.email}
+          onSend={sendToThisMember}
+          sentToast="Email sent."
+          onClose={() => setEmailOpen(false)}
+        />
+      )}
+      {nudgeOpen && (
+        <EmailModal
+          eyebrow="New message"
+          recipientName={m.full_name || m.email}
+          subjectDefault="Finishing your SACS Alumni signup"
+          messageDefault={'Hi,\n\nYou started signing up for the SACS Alumni Hub but there are a couple of details still to fill in — it takes about thirty seconds. Just sign in again at https://www.sacsalumni.org and it will pick up where you left off.\n\nThanks,\nSACS Alumni'}
+          onSend={sendToThisMember}
+          sentToast="Email sent."
+          onClose={() => setNudgeOpen(false)}
+        />
+      )}
     </div>
   )
 }

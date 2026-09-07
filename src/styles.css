@@ -8491,6 +8491,15 @@ button.delete-danger svg { flex-shrink: 0; }
   color: var(--ink);
   font-size: var(--fs-base);
   font-weight: 500;
+  /* Shared by the phone <a href="tel:"> link and the email <button> (which
+     opens EmailModal instead of a mailto: link) — buttons need the usual
+     browser chrome stripped so they match the anchor exactly. */
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 .business-contact-row svg { color: var(--maroon); flex-shrink: 0; }
 .business-contact-row:hover { color: var(--orange-dark); }

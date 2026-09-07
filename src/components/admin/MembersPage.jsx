@@ -5,6 +5,8 @@ import { useAdmin } from './AdminContext.jsx'
 import { Avatar } from '../Directory.jsx'
 import ConfirmDialog from '../ConfirmDialog.jsx'
 import EmptyState from '../EmptyState.jsx'
+import EmailModal from '../EmailModal.jsx'
+import { supabase } from '../../supabaseClient'
 
 const FILTERS = [
   { id: 'all', label: 'Everyone', match: () => true },
@@ -35,6 +37,7 @@ export default function MembersPage() {
   const [filter, setFilter] = useState('all')
   const [openMember, setOpenMember] = useState(null)
   const [confirmTarget, setConfirmTarget] = useState(null) // { member, action }
+  const [emailOpen, setEmailOpen] = useState(false)
 
   const myId = session?.user?.id
   const active = FILTERS.find((f) => f.id === filter) || FILTERS[0]
@@ -125,7 +128,9 @@ export default function MembersPage() {
                   </div>
                 </div>
               </div>
-              <DrawerField label="Email"><a href={`mailto:${openM.email}`}>{openM.email}</a></DrawerField>
+              <DrawerField label="Email">
+                <button type="button" className="link-btn" onClick={() => setEmailOpen(true)}>{openM.email}</button>
+              </DrawerField>
               <DrawerField label="City">{[openM.city, openM.province, openM.country].filter(Boolean).join(', ')}</DrawerField>
               <DrawerField label="Class year">{openM.grad_year ? `Class of '${String(openM.grad_year).slice(-2)}` : null}</DrawerField>
             </DrawerSection>
@@ -206,6 +211,18 @@ export default function MembersPage() {
           }
           onConfirm={runConfirmed}
           onCancel={() => setConfirmTarget(null)}
+        />
+      )}
+
+      {emailOpen && openM && (
+        <EmailModal
+          eyebrow="New message"
+          recipientName={openM.full_name || openM.email}
+          onSend={(subject, message) => supabase.functions.invoke('send-directed-email', {
+            body: { kind: 'admin_to_member', target_id: openM.id, subject, message },
+          })}
+          sentToast="Email sent."
+          onClose={() => setEmailOpen(false)}
         />
       )}
     </>

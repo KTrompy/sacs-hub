@@ -10,6 +10,7 @@ import Home from './components/Home.jsx'
 import People from './components/People.jsx'
 import { Avatar } from './components/Directory.jsx'
 import ContactModal from './components/ContactModal.jsx'
+import EmailModal from './components/EmailModal.jsx'
 import NotificationBell from './components/NotificationBell.jsx'
 import ConfirmDialog from './components/ConfirmDialog.jsx'
 import { CartProvider, useCart } from './components/CartContext.jsx'
@@ -99,6 +100,7 @@ export default function App() {
   const [profile, setProfile] = useState(null)
   const [contactTarget, setContactTarget] = useState(null) // profile to email
   const [contactDraft, setContactDraft] = useState('') // optional prefilled opener
+  const [supportEmailOpen, setSupportEmailOpen] = useState(false) // "get in touch" footer link
   const [navOpen, setNavOpen] = useState(false) // mobile hamburger menu
   // True the instant Supabase fires PASSWORD_RECOVERY (someone clicked the
   // reset-password link from Auth.jsx's "Forgot password?" flow) — that
@@ -787,7 +789,7 @@ export default function App() {
               <Route path="/directory" element={<People session={session} onMessage={openMessage} onGoToProfile={() => goTo('/profile')} refetchTrigger={directoryRefetchTrigger} />} />
               <Route path="/feed" element={<Feed session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/feed/:postId" element={<Feed session={session} profile={profile} onMessage={openMessage} />} />
-              <Route path="/mentoring/*" element={<Mentoring />} />
+              <Route path="/mentoring/*" element={<Mentoring onMessage={openMessage} />} />
               <Route path="/events" element={<Events session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/events/:eventId" element={<Events session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/jobs" element={<Jobs session={session} profile={profile} onMessage={openMessage} />} />
@@ -842,7 +844,7 @@ export default function App() {
               <span>SACS Alumni Hub — unofficial community site run by alumni, for alumni.</span>
               <span className="footer-credit">
                 Initiated and built by Kyle Trompeter —{' '}
-                <a className="footer-link" href="mailto:kyletrompeter0@gmail.com">get in touch</a>
+                <button type="button" className="footer-link footer-link-btn" onClick={() => setSupportEmailOpen(true)}>get in touch</button>
                 {' · '}
                 <button type="button" className="footer-link footer-link-btn" onClick={() => goTo('/donate')}>Support SACS</button>
                 {' · '}
@@ -917,6 +919,16 @@ export default function App() {
         />
       )}
 
+      {supportEmailOpen && (
+        <EmailModal
+          eyebrow="Contact"
+          recipientName="SACS Alumni admin team"
+          onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
+          sentToast="Email sent."
+          onClose={() => setSupportEmailOpen(false)}
+        />
+      )}
+
       {confirmingSignOut && (
         <ConfirmDialog
           title="Sign out?"
@@ -969,6 +981,7 @@ export default function App() {
 // with profile === null, which looked like the site was broken and, for
 // anyone not yet approved, showed them past the verification gate.
 function ProfileLoadError({ onRetry, onSignOut }) {
+  const [emailOpen, setEmailOpen] = useState(false)
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -978,11 +991,20 @@ function ProfileLoadError({ onRetry, onSignOut }) {
           Your account is fine — we just couldn't reach it this time. This is
           usually a brief connection problem, so trying again normally sorts
           it. If it keeps happening,{' '}
-          <a className="footer-link" href="mailto:kyletrompeter0@gmail.com">let us know</a>.
+          <button type="button" className="footer-link footer-link-btn" onClick={() => setEmailOpen(true)}>let us know</button>.
         </p>
         <button type="button" className="btn primary wide" onClick={onRetry}>Try again</button>
         <button type="button" className="link-btn" onClick={onSignOut}>Sign out</button>
       </div>
+      {emailOpen && (
+        <EmailModal
+          eyebrow="Contact"
+          recipientName="SACS Alumni admin team"
+          onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
+          sentToast="Email sent."
+          onClose={() => setEmailOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -997,6 +1019,7 @@ function ProfileLoadError({ onRetry, onSignOut }) {
 // happened, and giving them a way to query it, is the difference between "the
 // site is broken" and "something happened to my account".
 function AccountRemoved({ onSignOut }) {
+  const [emailOpen, setEmailOpen] = useState(false)
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -1005,12 +1028,22 @@ function AccountRemoved({ onSignOut }) {
         <p className="auth-verify-note">
           It looks like it was removed by an administrator. If you think that&rsquo;s
           a mistake, get in touch and we&rsquo;ll sort it out &mdash;{' '}
-          <a className="footer-link" href="mailto:kyletrompeter0@gmail.com?subject=SACS%20Alumni%20%E2%80%94%20my%20account%20was%20removed">
+          <button type="button" className="footer-link footer-link-btn" onClick={() => setEmailOpen(true)}>
             email an admin
-          </a>.
+          </button>.
         </p>
         <button type="button" className="btn primary wide" onClick={onSignOut}>Sign out</button>
       </div>
+      {emailOpen && (
+        <EmailModal
+          eyebrow="Contact"
+          recipientName="SACS Alumni admin team"
+          subjectDefault="SACS Alumni — my account was removed"
+          onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
+          sentToast="Email sent."
+          onClose={() => setEmailOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -1024,6 +1057,7 @@ function AccountRemoved({ onSignOut }) {
 // where the records are patchy or a surname has changed, so the whole point of
 // the screen is the route back to a human.
 function AccountDeclined({ reason, onSignOut }) {
+  const [emailOpen, setEmailOpen] = useState(false)
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -1041,15 +1075,22 @@ function AccountDeclined({ reason, onSignOut }) {
           for you, and we&rsquo;ll take another look.
         </p>
         <p className="auth-verify-contact">
-          <a
-            className="footer-link"
-            href={`mailto:kyletrompeter0@gmail.com?subject=${encodeURIComponent('SACS Alumni — please recheck my account')}`}
-          >
+          <button type="button" className="footer-link footer-link-btn" onClick={() => setEmailOpen(true)}>
             Email an admin
-          </a>
+          </button>
         </p>
         <button type="button" className="btn primary wide" onClick={onSignOut}>Sign out</button>
       </div>
+      {emailOpen && (
+        <EmailModal
+          eyebrow="Contact"
+          recipientName="SACS Alumni admin team"
+          subjectDefault="SACS Alumni — please recheck my account"
+          onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
+          sentToast="Email sent."
+          onClose={() => setEmailOpen(false)}
+        />
+      )}
     </div>
   )
 }

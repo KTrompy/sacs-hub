@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
+import EmailModal from './EmailModal.jsx'
 
 // Full-screen gate shown to signed-in members who haven't been approved
 // yet — the app itself stays locked until the alumni committee verifies
@@ -11,6 +12,7 @@ export default function PendingVerification({ session, profile, onProfileChange 
   const name = (profile?.full_name || '').split(' ')[0]
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState(null) // { type: 'pending' | 'error' | 'removed', text }
+  const [emailOpen, setEmailOpen] = useState(false)
 
   // "Check my status" used to be a bare window.location.reload(), which
   // looked broken: the page flashed and landed on this same screen with no
@@ -111,14 +113,22 @@ export default function PendingVerification({ session, profile, onProfileChange 
             subject line so it can be matched up. */}
         <p className="auth-verify-contact">
           Spotted a mistake in your details, or been waiting a while?{' '}
-          <a
-            className="footer-link"
-            href={`mailto:kyletrompeter0@gmail.com?subject=${encodeURIComponent('SACS Alumni — my signup details')}&body=${encodeURIComponent(`Hi,\n\nI signed up for SACS Alumni with ${email} and wanted to check on / correct my details:\n\n`)}`}
-          >
+          <button type="button" className="footer-link footer-link-btn" onClick={() => setEmailOpen(true)}>
             Get in touch
-          </a>{' '}
+          </button>{' '}
           and we&rsquo;ll sort it out.
         </p>
+        {emailOpen && (
+          <EmailModal
+            eyebrow="Contact"
+            recipientName="SACS Alumni admin team"
+            subjectDefault="SACS Alumni — my signup details"
+            messageDefault={`Hi,\n\nI signed up for SACS Alumni with ${email} and wanted to check on / correct my details:\n\n`}
+            onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
+            sentToast="Email sent."
+            onClose={() => setEmailOpen(false)}
+          />
+        )}
         <button type="button" className="link-btn" onClick={() => supabase.auth.signOut()}>
           Sign out
         </button>

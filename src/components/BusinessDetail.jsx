@@ -10,6 +10,7 @@ import EmptyState from './EmptyState.jsx'
 import LoadingState from './LoadingState.jsx'
 import DeleteButton from './DeleteButton.jsx'
 import { useToast } from './Toast.jsx'
+import EmailModal from './EmailModal.jsx'
 import { sanitizeBusinessHtml } from '../sanitizeHtml.js'
 import { BusinessLogo, BusinessForm } from './BusinessDirectory.jsx'
 
@@ -44,6 +45,7 @@ export default function BusinessDetail({ session, profile, onMessage }) {
   const [business, setBusiness] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
   const isAdmin = !!profile?.is_admin
 
   async function load() {
@@ -201,9 +203,9 @@ export default function BusinessDetail({ session, profile, onMessage }) {
                 </a>
               )}
               {business.contact_email && (
-                <a className="business-contact-row" href={`mailto:${business.contact_email}`}>
+                <button type="button" className="business-contact-row" onClick={() => setEmailOpen(true)}>
                   <MailIcon /> {business.contact_email}
-                </a>
+                </button>
               )}
               {website && (
                 <>
@@ -238,6 +240,18 @@ export default function BusinessDetail({ session, profile, onMessage }) {
           </div>
         </aside>
       </div>
+
+      {emailOpen && (
+        <EmailModal
+          eyebrow="New message"
+          recipientName={business.name}
+          onSend={(subject, message) => supabase.functions.invoke('send-directed-email', {
+            body: { kind: 'member_to_business', target_id: business.id, subject, message },
+          })}
+          sentToast="Email sent."
+          onClose={() => setEmailOpen(false)}
+        />
+      )}
     </section>
   )
 }
