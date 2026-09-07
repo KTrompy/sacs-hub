@@ -1534,7 +1534,106 @@ button.delete-danger svg { flex-shrink: 0; }
 .chip-toggle:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .hint-inline { font-weight: 400; color: var(--ink-soft); font-size: var(--fs-xs); }
 
+/* ---------- Account onboarding wizard (unified signup) ----------
+   Shared by src/components/onboarding/* in both modes: mode="new" (Join
+   tab, no session yet) and mode="resume" (post-auth gate — Google joiners,
+   and legacy accounts finishing an old-style partial signup). Prefixed
+   acct-onb- rather than onboarding- deliberately: that prefix already
+   belongs to the unrelated mentoring OnboardingWizard's leftover CSS further
+   down this file (mentoring's own JSX actually uses mtg-* classes now, but
+   the old onboarding-page/-card/-step/-question rules were left in place —
+   reusing that prefix here would silently inherit or collide with them). */
+.acct-onb-step { animation: acctOnbFadeIn 0.18s ease; }
+@keyframes acctOnbFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.acct-onb-section { margin: 0 0 24px; }
+.acct-onb-section:last-child { margin-bottom: 0; }
+.acct-onb-section-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+.acct-onb-fixed-field {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ink-soft);
+  font-size: var(--fs-base);
+}
+.acct-onb-captcha { margin: 4px 0 0; }
+
+/* Step X of 3 — subtle by design (spec: not a heavy wizard bar). */
+.acct-onb-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin: 4px 0 20px;
+}
+.acct-onb-progress-dots { display: flex; gap: 6px; }
+.acct-onb-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.acct-onb-progress-dot.on { width: 18px; border-radius: var(--radius-pill); background: var(--orange); }
+.acct-onb-progress-dot.done { background: var(--maroon); }
+.acct-onb-progress-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+/* Back / Continue row. Step 1 has no Back (spec §15) — .acct-onb-nav
+   handles both a lone "Continue" (justify-content flips via :only-child)
+   and the Back+Continue pair. */
+.acct-onb-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+.acct-onb-nav > .btn { flex: 1; }
+.acct-onb-nav > .btn:only-child { flex: initial; width: 100%; }
+.acct-onb-back {
+  flex: 1;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  padding: 12px 0;
+  cursor: pointer;
+}
+.acct-onb-back:hover { background: rgba(0, 0, 0, 0.03); }
+
+/* Draft-restore banner reuses .form-notice; this just tightens the two
+   action links that sit inside it ("Continue" is implicit — just keep
+   going — "Start fresh instead" clears the draft). */
+.acct-onb-draft-actions { margin-top: 4px; }
+
+
+.acct-onb-wrap { margin-top: 2px; }
+
+@media (max-width: 480px) {
+  /* Single-column fields on small phones — the two-up rows (name, DOB,
+     From/Class of, Country/Province...) were never given a mobile
+     breakpoint before this redesign. */
+  .auth-field-row { flex-direction: column; gap: 0; }
+  .auth-card { padding: 28px 20px; }
+}
+
 /* ---------- Auth: verification pending / signup done ---------- */
+
 .auth-verify-note {
   font-size: var(--fs-base);
   line-height: 1.55;
@@ -5156,7 +5255,6 @@ button.delete-danger svg { flex-shrink: 0; }
   object-fit: contain;
   display: block;
 }
-.job-badge.business-featured-tag { background: var(--orange); margin-left: 8px; }
 .business-pin { background: var(--maroon) !important; }
 
 .map-popup-person .job-logo { width: 34px; height: 34px; border-radius: var(--radius-sm); font-size: var(--fs-base); }

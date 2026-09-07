@@ -348,7 +348,6 @@ export default function Home({ session, profile, onMessage }) {
               .from('businesses')
               .select('id, name, logo_url, description, city, country')
               .or(businessFilters.join(','))
-              .order('promoted', { ascending: false })
               .order('created_at', { ascending: false })
               .limit(6)
           : Promise.resolve({ data: [] }),
@@ -417,7 +416,6 @@ export default function Home({ session, profile, onMessage }) {
         const { data: fallback } = await supabase
           .from('businesses')
           .select('id, name, logo_url, description, city, country')
-          .order('promoted', { ascending: false })
           .order('created_at', { ascending: false })
           .limit(6)
         businessList = fallback || []

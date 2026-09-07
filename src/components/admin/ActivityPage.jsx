@@ -38,8 +38,6 @@ const ACTION_TEXT = {
   delete_job: { verb: 'deleted the job listing', tone: 'bad' },
   delete_event: { verb: 'deleted the event', tone: 'bad' },
   delete_business: { verb: 'deleted the business', tone: 'bad' },
-  feature_business: { verb: 'featured', tone: 'good' },
-  unfeature_business: { verb: 'unfeatured', tone: 'good' },
   resolve_report: { verb: 'marked reviewed:', tone: 'good' },
   dismiss_report: { verb: 'dismissed:', tone: 'good' },
   reopen_report: { verb: 'reopened:', tone: 'warn' },

@@ -128,8 +128,8 @@ If both `pending` and `declined` are empty, an `EmptyState` (feed icon) renders 
 
 **Purpose:** blunt, single-purpose removal tools for content that shouldn't be up — most content moderation is expected to happen via the Reports tab; these four exist for "you know it when you see it."
 **Structure (all four):** a search box filtering the already-loaded rows client-side (no server-side search), then a list. Events additionally splits into **Upcoming** and **Past** sections (upcoming first, since a deletion there affects someone's actual plans).
-**Row contents:** Posts show title/author/timestamp and a truncated plain-text preview of the post body (HTML stripped via `DOMParser`, see Section 20 for why that matters). Jobs show title, company, poster, location, timestamp. Events show title, date/time, organiser, location. Businesses show name, category, owner, city/country, timestamp, and a "Featured" badge if promoted.
-**Row actions:** all four have **View** (navigates to the public page for that item) and a trash-can **Delete** icon button (`DeleteButton`, always confirms first via `ConfirmDialog`). Businesses additionally have **Feature**/**Unfeature**, a direct toggle with no confirmation dialog (reversible, described in the code as "harmless").
+**Row contents:** Posts show title/author/timestamp and a truncated plain-text preview of the post body (HTML stripped via `DOMParser`, see Section 20 for why that matters). Jobs show title, company, poster, location, timestamp. Events show title, date/time, organiser, location. Businesses show name, category, owner, city/country, timestamp.
+**Row actions:** all four have **View** (navigates to the public page for that item) and a trash-can **Delete** icon button (`DeleteButton`, always confirms first via `ConfirmDialog`).
 **Load limits:** Posts/Jobs load the 100 most recent rows; Businesses loads 200; Events loads 100 (sorted by event date descending, not creation date). None of the four paginate past that limit — there is no "load more."
 
 ### 2.12 Merch & orders tab (`MerchAdmin` → `MerchOrdersAdmin` / `MerchProductsAdmin`)

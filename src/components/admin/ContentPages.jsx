@@ -230,7 +230,7 @@ export function BusinessesPage() {
   async function load() {
     const { data } = await supabase
       .from('businesses')
-      .select('id, name, category, city, country, promoted, created_at, profiles!businesses_owner_id_fkey ( full_name )')
+      .select('id, name, category, city, country, created_at, profiles!businesses_owner_id_fkey ( full_name )')
       .order('created_at', { ascending: false })
       .limit(200)
     setItems(data || [])
@@ -243,12 +243,6 @@ export function BusinessesPage() {
     if (error) { showToast('Could not delete business listing.', { type: 'error' }); return }
     setItems((prev) => prev.filter((b) => b.id !== id))
   }
-  async function togglePromote(b) {
-    const next = !b.promoted
-    setItems((prev) => prev.map((x) => (x.id === b.id ? { ...x, promoted: next } : x)))
-    const { error } = await supabase.from('businesses').update({ promoted: next }).eq('id', b.id)
-    if (error) setItems((prev) => prev.map((x) => (x.id === b.id ? { ...x, promoted: !next } : x)))
-  }
 
   const needle = q.trim().toLowerCase()
   const shown = items.filter((b) => !needle || [b.name, b.category, b.city, b.country, b.profiles?.full_name].filter(Boolean).join(' ').toLowerCase().includes(needle))
@@ -256,7 +250,7 @@ export function BusinessesPage() {
   const columns = [
     { key: 'name', label: 'Business', render: (b) => (
       <span className="adm-content-cell">
-        <strong>{b.name}{b.promoted && <StatusBadge tone="info">Featured</StatusBadge>}</strong>
+        <strong>{b.name}</strong>
         <span className="adm-content-preview">{b.category}</span>
       </span>
     ) },
@@ -265,7 +259,6 @@ export function BusinessesPage() {
     { key: 'actions', label: '', className: 'adm-table-actions-col', render: (b) => (
       <span className="adm-table-row-actions">
         <button type="button" className="btn ghost small" onClick={() => navigate(`/businesses/${b.id}`)}>View</button>
-        <button type="button" className="btn ghost small" onClick={() => togglePromote(b)}>{b.promoted ? 'Unfeature' : 'Feature'}</button>
         <DeleteButton onConfirm={() => remove(b.id)} label="Delete business" message="This removes the business listing. This can't be undone." />
       </span>
     ) },

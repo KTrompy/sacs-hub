@@ -69,18 +69,6 @@ export default function BusinessDetail({ session, profile, onMessage }) {
     navigate('/businesses')
   }
 
-  async function togglePromote() {
-    const next = !business.promoted
-    setBusiness((b) => ({ ...b, promoted: next }))
-    const { error } = await supabase.from('businesses').update({ promoted: next }).eq('id', business.id)
-    if (error) {
-      setBusiness((b) => ({ ...b, promoted: !next }))
-      showToast('Could not update featured status.', { type: 'error' })
-    } else {
-      showToast(next ? 'Business featured' : 'Business unfeatured')
-    }
-  }
-
   function messageOwner() {
     onMessage(
       { id: business.owner_id, full_name: business.profiles?.full_name },
@@ -132,7 +120,6 @@ export default function BusinessDetail({ session, profile, onMessage }) {
               <BusinessLogo url={business.logo_url} name={business.name} />
               <h2 className="business-detail-name">
                 {business.name}
-                {business.promoted && <span className="job-badge business-featured-tag">Featured</span>}
               </h2>
               <p className="business-detail-meta">
                 {[business.category, [business.city, business.country].filter(Boolean).join(', ')]
@@ -172,11 +159,6 @@ export default function BusinessDetail({ session, profile, onMessage }) {
 
             {(isMine || isAdmin) && (
               <div className="business-detail-manage-row">
-                {isAdmin && (
-                  <button type="button" className="btn ghost small" onClick={togglePromote}>
-                    {business.promoted ? 'Remove from Featured' : 'Feature this business'}
-                  </button>
-                )}
                 {isMine && <button type="button" className="btn ghost small" onClick={() => setEditing(true)}>Edit</button>}
                 {(isMine || isAdmin) && (
                   <DeleteButton

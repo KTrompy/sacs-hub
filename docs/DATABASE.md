@@ -172,7 +172,6 @@ Alumni business directory (schema-update-19).
 | address, city, country | text | Location |
 | logo_url, cover_image_url | text | Storage URLs |
 | lat, lng | double precision | Map pin |
-| featured | boolean | Admin-promoted |
 | created_at, updated_at | timestamptz | |
 
 #### `notifications`

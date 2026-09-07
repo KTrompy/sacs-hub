@@ -90,12 +90,14 @@ export default function PendingVerification({ session, profile, onProfileChange 
       <div className="auth-card">
         <img src="/sacs-logo.png" alt="SACS logo" className="auth-logo" />
         <div className="pending-verify-icon" aria-hidden="true">⏳</div>
-        <h1 className="auth-title">{name ? `Thanks, ${name}!` : 'Thanks for joining!'}</h1>
+        <h1 className="auth-title">You&rsquo;re all set{name ? `, ${name}` : ''}</h1>
         <p className="auth-verify-note">
-          Your details are being verified against SACS school records by
-          the alumni committee. You&rsquo;ll receive an email at{' '}
-          <strong>{email}</strong> as soon as you&rsquo;re confirmed — then you
-          can sign in and meet everyone.
+          We&rsquo;ve received your details and they&rsquo;re being checked against
+          SACS school records.
+        </p>
+        <p className="auth-verify-note">
+          We&rsquo;ll email you at <strong>{email}</strong> as soon as your
+          account has been verified — then you can sign in and meet everyone.
         </p>
         {result && (
           <p className={result.type === 'pending' ? 'auth-verify-status' : 'form-error'} role="status">

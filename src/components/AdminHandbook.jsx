@@ -165,12 +165,6 @@ export default function AdminHandbook({ activeId }) {
             Removes the item for everyone, permanently. For events this also wipes the RSVPs.
             Members can already delete their own things, so you're only doing this for content
             that shouldn't be up.
-          </dd>
-          <dt>Feature / Unfeature (Businesses only)</dt>
-          <dd>
-            Pins a business to the top of the directory. Harmless and reversible. Worth agreeing a
-            rule with the committee — e.g. only for sponsors — so it doesn't become a favour.
-          </dd>
         </dl>
 
         <h4>Activity log</h4>

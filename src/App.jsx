@@ -3,8 +3,8 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { supabase, isAuthError } from './supabaseClient'
 import Auth from './components/Auth.jsx'
 import ResetPassword from './components/ResetPassword.jsx'
-import FinishSignup from './components/FinishSignup.jsx'
-import CompleteDetails from './components/CompleteDetails.jsx'
+import Onboarding from './components/onboarding/Onboarding.jsx'
+import ApprovalWelcome from './components/onboarding/ApprovalWelcome.jsx'
 import PendingVerification from './components/PendingVerification.jsx'
 import Home from './components/Home.jsx'
 import People from './components/People.jsx'
@@ -23,7 +23,7 @@ import { CartProvider, useCart } from './components/CartContext.jsx'
 // given person might never open. On a mid-range phone that's seconds of
 // blank page, and every deploy invalidated the whole thing.
 //
-// Kept eager above: the sign-in path (Auth/ResetPassword/FinishSignup/
+// Kept eager above: the sign-in path (Auth/ResetPassword/Onboarding/
 // PendingVerification), Home (the default landing route), and the chrome that
 // renders on every screen (header bell, messages dock, dialogs). Splitting
 // those would only add a spinner to the very first paint.
@@ -117,7 +117,6 @@ export default function App() {
   // same auto-expand default rather than staying manually stuck open/shut.
   const [moreNavOverride, setMoreNavOverride] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [checkedFirstRun, setCheckedFirstRun] = useState(false)
   // Lifecycle of the profile fetch below, kept separate from `profile`
   // itself because "still loading" and "loaded, and there's genuinely
   // nothing there" used to be indistinguishable — both were just
@@ -483,23 +482,6 @@ export default function App() {
     }
   }, [session, profile?.approved])
 
-  // First load after approval: instead of the old question-by-question
-  // wizard, drop them straight onto their Profile page with every
-  // still-empty field highlighted and the first one focused (Profile.jsx
-  // reads the nav state). onboarding_complete is flipped immediately so
-  // this only ever happens once — after that, the Home "Complete your
-  // profile" button re-triggers the same highlighting on demand.
-  useEffect(() => {
-    if (!profile || checkedFirstRun) return
-    if (!profile.consented_at || !profile.approved) return
-    if (!profile.onboarding_complete) {
-      supabase.from('profiles').update({ onboarding_complete: true }).eq('id', profile.id).then(() => {})
-      setProfile((p) => (p ? { ...p, onboarding_complete: true } : p))
-      navigate('/profile', { state: { highlightMissing: true, focusFirst: true } })
-    }
-    setCheckedFirstRun(true)
-  }, [profile, checkedFirstRun]) // eslint-disable-line react-hooks/exhaustive-deps
-
   function openMessage(targetProfile, draftText = '') {
     setContactTarget(targetProfile)
     setContactDraft(draftText)
@@ -583,31 +565,25 @@ export default function App() {
 
   // Signed in but signup details/consent never captured — social-login
   // joiners land here first (they skipped the signup form entirely).
-  if (!profile.consented_at) {
+  // Onboarding covers everyone whose signup isn't fully saved yet — a
+  // Google sign-in (no session-writable consent yet: mode="resume" starts
+  // at Step 1, pre-filled from the provider), and the legacy case that used
+  // to be CompleteDetails.jsx's job (consented once, but the membership
+  // record never finished — Onboarding detects that from the same two
+  // flags and resumes at Step 2 instead of asking for a name again).
+  if (!profile.consented_at || !profile.details_completed_at) {
     return (
-      <FinishSignup
-        session={session}
-        profile={profile}
-        onDone={(updatedProfile) => setProfile(updatedProfile)}
-      />
-    )
-  }
-
-  // Legacy fallback only. Membership details (title, DOB, cell, location,
-  // industry, community roles, comms preferences) are now collected inside
-  // the single signup wizard (Auth.jsx) and FinishSignup above — both set
-  // details_completed_at themselves the moment someone finishes joining, so
-  // a new member never sees this screen. It stays here purely to catch
-  // accounts from before that merge, or a signup whose write genuinely
-  // failed partway — either way, this is the one place left that still
-  // asks for it.
-  if (!profile.details_completed_at) {
-    return (
-      <CompleteDetails
-        session={session}
-        profile={profile}
-        onDone={(updatedProfile) => setProfile(updatedProfile)}
-      />
+      <div className="auth-page">
+        <div className="auth-card">
+          <img src="/sacs-logo.png" alt="SACS logo" className="auth-logo" />
+          <Onboarding
+            mode="resume"
+            session={session}
+            profile={profile}
+            onDone={(updatedProfile) => setProfile(updatedProfile)}
+          />
+        </div>
+      </div>
     )
   }
 
@@ -617,6 +593,23 @@ export default function App() {
   // so this screen is a real lock rather than just a screen.
   if (!profile.approved) {
     return <PendingVerification session={session} profile={profile} onProfileChange={setProfile} />
+  }
+
+  // First time seeing the full app post-approval. onboarding_complete is
+  // flipped the instant either button is pressed, so this can only ever
+  // show once — after that, Home's "Complete your profile" button re-
+  // triggers the same Profile-page highlighting on demand.
+  if (!profile.onboarding_complete) {
+    return (
+      <ApprovalWelcome
+        profile={profile}
+        onChoose={(dest) => {
+          supabase.from('profiles').update({ onboarding_complete: true }).eq('id', profile.id).then(() => {})
+          setProfile((p) => (p ? { ...p, onboarding_complete: true } : p))
+          if (dest === 'profile') navigate('/profile', { state: { highlightMissing: true, focusFirst: true } })
+        }}
+      />
+    )
   }
 
   const navTabs = profile?.is_admin ? [...TABS, ADMIN_TAB] : TABS

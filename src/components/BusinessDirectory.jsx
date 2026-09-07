@@ -154,7 +154,6 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
     const { data, error } = await supabase
       .from('businesses')
       .select(`*, profiles!businesses_owner_id_fkey ( ${POSTER_FIELDS} )`)
-      .order('promoted', { ascending: false })
       .order('created_at', { ascending: false })
       .range(0, BUSINESSES_PAGE_SIZE - 1)
     if (error) { console.error(error); setLoading(false); return }
@@ -168,7 +167,6 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
     const { data, error } = await supabase
       .from('businesses')
       .select(`*, profiles!businesses_owner_id_fkey ( ${POSTER_FIELDS} )`)
-      .order('promoted', { ascending: false })
       .order('created_at', { ascending: false })
       .range(businesses.length, businesses.length + BUSINESSES_PAGE_SIZE - 1)
     if (!error) {
@@ -210,18 +208,6 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
     if (target?.cover_image_url) deleteStorageFilesFromUrls('business-covers', target.cover_image_url)
   }
 
-  async function togglePromote(b) {
-    const next = !b.promoted
-    setBusinesses((prev) => prev.map((x) => (x.id === b.id ? { ...x, promoted: next } : x)))
-    const { error } = await supabase.from('businesses').update({ promoted: next }).eq('id', b.id)
-    if (error) {
-      setBusinesses((prev) => prev.map((x) => (x.id === b.id ? { ...x, promoted: !next } : x)))
-      showToast('Could not update featured status.', { type: 'error' })
-    } else {
-      showToast(next ? 'Business featured' : 'Business unfeatured')
-    }
-  }
-
   const countryOptions = useMemo(
     () => [...new Set(businesses.map((b) => (b.country || '').trim()).filter(Boolean))].sort(),
     [businesses]
@@ -242,8 +228,6 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
     return true
   })
 
-  const promotedShown = shown.filter((b) => b.promoted)
-  const regularShown = shown.filter((b) => !b.promoted)
   const activeFilterCount = Object.values(filters).filter(Boolean).length
 
   const pinned = useMemo(
@@ -358,50 +342,23 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
             />
           ) : (
             <>
-              {promotedShown.length > 0 && (
-                <div className="pinned-posts-section">
-                  <p className="feed-section-label">Featured businesses</p>
-                  <ul className="business-list">
-                    {promotedShown.map((b) => (
-                      <BusinessCard
-                        key={b.id}
-                        b={b}
-                        session={session}
-                        isAdmin={isAdmin}
-                        editingId={editingId}
-                        setEditingId={setEditingId}
-                        onOpenOwner={() => b.profiles?.id && navigate(`/people/${b.profiles.id}`)}
-                        onMessage={() => openMessageWithOwner(b)}
-                        onDelete={() => removeBusiness(b.id)}
-                        onTogglePromote={() => togglePromote(b)}
-                        onUpdated={() => { setEditingId(null); loadBusinesses(); showToast('Listing updated') }}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {regularShown.length > 0 && (
-                <>
-                  {promotedShown.length > 0 && <p className="feed-section-label">All businesses</p>}
-                  <ul className="business-list">
-                    {regularShown.map((b) => (
-                      <BusinessCard
-                        key={b.id}
-                        b={b}
-                        session={session}
-                        isAdmin={isAdmin}
-                        editingId={editingId}
-                        setEditingId={setEditingId}
-                        onOpenOwner={() => b.profiles?.id && navigate(`/people/${b.profiles.id}`)}
-                        onMessage={() => openMessageWithOwner(b)}
-                        onDelete={() => removeBusiness(b.id)}
-                        onTogglePromote={() => togglePromote(b)}
-                        onUpdated={() => { setEditingId(null); loadBusinesses(); showToast('Listing updated') }}
-                      />
-                    ))}
-                  </ul>
-                </>
+              {shown.length > 0 && (
+                <ul className="business-list">
+                  {shown.map((b) => (
+                    <BusinessCard
+                      key={b.id}
+                      b={b}
+                      session={session}
+                      isAdmin={isAdmin}
+                      editingId={editingId}
+                      setEditingId={setEditingId}
+                      onOpenOwner={() => b.profiles?.id && navigate(`/people/${b.profiles.id}`)}
+                      onMessage={() => openMessageWithOwner(b)}
+                      onDelete={() => removeBusiness(b.id)}
+                      onUpdated={() => { setEditingId(null); loadBusinesses(); showToast('Listing updated') }}
+                    />
+                  ))}
+                </ul>
               )}
             </>
           )}
@@ -446,7 +403,7 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
                                     <button type="button" className="map-popup-person" onClick={() => navigate(`/businesses/${b.id}`)}>
                                       <BusinessLogo url={b.logo_url} name={b.name} />
                                       <span className="map-popup-info">
-                                        <strong>{b.name}{b.promoted && <span className="business-featured-tag">Featured</span>}</strong>
+                                        <strong>{b.name}</strong>
                                         <span className="map-popup-meta">{b.category}</span>
                                       </span>
                                     </button>
@@ -496,7 +453,7 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
 }
 
 /* ---------- One business card (used in both Featured and All sections) ---------- */
-function BusinessCard({ b, session, isAdmin, editingId, setEditingId, onOpenOwner, onMessage, onDelete, onTogglePromote, onUpdated }) {
+function BusinessCard({ b, session, isAdmin, editingId, setEditingId, onOpenOwner, onMessage, onDelete, onUpdated }) {
   const isMine = b.owner_id === session.user.id
 
   if (editingId === b.id) {
@@ -511,17 +468,6 @@ function BusinessCard({ b, session, isAdmin, editingId, setEditingId, onOpenOwne
 
   return (
     <li className="job-card business-card">
-      {isAdmin && (
-        <button
-          type="button"
-          className={b.promoted ? 'job-save-btn saved' : 'job-save-btn'}
-          onClick={(e) => { e.stopPropagation(); onTogglePromote() }}
-          aria-pressed={b.promoted}
-          title={b.promoted ? 'Remove from Featured' : 'Feature this business'}
-        >
-          <StarIcon filled={b.promoted} />
-        </button>
-      )}
       {/* Stretched link rather than a clickable div — see the note on the
           same pattern in Directory.jsx. */}
       <Link className="stretched-link" to={`/businesses/${b.id}`}>
@@ -538,7 +484,6 @@ function BusinessCard({ b, session, isAdmin, editingId, setEditingId, onOpenOwne
           <div className="job-card-content">
             <h3 className="job-title">
               {b.name}
-              {b.promoted && <span className="job-badge business-featured-tag">Featured</span>}
               {b.category && <span className="job-badge">{b.category}</span>}
             </h3>
             <p className="job-meta">
