@@ -12255,3 +12255,50 @@ button.stretched-link {
 
 /* ---------- Empty / loading ---------- */
 .mtg-empty { text-align: center; padding: var(--sp-8) var(--sp-5); color: var(--ink-soft); }
+
+/* ---------- Mentor directory card body / profile page (schema-update-65) ---------- */
+.mtg-card-description {
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
+  margin: var(--sp-2) 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mtg-card-description-full {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  white-space: pre-wrap;
+}
+.mtg-profile-page { max-width: 720px; margin: 0 auto; }
+.mtg-mentor-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-6);
+  margin-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--line);
+}
+.mtg-mentor-hero h1 { font-family: var(--display); color: var(--maroon); margin: 0; font-size: var(--fs-2xl); }
+.mtg-mentor-hero p { color: var(--ink-soft); margin: 0; }
+.mtg-mentor-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--sp-4);
+  margin: var(--sp-6) 0;
+  padding: var(--sp-5) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.mtg-mentor-fact { display: flex; flex-direction: column; gap: 2px; }
+.mtg-mentor-fact-label { font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+.mtg-mentor-fact-value { color: var(--ink); font-size: var(--fs-sm); }
+.mtg-mentor-contact { margin-top: var(--sp-7); padding-top: var(--sp-6); border-top: 1px solid var(--line); text-align: center; }
+.mtg-mentor-contact h3 { margin: 0 0 var(--sp-4); color: var(--maroon); font-family: var(--display); font-size: var(--fs-lg); }
+.mtg-mentor-contact .btn.primary { padding-left: var(--sp-6); padding-right: var(--sp-6); }
+@media (max-width: 640px) {
+  .mtg-mentor-facts { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}

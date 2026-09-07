@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase, isNetworkError, openStorageFile } from '../supabaseClient'
 import { PhotoBlock } from './Directory.jsx'
 import LoadingState from './LoadingState.jsx'
 import EmptyState from './EmptyState.jsx'
 import ReportButton from './ReportButton.jsx'
-import PersonSheet from './mentoring/PersonSheet.jsx'
-import { useToast } from './Toast.jsx'
 import { buildIcebreaker } from '../icebreaker.js'
 import { normalizeExpertise, formatExperienceRange, formatExperienceDuration, safeUrl } from '../utils.js'
 
@@ -48,14 +46,12 @@ function Chips({ items }) {
 export default function PersonProfile({ session, me, onMessage }) {
   const { personId } = useParams()
   const navigate = useNavigate()
-  const showToast = useToast()
   const [person, setPerson] = useState(null)
   const [contact, setContact] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [retryTick, setRetryTick] = useState(0)
-  const [connecting, setConnecting] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -157,11 +153,10 @@ export default function PersonProfile({ session, me, onMessage }) {
     || !!p.business_website || !!p.availability
     || p.is_open_to_opportunities || p.seeking_mentor
 
-  // Which request, if either, makes sense between these two people. Both can
-  // be true — a peer who mentors you in one area while you mentor them in
-  // another is a perfectly normal arrangement.
+  // Whether this person is currently listed as an available mentor — the
+  // only mentoring-related thing this page needs to know, since the actual
+  // "get in touch" action lives on their mentor profile, not here.
   const canAskToMentorMe = !isMe && !!p.is_open_to_opportunities && !p.mentor_paused
-  const canOfferToMentor = !isMe && !!p.seeking_mentor && !!me?.is_open_to_opportunities
 
   return (
     <section className="panel narrow profile-page person-profile-page">
@@ -351,22 +346,15 @@ export default function PersonProfile({ session, me, onMessage }) {
             </div>
           )}
 
-          {(canAskToMentorMe || canOfferToMentor) && (
+          {/* Mentoring here is a pointer, not an action — the whole point of
+              the mentoring redesign is that contacting a mentor happens on
+              their mentor profile (which has the actual Email CTA), not via
+              a request flow bolted onto the general people directory. */}
+          {canAskToMentorMe && (
             <div className="profile-mentoring-cta">
-              {/* Opens the same profile sheet + commitment ladder used
-                  throughout Mentoring — a quick question, a one-off
-                  conversation, or a full mentorship request — rather than
-                  the old all-or-nothing "send a mentorship request" modal. */}
-              {canAskToMentorMe && (
-                <button type="button" className="btn primary small" onClick={() => setConnecting({ mode: 'mentor' })}>
-                  Connect for mentorship
-                </button>
-              )}
-              {canOfferToMentor && (
-                <button type="button" className="btn ghost small" onClick={() => setConnecting({ mode: 'mentee' })}>
-                  Offer to help them
-                </button>
-              )}
+              <Link to={`/mentoring/${p.id}`} className="btn primary small">
+                View mentor profile
+              </Link>
             </div>
           )}
         </div>
@@ -388,16 +376,6 @@ export default function PersonProfile({ session, me, onMessage }) {
         )}
       </div>
 
-      {connecting && (
-        <PersonSheet
-          person={p}
-          me={me}
-          mode={connecting.mode}
-          onClose={() => setConnecting(null)}
-          onSent={() => navigate('/mentoring/relationships')}
-          showToast={showToast}
-        />
-      )}
     </section>
   )
 }

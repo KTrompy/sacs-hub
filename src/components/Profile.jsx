@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase, deleteOwnAccount, openStorageFile } from '../supabaseClient'
 import { Avatar } from './Directory.jsx'
-import { INDUSTRIES, INDUSTRY_KEYWORDS, SA_CITIES, EXPERTISE_OPTIONS, EXPERTISE_BY_INDUSTRY, SERVICES_OFFERED, AVAILABILITY_OPTIONS, GEOGRAPHIC_FOCUS, TITLES, GENDERS } from '../constants.js'
+import { INDUSTRIES, INDUSTRY_KEYWORDS, SA_CITIES, EXPERTISE_OPTIONS, EXPERTISE_BY_INDUSTRY, AVAILABILITY_OPTIONS, GEOGRAPHIC_FOCUS, TITLES, GENDERS } from '../constants.js'
 import PhotoCropper from './PhotoCropper.jsx'
 import { geocodeCity } from '../geocode.js'
 import CityAutocomplete from './CityAutocomplete.jsx'
@@ -44,6 +44,8 @@ const EMPTY = {
   services_offered: [],
   business_website: '',
   is_open_to_opportunities: false,
+  mentor_note: '',
+  mentor_paused: false,
   availability: '',
   geographic_focus: [],
   // The mentee half of mentoring (schema-update-56). Kept in the same
@@ -114,7 +116,6 @@ const SKIPPABLE_FIELD_CHECKS = {
   business_website: (p) => !p.business_website?.trim(),
   availability: (p) => !p.availability,
   expertise: (p) => !Array.isArray(p.expertise) || p.expertise.length === 0,
-  services_offered: (p) => !Array.isArray(p.services_offered) || p.services_offered.length === 0,
   geographic_focus: (p) => !Array.isArray(p.geographic_focus) || p.geographic_focus.length === 0,
 }
 
@@ -206,6 +207,8 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
         services_offered: Array.isArray(profile.services_offered) ? profile.services_offered : [],
         business_website: profile.business_website || '',
         is_open_to_opportunities: profile.is_open_to_opportunities === true,
+        mentor_note: profile.mentor_note || '',
+        mentor_paused: profile.mentor_paused === true,
         availability: profile.availability || '',
         geographic_focus: Array.isArray(profile.geographic_focus) ? profile.geographic_focus : [],
         seeking_mentor: profile.seeking_mentor === true,
@@ -266,7 +269,7 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
     ])
     if (!profile.cv_url) missing.add('cv')
     setMissingFields(missing)
-    const mentoringFields = ['availability', 'expertise', 'services_offered', 'geographic_focus', 'business_website']
+    const mentoringFields = ['availability', 'expertise', 'geographic_focus', 'business_website']
     if (mentoringFields.some((f) => missing.has(f))) setShowMentoring(true)
     // First login after approval (and the Home CTA) also ask us to put the
     // cursor straight into the first empty field, so there's zero "now
@@ -706,6 +709,7 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
       phone: form.phone.trim(),
       business_website: website,
       mentee_note: form.mentee_note.trim(),
+      mentor_note: form.mentor_note.trim(),
       address_line1: form.address_line1.trim(),
       address_line2: form.address_line2.trim(),
       address_line3: form.address_line3.trim(),
@@ -801,7 +805,7 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
   // Whether the collapsed Mentoring toggle should show a "something's
   // missing in here" dot — it auto-expands on arrival from onboarding, but
   // this keeps the cue visible even if someone collapses it again.
-  const mentoringHasMissing = ['availability', 'expertise', 'services_offered', 'geographic_focus', 'business_website']
+  const mentoringHasMissing = ['availability', 'expertise', 'geographic_focus', 'business_website']
     .some((f) => missingFields.has(f))
 
   return (
@@ -1514,24 +1518,50 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
                   />
                 </label>
 
-                {/* Services & opportunities offered */}
-                <div className={fieldCls('services_offered')}>
-                  <span>What can you offer to other Old Boys?</span>
+                {/* Free-text mentoring description — replaces the old
+                    structured "what can you offer" tag picker. A specific
+                    list of services never covered what actually makes a
+                    mentor useful nearly as well as a couple of sentences in
+                    their own words does. */}
+                <label className={fieldCls('mentor_note')}><span>Anything else you'd like people to know?</span>
                   <span className="hint">
-                    These show up on your profile as things people can reach out to you about.
+                    Tell people about your experience, specific topics you're happy to discuss, industries you've worked in, or anything else that might be useful.
                   </span>
-                  <div className="tags-grid compact">
-                    {SERVICES_OFFERED.map((service) => (
-                      <button
-                        key={service}
-                        type="button"
-                        className={`tag-btn ${form.services_offered.includes(service) ? 'selected' : ''}`}
-                        onClick={() => toggleTag('services_offered', service)}
-                      >
-                        {service}
-                      </button>
-                    ))}
+                  <textarea
+                    rows={4}
+                    value={form.mentor_note}
+                    onChange={(e) => set('mentor_note', e.target.value.slice(0, 600))}
+                    placeholder="I've worked in investment banking for the past 8 years and am happy to chat about careers in finance, preparing for interviews, or starting out in the industry."
+                  />
+                </label>
+
+                {/* A simple on/off — not a capacity or scheduling system,
+                    just whether you currently show up in the mentor
+                    directory. Saves immediately like the two toggles above,
+                    same reasoning: this is a status, not a draft. */}
+                <div className="field">
+                  <span>Are you currently available to mentor?</span>
+                  <div className="onboarding-choice-row profile-choice-row">
+                    <button
+                      type="button"
+                      className={!form.mentor_paused ? 'onboarding-choice on' : 'onboarding-choice'}
+                      onClick={() => saveToggle('mentor_paused', false)}
+                      disabled={togglingField === 'mentor_paused'}
+                    >
+                      Available
+                    </button>
+                    <button
+                      type="button"
+                      className={form.mentor_paused ? 'onboarding-choice on' : 'onboarding-choice'}
+                      onClick={() => saveToggle('mentor_paused', true)}
+                      disabled={togglingField === 'mentor_paused'}
+                    >
+                      Not currently available
+                    </button>
                   </div>
+                  <span className="hint">
+                    Keeps your mentoring info on your profile but hides you from the active mentor directory. You can change this any time.
+                  </span>
                 </div>
 
                 {/* Business website */}

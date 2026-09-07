@@ -787,7 +787,7 @@ export default function App() {
               <Route path="/directory" element={<People session={session} onMessage={openMessage} onGoToProfile={() => goTo('/profile')} refetchTrigger={directoryRefetchTrigger} />} />
               <Route path="/feed" element={<Feed session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/feed/:postId" element={<Feed session={session} profile={profile} onMessage={openMessage} />} />
-              <Route path="/mentoring/*" element={<Mentoring session={session} profile={profile} onProfileChange={setProfile} />} />
+              <Route path="/mentoring/*" element={<Mentoring />} />
               <Route path="/events" element={<Events session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/events/:eventId" element={<Events session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/jobs" element={<Jobs session={session} profile={profile} onMessage={openMessage} />} />
