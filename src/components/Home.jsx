@@ -15,14 +15,7 @@ import { buildIcebreaker } from '../icebreaker.js'
 import LoadingState from './LoadingState.jsx'
 import EmptyState from './EmptyState.jsx'
 import CompleteProfilePrompt from './CompleteProfilePrompt.jsx'
-
-// Fields checked for the profile-completion bar — the ones that actually
-// make a profile useful to other Old Boys (who you are, what you do,
-// where you are, how to reach you), not every column on the table.
-const COMPLETION_FIELDS = [
-  'avatar_url', 'bio', 'occupation', 'company', 'city', 'country',
-  'grad_year', 'degree', 'industry', 'linkedin_url',
-]
+import { completionPercent, missingCompletionFields } from '../profileCompletion.js'
 
 // The mobile-only pill row above the two-column layout — same sections
 // that sit side-by-side on desktop. On mobile every section still renders
@@ -36,22 +29,6 @@ const MOBILE_TABS = [
   { id: 'businesses', label: 'Businesses near me' },
   { id: 'events', label: 'Upcoming events' },
 ]
-
-function isFieldFilled(profile, f) {
-  const v = profile?.[f]
-  return v !== null && v !== undefined && String(v).trim() !== ''
-}
-
-function completionPercent(profile) {
-  if (!profile) return 0
-  const filled = COMPLETION_FIELDS.filter((f) => isFieldFilled(profile, f)).length
-  return Math.round((filled / COMPLETION_FIELDS.length) * 100)
-}
-
-function missingCompletionFields(profile) {
-  if (!profile) return []
-  return COMPLETION_FIELDS.filter((f) => !isFieldFilled(profile, f))
-}
 
 // Once-a-day key for the modal nudge below — scoped per user so one
 // person dismissing it doesn't affect another on a shared device, and

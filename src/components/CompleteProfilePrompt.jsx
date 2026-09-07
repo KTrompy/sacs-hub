@@ -1,22 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import useModal from '../useModal.js'
-
-// Human-readable labels for the same COMPLETION_FIELDS Home.jsx scores
-// against — kept here rather than exported from Home.jsx since this is the
-// only place that needs to show them to a person rather than just count them.
-const FIELD_LABELS = {
-  avatar_url: 'Add a profile photo',
-  bio: 'Write a short bio',
-  occupation: 'Add your occupation',
-  company: 'Add your company',
-  city: 'Add your city',
-  country: 'Add your country',
-  grad_year: 'Add your graduation year',
-  degree: 'Add your degree',
-  industry: 'Add your industry',
-  linkedin_url: 'Link your LinkedIn',
-}
+import { COMPLETION_FIELD_LABELS as FIELD_LABELS } from '../profileCompletion.js'
 
 // A once-a-day, dismissible nudge for anyone whose profile is still
 // incomplete — sits on top of the always-present Home banner rather than

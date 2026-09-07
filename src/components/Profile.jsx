@@ -15,6 +15,9 @@ import DeleteButton from './DeleteButton.jsx'
 import ConfirmDialog from './ConfirmDialog.jsx'
 import useModal from '../useModal.js'
 import { normalizeExpertise, formatExperienceRange, formatExperienceDuration, isValidGradYear, isSafeHttpUrl } from '../utils.js'
+import ProfileSectionNav from './profile/ProfileSectionNav.jsx'
+import ProfileCompletionCard from './profile/ProfileCompletionCard.jsx'
+import SaveBar from './profile/SaveBar.jsx'
 
 const MAX_CV_SIZE = 10 * 1024 * 1024 // 10 MB
 const CV_ACCEPT = '.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -134,7 +137,42 @@ const REQUIRED_FIELD_CHECKS = {
   photo: (p) => !p.avatar_url,
 }
 
-export default function Profile({ session, profile, onSaved, onDirtyChange, saveRef, onNavigateHome }) {
+// Which Edit Profile section each of the missing-field keys above lives in
+// — drives the little "something's incomplete in here" dot on the section
+// nav, and which section the post-onboarding auto-scroll/focus effect
+// needs to land on (mentoring fields already had this special case; this
+// just generalizes it to the whole nav).
+const MISSING_FIELD_SECTION = {
+  photo: 'overview',
+  bio: 'about',
+  degree: 'about',
+  industry: 'career',
+  occupation: 'career',
+  company: 'career',
+  cv: 'documents',
+  city: 'location',
+  postal_code: 'location',
+  linkedin_url: 'contact',
+  phone: 'contact',
+  business_website: 'mentoring',
+  availability: 'mentoring',
+  expertise: 'mentoring',
+  geographic_focus: 'mentoring',
+}
+
+const NAV_SECTIONS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'about', label: 'About' },
+  { id: 'career', label: 'Career' },
+  { id: 'experience', label: 'Experience' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'location', label: 'Location' },
+  { id: 'contact', label: 'Contact' },
+  { id: 'membership', label: 'Membership' },
+  { id: 'mentoring', label: 'Mentoring' },
+]
+
+export default function Profile({ session, profile, onSaved, onDirtyChange, saveRef }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [form, setForm] = useState(EMPTY)
@@ -172,59 +210,78 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
   // the effect below that populates this from location.state.highlightMissing.
   // Empty otherwise, so this has no effect on a normal profile-page visit.
   const [missingFields, setMissingFields] = useState(() => new Set())
+  // Which section nav item is currently active, driven by scroll position —
+  // see the scroll-spy effect below.
+  const [activeSection, setActiveSection] = useState('overview')
   const fileRef = useRef(null)
   const cvRef = useRef(null)
-  const aboutSectionRef = useRef(null)
+  const sectionRefs = useRef({})
+  // Snapshot of the last-saved profile_details row, restored by Discard —
+  // separate from `profile` (which the parent only updates for the main
+  // `profiles` table) since profile_details lives entirely client-side
+  // between loads/saves.
+  const savedDetailsRef = useRef(EMPTY_DETAILS)
+
+  function setSectionRef(id) {
+    return (el) => { sectionRefs.current[id] = el }
+  }
+
+  // Builds the editor's form state from a `profiles` row — used both on
+  // mount/profile-change and by Discard (reverting unsaved edits back to
+  // whatever's actually saved).
+  function populateForm(p) {
+    const isKnownIndustry = INDUSTRIES.includes(p.industry)
+    setForm({
+      full_name: p.full_name || '',
+      // Own-name columns (schema-update-57) — the editable fields. A
+      // pre-57 row may have only full_name; split it as a best guess so
+      // the inputs aren't blank for someone whose name is clearly known.
+      first_name: p.first_name || (p.full_name || '').split(' ')[0] || '',
+      preferred_name: p.preferred_name || '',
+      last_name: p.last_name || (p.full_name || '').split(' ').slice(1).join(' ') || '',
+      start_year: p.start_year || '',
+      grad_year: p.grad_year || '',
+      degree: p.degree || '',
+      industry: isKnownIndustry ? p.industry : (p.industry ? 'Other' : ''),
+      occupation: p.occupation || '',
+      company: p.company || '',
+      city: p.city || '',
+      country: p.country || 'South Africa',
+      address_line1: p.address_line1 || '',
+      address_line2: p.address_line2 || '',
+      address_line3: p.address_line3 || '',
+      province: p.province || '',
+      postal_code: p.postal_code || '',
+      bio: p.bio || '',
+      linkedin_url: p.linkedin_url || '',
+      phone: p.phone || '',
+      expertise: normalizeExpertise(p.expertise),
+      services_offered: Array.isArray(p.services_offered) ? p.services_offered : [],
+      business_website: p.business_website || '',
+      is_open_to_opportunities: p.is_open_to_opportunities === true,
+      mentor_note: p.mentor_note || '',
+      mentor_paused: p.mentor_paused === true,
+      availability: p.availability || '',
+      geographic_focus: Array.isArray(p.geographic_focus) ? p.geographic_focus : [],
+      seeking_mentor: p.seeking_mentor === true,
+      mentee_goals: normalizeExpertise(p.mentee_goals),
+      mentee_note: p.mentee_note || '',
+      experience: (Array.isArray(p.experience) ? p.experience : [])
+        .map((entry) => ({ ...entry, _key: makeExperienceKey() })),
+      looking_to_connect: Array.isArray(p.looking_to_connect) ? p.looking_to_connect : [],
+    })
+    if (!isKnownIndustry && p.industry) setCustomIndustry(p.industry)
+    else setCustomIndustry('')
+    setCityCoords(null)
+    setDirty(false)
+    // Existing entries load collapsed as summary cards; only newly-added
+    // ones (via addExperience) start expanded.
+    setExpandedExperience(new Set())
+  }
 
   useEffect(() => {
-    if (profile) {
-      const isKnownIndustry = INDUSTRIES.includes(profile.industry)
-      setForm({
-        full_name: profile.full_name || '',
-        // Own-name columns (schema-update-57) — the editable fields. A
-        // pre-57 row may have only full_name; split it as a best guess so
-        // the inputs aren't blank for someone whose name is clearly known.
-        first_name: profile.first_name || (profile.full_name || '').split(' ')[0] || '',
-        preferred_name: profile.preferred_name || '',
-        last_name: profile.last_name || (profile.full_name || '').split(' ').slice(1).join(' ') || '',
-        start_year: profile.start_year || '',
-        grad_year: profile.grad_year || '',
-        degree: profile.degree || '',
-        industry: isKnownIndustry ? profile.industry : (profile.industry ? 'Other' : ''),
-        occupation: profile.occupation || '',
-        company: profile.company || '',
-        city: profile.city || '',
-        country: profile.country || 'South Africa',
-        address_line1: profile.address_line1 || '',
-        address_line2: profile.address_line2 || '',
-        address_line3: profile.address_line3 || '',
-        province: profile.province || '',
-        postal_code: profile.postal_code || '',
-        bio: profile.bio || '',
-        linkedin_url: profile.linkedin_url || '',
-        phone: profile.phone || '',
-        expertise: normalizeExpertise(profile.expertise),
-        services_offered: Array.isArray(profile.services_offered) ? profile.services_offered : [],
-        business_website: profile.business_website || '',
-        is_open_to_opportunities: profile.is_open_to_opportunities === true,
-        mentor_note: profile.mentor_note || '',
-        mentor_paused: profile.mentor_paused === true,
-        availability: profile.availability || '',
-        geographic_focus: Array.isArray(profile.geographic_focus) ? profile.geographic_focus : [],
-        seeking_mentor: profile.seeking_mentor === true,
-        mentee_goals: normalizeExpertise(profile.mentee_goals),
-        mentee_note: profile.mentee_note || '',
-        experience: (Array.isArray(profile.experience) ? profile.experience : [])
-          .map((entry) => ({ ...entry, _key: makeExperienceKey() })),
-        looking_to_connect: Array.isArray(profile.looking_to_connect) ? profile.looking_to_connect : [],
-      })
-      if (!isKnownIndustry && profile.industry) setCustomIndustry(profile.industry)
-      setCityCoords(null)
-      setDirty(false)
-      // Existing entries load collapsed as summary cards; only newly-added
-      // ones (via addExperience) start expanded.
-      setExpandedExperience(new Set())
-    }
+    if (profile) populateForm(profile)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile])
 
   // profile_details lives in its own table (tighter RLS than `profiles` —
@@ -244,9 +301,12 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
       if (detErr) { setError(detErr.message); return }
       if (data) {
         const { profile_id, created_at, updated_at, ...rest } = data
-        setDetails({ ...EMPTY_DETAILS, ...rest })
+        const loaded = { ...EMPTY_DETAILS, ...rest }
+        setDetails(loaded)
+        savedDetailsRef.current = loaded
       } else {
         setDetails(EMPTY_DETAILS)
+        savedDetailsRef.current = EMPTY_DETAILS
       }
     }
     loadDetails()
@@ -254,14 +314,18 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.user.id])
 
-  // Arriving fresh from onboarding (App.jsx sets this nav state) — work out
-  // which of the skippable fields actually got left blank and highlight
-  // just those, auto-opening the Mentoring section if any of its fields are
-  // among them so the highlight is actually visible. Runs once off the nav
-  // state, not on every profile load, and immediately clears that state
-  // (via replace) so refreshing this page or coming back later doesn't
-  // re-trigger it.
+  // Two things can arrive via nav state, handled in one effect so they can
+  // never race each other clearing location.state:
+  //  - openPhotoModal — "Change photo" clicked from the View Profile page.
+  //  - highlightMissing — arriving fresh from onboarding, or the Home
+  //    "Complete your profile" button / once-a-day nudge modal.
   useEffect(() => {
+    if (location.state?.openPhotoModal) {
+      setShowPhotoModal(true)
+      navigate(location.pathname, { replace: true, state: {} })
+      return
+    }
+
     if (!location.state?.highlightMissing || !profile) return
     const missing = new Set([
       ...Object.keys(REQUIRED_FIELD_CHECKS).filter((key) => REQUIRED_FIELD_CHECKS[key](profile)),
@@ -290,6 +354,51 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, location.state])
 
+  // Scroll-spy for the section nav — no IntersectionObserver needed for a
+  // single scrolling column of nine sections; just checks, on scroll,
+  // which section's top has crossed the sticky header/nav offset.
+  useEffect(() => {
+    function onScroll() {
+      const offset = 150
+      let current = NAV_SECTIONS[0].id
+      for (const { id } of NAV_SECTIONS) {
+        const el = sectionRefs.current[id]
+        if (el && el.getBoundingClientRect().top - offset <= 0) current = id
+      }
+      setActiveSection((prev) => (prev === current ? prev : current))
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  function scrollToSection(id) {
+    sectionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  // Used by the completion card — jump to the section, then focus the
+  // specific field once it's scrolled into view.
+  function jumpToField(key, sectionId) {
+    scrollToSection(sectionId)
+    setTimeout(() => {
+      const wrap = document.getElementById(`field-${key}`)
+      const target = wrap?.querySelector('input, textarea, select, button') || wrap
+      target?.focus?.({ preventScroll: true })
+    }, 350)
+  }
+
+  // Reverts every unsaved edit back to what's actually in the database —
+  // the About/Career/Experience/etc. form state resets from `profile`
+  // (the last value the parent confirmed was saved), and the membership
+  // details reset from the last-loaded/last-saved snapshot.
+  function discardChanges() {
+    if (profile) populateForm(profile)
+    setDetails(savedDetailsRef.current)
+    setError(null)
+    setGeoWarning(false)
+    setSaved(false)
+  }
+
   // Let the parent (App) know whenever there are unsaved edits, so it can
   // warn before letting someone navigate away and lose them.
   useEffect(() => { onDirtyChange?.(dirty) }, [dirty]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -298,6 +407,14 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
   // trigger a save (e.g. from the "leave without saving?" prompt) without
   // this component needing to know anything about navigation.
   useEffect(() => { if (saveRef) saveRef.current = save }) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-hides the "✓ Changes saved" toast a couple of seconds after a
+  // successful save, rather than leaving it sitting there indefinitely.
+  useEffect(() => {
+    if (!saved) return
+    const t = setTimeout(() => setSaved(false), 2600)
+    return () => clearTimeout(t)
+  }, [saved])
 
   // Clears a field's "still missing" highlight the moment someone starts
   // addressing it — no reason to keep flagging it once they've engaged with
@@ -369,6 +486,7 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
     })
     setSaved(false)
     setDirty(true)
+    clearMissing('industry')
   }
 
   function toggleTag(field, tag) {
@@ -506,6 +624,7 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
       onSaved(updated)
       setCropFile(null)
       setCropInitial(null)
+      clearMissing('photo')
       // Best-effort cleanup of the now-orphaned previous avatar file.
       const prevPath = prevUrl?.match(/\/avatars\/([^?]+)/)?.[1]
       if (prevPath) supabase.storage.from('avatars').remove([prevPath]).catch(() => {})
@@ -750,24 +869,26 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
     // member who has never opened this section yet has no profile_details
     // row at all (see loadDetails() above). id_number/nationality/phones
     // are trimmed here for the same reason the profiles fields are above.
+    const detailsPayload = {
+      profile_id: session.user.id,
+      ...details,
+      // An empty string isn't a valid `date` value — store null instead.
+      date_of_birth: details.date_of_birth || null,
+      known_as: details.known_as.trim(),
+      initials: details.initials.trim(),
+      surname_at_school: details.surname_at_school.trim(),
+      id_number: details.id_number.trim(),
+      nationality: details.nationality.trim(),
+      phone_home: details.phone_home.trim(),
+      phone_work: details.phone_work.trim(),
+      phone_fax: details.phone_fax.trim(),
+    }
     const { error: detErr } = await supabase
       .from('profile_details')
-      .upsert({
-        profile_id: session.user.id,
-        ...details,
-        // An empty string isn't a valid `date` value — store null instead.
-        date_of_birth: details.date_of_birth || null,
-        known_as: details.known_as.trim(),
-        initials: details.initials.trim(),
-        surname_at_school: details.surname_at_school.trim(),
-        id_number: details.id_number.trim(),
-        nationality: details.nationality.trim(),
-        phone_home: details.phone_home.trim(),
-        phone_work: details.phone_work.trim(),
-        phone_fax: details.phone_fax.trim(),
-      })
+      .upsert(detailsPayload)
     setBusy(false)
     if (detErr) { setError(detErr.message); return false }
+    savedDetailsRef.current = details
 
     onSaved(data)
     setSaved(true)
@@ -808,20 +929,37 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
   const mentoringHasMissing = ['availability', 'expertise', 'geographic_focus', 'business_website']
     .some((f) => missingFields.has(f))
 
+  const navSections = NAV_SECTIONS.map((s) => ({
+    ...s,
+    hasMissing: Array.from(missingFields).some((f) => MISSING_FIELD_SECTION[f] === s.id),
+  }))
+
+  const overviewRoleLine = form.occupation && form.company
+    ? `${form.occupation} @ ${form.company}`
+    : (form.occupation || form.company || '')
+  const overviewLocationLine = form.city && form.country
+    ? `${form.city}, ${form.country}`
+    : (form.country || form.city || '')
+
   return (
-    <section className="panel narrow profile-page">
+    <section className="panel narrow profile-page profile-edit-page">
       {/* Header */}
       <div className="profile-header-with-back">
-        <button type="button" className="profile-back-btn" onClick={onNavigateHome} aria-label="Back to home">
-          ← Home
+        <button
+          type="button"
+          className="profile-back-btn"
+          onClick={() => navigate(`/people/${session.user.id}`)}
+          aria-label="Back to profile"
+        >
+          ← Back to profile
         </button>
         <div>
-          <h2 className="panel-title">My profile</h2>
-          <p className="panel-sub">
-            Control how you appear in the directory and what other Old Boys see.
-          </p>
+          <h2 className="panel-title">Edit profile</h2>
+          <p className="panel-sub">Keep your alumni profile up to date.</p>
         </div>
       </div>
+
+      <ProfileCompletionCard profile={profile} onJumpToField={jumpToField} />
 
       {/* A real <form> wrapping the editor, so Enter in any text field
           saves instead of doing nothing — see the note in Jobs.jsx. It
@@ -840,836 +978,890 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
         </div>
       )}
 
-      {/* Photo Section - Hero */}
-      <div className="profile-photo-section">
-        <div className={missingFields.has('photo') ? 'profile-photo-card field-missing' : 'profile-photo-card'}>
-          <button
-            type="button"
-            className="profile-photo-avatar-btn"
-            onClick={() => setShowPhotoModal(true)}
-            aria-label="View profile photo"
-          >
-            <Avatar url={profile?.avatar_url} name={form.full_name} size={120} />
-          </button>
-          <div className="profile-photo-actions">
-            <button type="button"
-              className="btn primary small"
-              onClick={() => setShowPhotoModal(true)}
-            >
-              {profile?.avatar_url ? 'Profile picture' : 'Add photo'}
-            </button>
-            <p className="profile-photo-hint">JPG, PNG or WebP • Max 8MB</p>
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            style={{ display: 'none' }}
-            onChange={pickPhoto}
-          />
-        </div>
-      </div>
+      <div className="pe-layout">
+        <ProfileSectionNav sections={navSections} activeId={activeSection} onNavigate={scrollToSection} />
 
-      {/* Basic Info Section */}
-      <div className="profile-section" ref={aboutSectionRef}>
-        <h3 className="profile-section-title">About you</h3>
+        <div className="pe-content">
 
-        <div className="field-row">
-          <label className="field"><span>First name</span>
-            <ClearableInput
-              value={form.first_name}
-              onChange={(e) => set('first_name', e.target.value)}
-              onClear={() => set('first_name', '')}
-            />
-          </label>
-          <label className="field"><span>Last name</span>
-            <ClearableInput
-              value={form.last_name}
-              onChange={(e) => set('last_name', e.target.value)}
-              onClear={() => set('last_name', '')}
-            />
-          </label>
-        </div>
-
-        <label className="field"><span>Preferred first name</span>
-          <ClearableInput
-            value={form.preferred_name}
-            onChange={(e) => set('preferred_name', e.target.value)}
-            onClear={() => set('preferred_name', '')}
-            placeholder="If different — this is the name others see"
-          />
-        </label>
-
-        <label className={fieldCls('bio')}><span>Bio</span>
-          <ClearableInput
-            as="textarea"
-            rows={3}
-            value={form.bio}
-            onChange={(e) => set('bio', e.target.value)}
-            onClear={() => set('bio', '')}
-            placeholder="What you've been up to since SACS…"
-          />
-        </label>
-
-        <div className="field-row">
-          <label className="field"><span>At SACS from</span>
-            <ClearableInput
-              inputMode="numeric"
-              value={form.start_year}
-              onChange={(e) => set('start_year', e.target.value.replace(/\D/g, '').slice(0, 4))}
-              onClear={() => set('start_year', '')}
-              placeholder="2012"
-            />
-          </label>
-          <label className="field"><span>Class of</span>
-            <ClearableInput
-              inputMode="numeric"
-              value={form.grad_year}
-              onChange={(e) => set('grad_year', e.target.value.replace(/\D/g, '').slice(0, 4))}
-              onClear={() => set('grad_year', '')}
-              placeholder="2024"
-            />
-          </label>
-        </div>
-
-        <label className={fieldCls('degree')}><span>Degree</span>
-          <ClearableInput
-            value={form.degree}
-            onChange={(e) => set('degree', e.target.value)}
-            onClear={() => set('degree', '')}
-            placeholder="e.g. BCom Accounting"
-          />
-        </label>
-
-      </div>
-
-      {/* Career Section */}
-      <div className="profile-section profile-section-career">
-        <h3 className="profile-section-title">Career</h3>
-
-        <label className={fieldCls('industry')}><span>Industry</span>
-          <ListAutocomplete
-            value={form.industry}
-            onChange={setIndustry}
-            options={INDUSTRIES}
-            keywords={INDUSTRY_KEYWORDS}
-            placeholder="Search or type your industry"
-            clearable
-          />
-        </label>
-
-        <div className="field-row">
-          <label className={fieldCls('occupation')}><span>Job title</span>
-            <ClearableInput
-              value={form.occupation}
-              onChange={(e) => set('occupation', e.target.value)}
-              onClear={() => set('occupation', '')}
-              placeholder="e.g. Software Engineer"
-            />
-          </label>
-          <label className={fieldCls('company')}><span>Company</span>
-            <ClearableInput
-              value={form.company}
-              onChange={(e) => set('company', e.target.value)}
-              onClear={() => set('company', '')}
-              placeholder="e.g. Naspers"
-            />
-          </label>
-        </div>
-      </div>
-
-      {/* Experience Section — collapsed, LinkedIn-style summary cards that
-          expand into the edit form one at a time, rather than every entry's
-          full form sitting open at once. */}
-      <div className="profile-section profile-section-experience">
-        <h3 className="profile-section-title"><ExperienceIcon /> Experience</h3>
-
-        {form.experience.length === 0 && (
-          <p className="experience-empty">
-            Add the roles you've held since SACS — they'll show up as a career timeline on your profile.
-          </p>
-        )}
-
-        {form.experience.map((entry) => {
-          const showCompanyError = !entry.company.trim() && (entry.title.trim() || entry.industry.trim() || entry.from.trim() || entry.to.trim())
-          // An invalid entry (missing the required company name) always
-          // shows expanded so the inline error stays visible — collapsing
-          // it would hide the one thing the person needs to fix.
-          const isExpanded = expandedExperience.has(entry._key) || showCompanyError
-          const isCurrent = !entry.to
-
-          if (!isExpanded) {
-            const range = formatExperienceRange(entry.from, entry.to)
-            const duration = formatExperienceDuration(entry.from, entry.to)
-            return (
-              <div className="experience-summary-card" key={entry._key}>
-                <span className="experience-summary-icon" aria-hidden="true"><ExperienceIcon /></span>
+          {/* Overview — confirms at a glance you're editing the right
+              profile, and is where the photo lives. */}
+          <div className="profile-section pe-section" id="pe-section-overview" ref={setSectionRef('overview')}>
+            <h3 className="profile-section-title">Overview</h3>
+            <div className="pe-overview-row">
+              <div className={missingFields.has('photo') ? 'profile-photo-card field-missing' : 'profile-photo-card'} id="field-avatar_url">
                 <button
                   type="button"
-                  className="experience-summary-body"
-                  onClick={() => toggleExperienceExpanded(entry._key)}
+                  className="profile-photo-avatar-btn"
+                  onClick={() => setShowPhotoModal(true)}
+                  aria-label="View profile photo"
                 >
-                  <span className="experience-timeline-title">{entry.title || entry.company || 'Untitled role'}</span>
-                  {entry.title && entry.company && <span className="experience-timeline-company">{entry.company}</span>}
-                  <span className="experience-timeline-meta">
-                    {range && <span className="experience-timeline-range">{range}{duration && ` · ${duration}`}</span>}
-                    {entry.industry && <span className="experience-timeline-industry">{entry.industry}</span>}
-                  </span>
+                  <Avatar url={profile?.avatar_url} name={form.full_name} size={120} />
                 </button>
-                <div className="experience-summary-actions">
-                  <button
-                    type="button"
-                    className="icon-btn-edit"
-                    onClick={() => toggleExperienceExpanded(entry._key)}
-                    aria-label="Edit experience"
-                    title="Edit"
+                <div className="profile-photo-actions">
+                  <button type="button"
+                    className="btn primary small"
+                    onClick={() => setShowPhotoModal(true)}
                   >
-                    <PencilIcon />
+                    {profile?.avatar_url ? 'Change photo' : 'Add photo'}
                   </button>
-                  <DeleteButton
-                    onConfirm={() => removeExperience(entry._key)}
-                    label="Delete experience"
-                    title="Delete this experience entry?"
-                    message="This will remove it from your profile. This can't be undone."
-                    className="icon-btn-delete"
-                  />
+                  <p className="profile-photo-hint">JPG, PNG or WebP • Max 8MB</p>
                 </div>
-              </div>
-            )
-          }
-
-          return (
-            <div className="experience-entry" key={entry._key}>
-              <div className="field-row">
-                <label className="field"><span>Title</span>
-                  <ClearableInput
-                    value={entry.title}
-                    onChange={(e) => setExperienceField(entry._key, 'title', e.target.value)}
-                    onClear={() => setExperienceField(entry._key, 'title', '')}
-                    placeholder="e.g. Marketing Manager"
-                  />
-                </label>
-                <label className="field"><span>Company name</span>
-                  <ClearableInput
-                    value={entry.company}
-                    onChange={(e) => setExperienceField(entry._key, 'company', e.target.value)}
-                    onClear={() => setExperienceField(entry._key, 'company', '')}
-                    placeholder="e.g. Naspers"
-                    className={showCompanyError ? 'input-error' : ''}
-                  />
-                  {showCompanyError && <span className="field-error">Company name is required</span>}
-                </label>
-              </div>
-
-              <label className="field"><span>Industry</span>
-                <ListAutocomplete
-                  value={entry.industry}
-                  onChange={(v) => setExperienceField(entry._key, 'industry', v)}
-                  options={INDUSTRIES}
-                  keywords={INDUSTRY_KEYWORDS}
-                  placeholder="Search or type an industry"
-                  clearable
-                />
-              </label>
-
-              <label className="field"><span>Description (optional)</span>
-                <textarea
-                  value={entry.description}
-                  onChange={(e) => setExperienceField(entry._key, 'description', e.target.value)}
-                  placeholder="Add details about your role, achievements, or responsibilities..."
-                  style={{ resize: 'vertical', minHeight: '100px' }}
-                />
-              </label>
-
-              <div className="field-row">
-                <label className="field"><span>From</span>
-                  <input
-                    type="month"
-                    className="experience-date"
-                    value={entry.from}
-                    onChange={(e) => setExperienceField(entry._key, 'from', e.target.value)}
-                  />
-                </label>
-                <label className="field"><span>To</span>
-                  {isCurrent ? (
-                    <div className="experience-present-chip">Present</div>
-                  ) : (
-                    <input
-                      type="month"
-                      className="experience-date"
-                      value={entry.to}
-                      onChange={(e) => setExperienceField(entry._key, 'to', e.target.value)}
-                    />
-                  )}
-                </label>
-              </div>
-
-              <label className="experience-current-check">
                 <input
-                  type="checkbox"
-                  checked={isCurrent}
-                  onChange={(e) => setExperienceField(entry._key, 'to', e.target.checked ? '' : monthNow())}
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={pickPhoto}
                 />
-                <span>I currently work here</span>
-              </label>
+              </div>
 
-              <div className="experience-entry-actions">
-                <button type="button" className="experience-remove" onClick={() => removeExperience(entry._key)}>
-                  Remove
-                </button>
-                <button type="button" className="experience-done" onClick={() => toggleExperienceExpanded(entry._key)}>
-                  Done
-                </button>
+              <div className="pe-overview-summary">
+                <strong className="pe-overview-name">{form.full_name || 'Your name'}</strong>
+                {overviewRoleLine && <span>{overviewRoleLine}</span>}
+                {overviewLocationLine && <span>{overviewLocationLine}</span>}
+                {form.grad_year && <span>Class of {form.grad_year}</span>}
               </div>
             </div>
-          )
-        })}
-
-        <button type="button" className="experience-add" onClick={addExperience}>
-          <PlusIcon /> Add position
-        </button>
-      </div>
-
-      {/* CV Section */}
-      <div className={missingFields.has('cv') ? 'profile-section field-missing' : 'profile-section'}>
-        <h3 className="profile-section-title"><CvIcon /> CV / Resume</h3>
-        <p className="experience-empty" style={{ marginBottom: 12 }}>
-          Upload your CV so other Old Boys and potential employers can view it.
-        </p>
-        <div className="cv-upload-area">
-          {profile?.cv_url ? (
-            <div className="cv-file-row">
-              {/* Signed URL rather than a public one — see openStorageFile()
-                  and the cvs-bucket note in schema-update-47.sql. */}
-              <a
-                className="cv-file-link"
-                href={profile.cv_url}
-                onClick={(e) => { e.preventDefault(); openStorageFile('cvs', profile.cv_url) }}
-                rel="noopener noreferrer"
-              >
-                <CvFileIcon /> {profile.cv_filename || 'CV'}
-              </a>
-              <div className="cv-file-actions">
-                <button type="button" className="btn ghost small" onClick={() => cvRef.current?.click()} disabled={cvUploading}>
-                  {cvUploading ? 'Uploading…' : 'Replace'}
-                </button>
-                <button type="button" className="btn ghost small" onClick={removeCv}>Remove</button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" className="cv-upload-btn" onClick={() => cvRef.current?.click()} disabled={cvUploading}>
-              {cvUploading ? 'Uploading…' : '+ Upload CV'}
-            </button>
-          )}
-          <input
-            ref={cvRef}
-            type="file"
-            accept={CV_ACCEPT}
-            style={{ display: 'none' }}
-            onChange={pickCv}
-          />
-          <span className="hint">PDF or Word document · Max 10 MB</span>
-        </div>
-      </div>
-
-      {/* Location Section */}
-      <div className="profile-section profile-section-location">
-        <h3 className="profile-section-title">Location</h3>
-
-        <label className="field"><span>Country</span>
-          <CountryAutocomplete
-            value={form.country}
-            onChange={(v) => set('country', v)}
-            placeholder="Start typing a country…"
-            clearable
-          />
-        </label>
-
-        <label className={fieldCls('city')}><span>City / Town</span>
-          <CityAutocomplete
-            value={form.city}
-            country={form.country}
-            onChange={(v) => set('city', v)}
-            onSelectCoords={setCityCoords}
-            placeholder="e.g. Cape Town, London, New York"
-          />
-          <span className="hint">Start typing and choose from suggestions</span>
-        </label>
-
-        <label className="field"><span>Address line 1</span>
-          <ClearableInput
-            value={form.address_line1}
-            onChange={(e) => set('address_line1', e.target.value)}
-            onClear={() => set('address_line1', '')}
-          />
-        </label>
-        <label className="field"><span>Address line 2</span>
-          <ClearableInput
-            value={form.address_line2}
-            onChange={(e) => set('address_line2', e.target.value)}
-            onClear={() => set('address_line2', '')}
-          />
-        </label>
-        <label className="field"><span>Address line 3</span>
-          <ClearableInput
-            value={form.address_line3}
-            onChange={(e) => set('address_line3', e.target.value)}
-            onClear={() => set('address_line3', '')}
-          />
-        </label>
-        <div className="field-row">
-          <label className="field"><span>Province</span>
-            <ClearableInput
-              value={form.province}
-              onChange={(e) => set('province', e.target.value)}
-              onClear={() => set('province', '')}
-            />
-          </label>
-          <label className={fieldCls('postal_code')}><span>Post code</span>
-            <ClearableInput
-              value={form.postal_code}
-              inputMode="numeric"
-              onChange={(e) => set('postal_code', e.target.value)}
-              onClear={() => set('postal_code', '')}
-            />
-          </label>
-        </div>
-      </div>
-
-      {/* Connect Section */}
-      <div className="profile-section profile-section-connect">
-        <h3 className="profile-section-title">Connect</h3>
-
-        <label className={fieldCls('linkedin_url')}><span>LinkedIn URL</span>
-          {/* Fixed, visible https:// prefix — people kept pasting bare
-              "linkedin.com/in/…" links, hitting the "must start with
-              http://" save error, and not understanding why. The scheme is
-              now shown as a locked prefix and added to the stored value
-              automatically, so there's nothing to get wrong. Pasting a full
-              https:// link still works — the scheme is just de-duplicated. */}
-          <div className="url-input-wrap">
-            <span className="url-prefix" aria-hidden="true">https://</span>
-            <input
-              type="text"
-              value={form.linkedin_url.replace(/^https?:\/\//i, '')}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/^https?:\/\//i, '')
-                set('linkedin_url', raw.trim() ? `https://${raw}` : '')
-              }}
-              placeholder="linkedin.com/in/yourname"
-            />
           </div>
-          <span className="hint">Just paste your profile link — the https:// is added for you.</span>
-        </label>
 
-        <label className={fieldCls('phone')}><span>Phone number</span>
-          <PhoneInput value={form.phone} onChange={(v) => set('phone', v)} />
-          <span className="hint">Who can see this is controlled in Settings → Privacy.</span>
-        </label>
-      </div>
-
-      {/* SACS membership details — Collapsible, same pattern as Mentoring
-          below. Backed by the separate profile_details table (tighter RLS
-          than `profiles`), so id_number/nationality/personal phones never
-          ride along with the "any authenticated user can read every
-          profile column" policy the directory relies on. */}
-      <div className="profile-section">
-        <button type="button"
-          className="profile-mentoring-toggle"
-          onClick={() => setShowDetails(!showDetails)}
-        >
-          <span className="profile-mentoring-title">SACS membership details</span>
-          <span className={`toggle-arrow ${showDetails ? 'open' : ''}`}>▼</span>
-        </button>
-
-        {showDetails && (
-          <div className="profile-mentoring-content">
-            <p className="hint" style={{ marginBottom: 12 }}>
-              Used for the Alumni Association&rsquo;s membership records — not shown in the directory.
-            </p>
+          {/* About */}
+          <div className="profile-section pe-section" id="pe-section-about" ref={setSectionRef('about')}>
+            <h3 className="profile-section-title">About</h3>
+            <p className="pe-section-hint">Basic information that helps other alumni recognise you.</p>
 
             <div className="field-row">
-              <label className="field"><span>Title</span>
-                <ListAutocomplete
-                  value={details.title}
-                  onChange={(v) => setDetail('title', v)}
-                  options={TITLES}
-                  placeholder="Select a title"
-                  clearable
+              <label className="field"><span>First name</span>
+                <ClearableInput
+                  value={form.first_name}
+                  onChange={(e) => set('first_name', e.target.value)}
+                  onClear={() => set('first_name', '')}
                 />
               </label>
-              <label className="field"><span>Gender</span>
-                <ListAutocomplete
-                  // Defaults the picker to Male for a brand-new, never-saved
-                  // record (SACS is a boys' school) without ever overwriting
-                  // an existing choice — once details.gender has any value
-                  // (including one someone deliberately changed away from
-                  // Male), that value wins.
-                  value={details.gender || 'Male'}
-                  onChange={(v) => setDetail('gender', v)}
-                  options={GENDERS}
-                  placeholder="Select a gender"
-                  clearable
+              <label className="field"><span>Last name</span>
+                <ClearableInput
+                  value={form.last_name}
+                  onChange={(e) => set('last_name', e.target.value)}
+                  onClear={() => set('last_name', '')}
                 />
               </label>
             </div>
 
-            <label className="field"><span>Date of birth</span>
-              <input
-                type="date"
-                value={details.date_of_birth || ''}
-                onChange={(e) => setDetail('date_of_birth', e.target.value)}
-                autoComplete="bday"
+            <label className="field"><span>Preferred first name</span>
+              <ClearableInput
+                value={form.preferred_name}
+                onChange={(e) => set('preferred_name', e.target.value)}
+                onClear={() => set('preferred_name', '')}
+                placeholder="If different — this is the name others see"
               />
             </label>
 
-            {/* "Known as" used to live here too — it duplicated the
-                "Preferred first name" field in About you, which writes to
-                profiles.preferred_name and is what the directory shows. */}
-            <div className="field-row">
-              <label className="field"><span>Initials</span>
-                <ClearableInput
-                  value={details.initials}
-                  onChange={(e) => setDetail('initials', e.target.value)}
-                  onClear={() => setDetail('initials', '')}
-                  placeholder="e.g. J.A."
-                />
-              </label>
-              <label className="field"><span>Surname at school (if different)</span>
-                <ClearableInput
-                  value={details.surname_at_school}
-                  onChange={(e) => setDetail('surname_at_school', e.target.value)}
-                  onClear={() => setDetail('surname_at_school', '')}
-                  placeholder="Only if it has changed"
-                />
-              </label>
-            </div>
+            <label className={fieldCls('bio')} id="field-bio"><span>Bio</span>
+              <ClearableInput
+                as="textarea"
+                rows={3}
+                value={form.bio}
+                onChange={(e) => set('bio', e.target.value)}
+                onClear={() => set('bio', '')}
+                placeholder="What you've been up to since SACS…"
+              />
+            </label>
 
             <div className="field-row">
-              <label className="field"><span>ID / passport number</span>
+              <label className="field"><span>At SACS from</span>
                 <ClearableInput
-                  value={details.id_number}
-                  onChange={(e) => setDetail('id_number', e.target.value)}
-                  onClear={() => setDetail('id_number', '')}
+                  inputMode="numeric"
+                  value={form.start_year}
+                  onChange={(e) => set('start_year', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  onClear={() => set('start_year', '')}
+                  placeholder="2012"
                 />
               </label>
-              <label className="field"><span>Nationality</span>
+              <label className="field" id="field-grad_year"><span>Class of</span>
                 <ClearableInput
-                  value={details.nationality}
-                  onChange={(e) => setDetail('nationality', e.target.value)}
-                  onClear={() => setDetail('nationality', '')}
+                  inputMode="numeric"
+                  value={form.grad_year}
+                  onChange={(e) => set('grad_year', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  onClear={() => set('grad_year', '')}
+                  placeholder="2024"
                 />
               </label>
             </div>
+
+            <label className={fieldCls('degree')} id="field-degree"><span>Degree</span>
+              <ClearableInput
+                value={form.degree}
+                onChange={(e) => set('degree', e.target.value)}
+                onClear={() => set('degree', '')}
+                placeholder="e.g. BCom Accounting"
+              />
+            </label>
+          </div>
+
+          {/* Career */}
+          <div className="profile-section pe-section" id="pe-section-career" ref={setSectionRef('career')}>
+            <h3 className="profile-section-title">Career</h3>
+            <p className="pe-section-hint">Your current professional information — this is what helps other alumni find you in the directory.</p>
+
+            <label className={fieldCls('industry')} id="field-industry"><span>Industry</span>
+              <ListAutocomplete
+                value={form.industry}
+                onChange={setIndustry}
+                options={INDUSTRIES}
+                keywords={INDUSTRY_KEYWORDS}
+                placeholder="Search or type your industry"
+                clearable
+              />
+            </label>
 
             <div className="field-row">
-              <label className="field"><span>Home phone</span>
-                <PhoneInput value={details.phone_home} onChange={(v) => setDetail('phone_home', v)} />
+              <label className={fieldCls('occupation')} id="field-occupation"><span>Job title</span>
+                <ClearableInput
+                  value={form.occupation}
+                  onChange={(e) => set('occupation', e.target.value)}
+                  onClear={() => set('occupation', '')}
+                  placeholder="e.g. Software Engineer"
+                />
               </label>
-              <label className="field"><span>Work phone</span>
-                <PhoneInput value={details.phone_work} onChange={(v) => setDetail('phone_work', v)} />
+              <label className={fieldCls('company')} id="field-company"><span>Company</span>
+                <ClearableInput
+                  value={form.company}
+                  onChange={(e) => set('company', e.target.value)}
+                  onClear={() => set('company', '')}
+                  placeholder="e.g. Naspers"
+                />
               </label>
-            </div>
-
-            <div className="field">
-              <span>Association with SACS</span>
-              <span className="hint">Tick everything that applies — these aren&rsquo;t mutually exclusive.</span>
-              <div className="chip-toggle-row">
-                {[
-                  ['old_boy', 'Old Boy'],
-                  ['current_parent', 'Current parent'],
-                  ['past_parent', 'Past parent'],
-                  ['current_staff', 'Current staff'],
-                  ['past_staff', 'Past staff'],
-                ].map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={details[key] ? 'chip-toggle on' : 'chip-toggle'}
-                    aria-pressed={details[key]}
-                    onClick={() => setDetail(key, !details[key])}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="field">
-              <span>How can the Alumni Association reach you?</span>
-              <div className="chip-toggle-row">
-                {[
-                  ['comm_pref_email', 'Email'],
-                  ['comm_pref_phone', 'Phone'],
-                  ['comm_pref_sms', 'SMS'],
-                ].map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={details[key] ? 'chip-toggle on' : 'chip-toggle'}
-                    aria-pressed={details[key]}
-                    onClick={() => setDetail(key, !details[key])}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="field">
-              <span>Membership tier</span>
-              <p className="hint">
-                {details.subscription_tier} — set by the Alumni Association office, not editable here.
-              </p>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Mentoring - Collapsible */}
-      <div className="profile-section">
-        <button type="button"
-          className="profile-mentoring-toggle"
-          onClick={() => setShowMentoring(!showMentoring)}
-        >
-          <span className="profile-mentoring-title">
-            Mentoring
-            {mentoringHasMissing && <span className="field-missing-dot" aria-label="Has unfilled optional fields" />}
-          </span>
-          <span className={`toggle-arrow ${showMentoring ? 'open' : ''}`}>▼</span>
-        </button>
+          {/* Experience — collapsed, LinkedIn-style summary cards that
+              expand into the edit form one at a time, rather than every
+              entry's full form sitting open at once. */}
+          <div className="profile-section pe-section profile-section-experience" id="pe-section-experience" ref={setSectionRef('experience')}>
+            <h3 className="profile-section-title"><ExperienceIcon /> Experience</h3>
+            <p className="pe-section-hint">Your career journey — separate from the current role above, so it can grow into a full timeline.</p>
 
-        {showMentoring && (
-          <div className="profile-mentoring-content">
-            {/* Single, top-level gate for the whole section — everything
-                below only makes sense once someone has actually said yes
-                here, so it's the one and only "am I open to this" question.
-                This toggle alone is also what puts someone under Find a
-                Mentor — there's no separate "Mentoring/Coaching" checkbox
-                anymore, so this is the only thing to flip. */}
-            <div className="field">
-              <span>Open to mentoring and other opportunities?</span>
-              <div className="onboarding-choice-row profile-choice-row">
-                <button
-                  type="button"
-                  className={form.is_open_to_opportunities ? 'onboarding-choice on' : 'onboarding-choice'}
-                  onClick={() => saveToggle('is_open_to_opportunities', true)}
-                  disabled={togglingField === 'is_open_to_opportunities'}
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  className={!form.is_open_to_opportunities ? 'onboarding-choice on' : 'onboarding-choice'}
-                  onClick={() => saveToggle('is_open_to_opportunities', false)}
-                  disabled={togglingField === 'is_open_to_opportunities'}
-                >
-                  Not right now
-                </button>
-              </div>
-              {form.is_open_to_opportunities && (
-                <span className="hint mentor-status-hint">
-                  ✓ You'll show up under Find a Mentor.{' '}
-                  <button type="button" className="link-btn" onClick={() => navigate('/mentoring')}>
-                    See how you appear →
-                  </button>
-                </span>
-              )}
-            </div>
+            {form.experience.length === 0 && (
+              <p className="experience-empty">
+                Add the roles you've held since SACS — they'll show up as a career timeline on your profile.
+              </p>
+            )}
 
-            {form.is_open_to_opportunities && (
-              <div className="profile-mentoring-details">
-                <div className="field-row">
-                  <label className={fieldCls('availability')}><span>Availability</span>
+            {form.experience.map((entry) => {
+              const showCompanyError = !entry.company.trim() && (entry.title.trim() || entry.industry.trim() || entry.from.trim() || entry.to.trim())
+              // An invalid entry (missing the required company name) always
+              // shows expanded so the inline error stays visible — collapsing
+              // it would hide the one thing the person needs to fix.
+              const isExpanded = expandedExperience.has(entry._key) || showCompanyError
+              const isCurrent = !entry.to
+
+              if (!isExpanded) {
+                const range = formatExperienceRange(entry.from, entry.to)
+                const duration = formatExperienceDuration(entry.from, entry.to)
+                return (
+                  <div className="experience-summary-card" key={entry._key}>
+                    <span className="experience-summary-icon" aria-hidden="true"><ExperienceIcon /></span>
+                    <button
+                      type="button"
+                      className="experience-summary-body"
+                      onClick={() => toggleExperienceExpanded(entry._key)}
+                    >
+                      <span className="experience-timeline-title">{entry.title || entry.company || 'Untitled role'}</span>
+                      {entry.title && entry.company && <span className="experience-timeline-company">{entry.company}</span>}
+                      <span className="experience-timeline-meta">
+                        {range && <span className="experience-timeline-range">{range}{duration && ` · ${duration}`}</span>}
+                        {entry.industry && <span className="experience-timeline-industry">{entry.industry}</span>}
+                      </span>
+                    </button>
+                    <div className="experience-summary-actions">
+                      <button
+                        type="button"
+                        className="icon-btn-edit"
+                        onClick={() => toggleExperienceExpanded(entry._key)}
+                        aria-label="Edit experience"
+                        title="Edit"
+                      >
+                        <PencilIcon />
+                      </button>
+                      <DeleteButton
+                        onConfirm={() => removeExperience(entry._key)}
+                        label="Delete experience"
+                        title="Delete this experience entry?"
+                        message="This will remove it from your profile. This can't be undone."
+                        className="icon-btn-delete"
+                      />
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
+                <div className="experience-entry" key={entry._key}>
+                  <div className="field-row">
+                    <label className="field"><span>Title</span>
+                      <ClearableInput
+                        value={entry.title}
+                        onChange={(e) => setExperienceField(entry._key, 'title', e.target.value)}
+                        onClear={() => setExperienceField(entry._key, 'title', '')}
+                        placeholder="e.g. Marketing Manager"
+                      />
+                    </label>
+                    <label className="field"><span>Company name</span>
+                      <ClearableInput
+                        value={entry.company}
+                        onChange={(e) => setExperienceField(entry._key, 'company', e.target.value)}
+                        onClear={() => setExperienceField(entry._key, 'company', '')}
+                        placeholder="e.g. Naspers"
+                        className={showCompanyError ? 'input-error' : ''}
+                      />
+                      {showCompanyError && <span className="field-error">Company name is required</span>}
+                    </label>
+                  </div>
+
+                  <label className="field"><span>Industry</span>
                     <ListAutocomplete
-                      value={form.availability}
-                      onChange={(value) => set('availability', value)}
-                      options={AVAILABILITY_OPTIONS}
-                      placeholder="Search your availability"
+                      value={entry.industry}
+                      onChange={(v) => setExperienceField(entry._key, 'industry', v)}
+                      options={INDUSTRIES}
+                      keywords={INDUSTRY_KEYWORDS}
+                      placeholder="Search or type an industry"
                       clearable
                     />
                   </label>
 
-                  <div className={fieldCls('geographic_focus')}>
-                    <span>Geographic focus</span>
-                    <div className="tags-grid compact">
-                      {GEOGRAPHIC_FOCUS.map((geo) => (
-                        <button
-                          key={geo}
-                          type="button"
-                          className={`tag-btn ${form.geographic_focus.includes(geo) ? 'selected' : ''}`}
-                          onClick={() => toggleTag('geographic_focus', geo)}
-                        >
-                          {geo}
-                        </button>
-                      ))}
-                    </div>
+                  <label className="field"><span>Description (optional)</span>
+                    <textarea
+                      value={entry.description}
+                      onChange={(e) => setExperienceField(entry._key, 'description', e.target.value)}
+                      placeholder="Add details about your role, achievements, or responsibilities..."
+                      style={{ resize: 'vertical', minHeight: '100px' }}
+                    />
+                  </label>
+
+                  <div className="field-row">
+                    <label className="field"><span>From</span>
+                      <input
+                        type="month"
+                        className="experience-date"
+                        value={entry.from}
+                        onChange={(e) => setExperienceField(entry._key, 'from', e.target.value)}
+                      />
+                    </label>
+                    <label className="field"><span>To</span>
+                      {isCurrent ? (
+                        <div className="experience-present-chip">Present</div>
+                      ) : (
+                        <input
+                          type="month"
+                          className="experience-date"
+                          value={entry.to}
+                          onChange={(e) => setExperienceField(entry._key, 'to', e.target.value)}
+                        />
+                      )}
+                    </label>
+                  </div>
+
+                  <label className="experience-current-check">
+                    <input
+                      type="checkbox"
+                      checked={isCurrent}
+                      onChange={(e) => setExperienceField(entry._key, 'to', e.target.checked ? '' : monthNow())}
+                    />
+                    <span>I currently work here</span>
+                  </label>
+
+                  <div className="experience-entry-actions">
+                    <button type="button" className="experience-remove" onClick={() => removeExperience(entry._key)}>
+                      Remove
+                    </button>
+                    <button type="button" className="experience-done" onClick={() => toggleExperienceExpanded(entry._key)}>
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+
+            <button type="button" className="experience-add" onClick={addExperience}>
+              <PlusIcon /> Add position
+            </button>
+          </div>
+
+          {/* Documents — CV / Resume */}
+          <div
+            className={missingFields.has('cv') ? 'profile-section pe-section field-missing' : 'profile-section pe-section'}
+            id="pe-section-documents"
+            ref={setSectionRef('documents')}
+          >
+            <h3 className="profile-section-title"><CvIcon /> Documents</h3>
+            <p className="pe-section-hint">Add your CV to give alumni opportunities more context about your experience.</p>
+            <div className="cv-upload-area">
+              {profile?.cv_url ? (
+                <div className="cv-file-row">
+                  {/* Signed URL rather than a public one — see openStorageFile()
+                      and the cvs-bucket note in schema-update-47.sql. */}
+                  <a
+                    className="cv-file-link"
+                    href={profile.cv_url}
+                    onClick={(e) => { e.preventDefault(); openStorageFile('cvs', profile.cv_url) }}
+                    rel="noopener noreferrer"
+                  >
+                    <CvFileIcon /> {profile.cv_filename || 'CV'}
+                    <span className="pe-doc-status">Uploaded</span>
+                  </a>
+                  <div className="cv-file-actions">
+                    <button type="button" className="btn ghost small" onClick={() => cvRef.current?.click()} disabled={cvUploading}>
+                      {cvUploading ? 'Uploading…' : 'Replace'}
+                    </button>
+                    <button type="button" className="btn ghost small" onClick={removeCv}>Remove</button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" className="cv-upload-btn" onClick={() => cvRef.current?.click()} disabled={cvUploading}>
+                  {cvUploading ? 'Uploading…' : '+ Upload CV'}
+                </button>
+              )}
+              <input
+                ref={cvRef}
+                type="file"
+                accept={CV_ACCEPT}
+                style={{ display: 'none' }}
+                onChange={pickCv}
+              />
+              <span className="hint">PDF or Word document · Max 10 MB</span>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="profile-section pe-section" id="pe-section-location" ref={setSectionRef('location')}>
+            <h3 className="profile-section-title">Location</h3>
+            <p className="pe-section-hint">Where are you currently based?</p>
+
+            <label className="field" id="field-country"><span>Country</span>
+              <CountryAutocomplete
+                value={form.country}
+                onChange={(v) => set('country', v)}
+                placeholder="Start typing a country…"
+                clearable
+              />
+            </label>
+
+            <label className={fieldCls('city')} id="field-city"><span>City / Town</span>
+              <CityAutocomplete
+                value={form.city}
+                country={form.country}
+                onChange={(v) => set('city', v)}
+                onSelectCoords={setCityCoords}
+                placeholder="e.g. Cape Town, London, New York"
+              />
+              <span className="hint">Start typing and choose from suggestions</span>
+            </label>
+
+            <label className="field"><span>Address line 1</span>
+              <ClearableInput
+                value={form.address_line1}
+                onChange={(e) => set('address_line1', e.target.value)}
+                onClear={() => set('address_line1', '')}
+              />
+            </label>
+            <label className="field"><span>Address line 2</span>
+              <ClearableInput
+                value={form.address_line2}
+                onChange={(e) => set('address_line2', e.target.value)}
+                onClear={() => set('address_line2', '')}
+              />
+            </label>
+            <label className="field"><span>Address line 3</span>
+              <ClearableInput
+                value={form.address_line3}
+                onChange={(e) => set('address_line3', e.target.value)}
+                onClear={() => set('address_line3', '')}
+              />
+            </label>
+            <div className="field-row">
+              <label className="field"><span>Province</span>
+                <ClearableInput
+                  value={form.province}
+                  onChange={(e) => set('province', e.target.value)}
+                  onClear={() => set('province', '')}
+                />
+              </label>
+              <label className={fieldCls('postal_code')}><span>Post code</span>
+                <ClearableInput
+                  value={form.postal_code}
+                  inputMode="numeric"
+                  onChange={(e) => set('postal_code', e.target.value)}
+                  onClear={() => set('postal_code', '')}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Contact & links */}
+          <div className="profile-section pe-section" id="pe-section-contact" ref={setSectionRef('contact')}>
+            <h3 className="profile-section-title">Contact &amp; links</h3>
+            <p className="pe-section-hint">Who can see this is controlled in Settings → Privacy.</p>
+
+            <label className={fieldCls('linkedin_url')} id="field-linkedin_url"><span>LinkedIn URL</span>
+              {/* Fixed, visible https:// prefix — people kept pasting bare
+                  "linkedin.com/in/…" links, hitting the "must start with
+                  http://" save error, and not understanding why. The scheme is
+                  now shown as a locked prefix and added to the stored value
+                  automatically, so there's nothing to get wrong. Pasting a full
+                  https:// link still works — the scheme is just de-duplicated. */}
+              <div className="url-input-wrap">
+                <span className="url-prefix" aria-hidden="true">https://</span>
+                <input
+                  type="text"
+                  value={form.linkedin_url.replace(/^https?:\/\//i, '')}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/^https?:\/\//i, '')
+                    set('linkedin_url', raw.trim() ? `https://${raw}` : '')
+                  }}
+                  placeholder="linkedin.com/in/yourname"
+                />
+              </div>
+              <span className="hint">Just paste your profile link — the https:// is added for you.</span>
+            </label>
+
+            <label className={fieldCls('phone')}><span>Phone number</span>
+              <PhoneInput value={form.phone} onChange={(v) => set('phone', v)} />
+            </label>
+          </div>
+
+          {/* SACS membership details — Collapsible, backed by the separate
+              profile_details table (tighter RLS than `profiles`), so
+              id_number/nationality/personal phones never ride along with
+              the "any authenticated user can read every profile column"
+              policy the directory relies on. Visually separated from the
+              rest of the public profile because it isn't part of it. */}
+          <div className="profile-section pe-section pe-membership-section" id="pe-section-membership" ref={setSectionRef('membership')}>
+            <button type="button"
+              className="profile-mentoring-toggle"
+              onClick={() => setShowDetails(!showDetails)}
+            >
+              <span className="profile-mentoring-title">
+                SACS membership
+                <span className="pe-admin-tag">Administrative</span>
+              </span>
+              <span className={`toggle-arrow ${showDetails ? 'open' : ''}`}>▼</span>
+            </button>
+
+            {showDetails && (
+              <div className="profile-mentoring-content">
+                <p className="hint" style={{ marginBottom: 12 }}>
+                  Used for the Alumni Association&rsquo;s membership records — private, and separate from your public profile.
+                </p>
+
+                <div className="field-row">
+                  <label className="field"><span>Title</span>
+                    <ListAutocomplete
+                      value={details.title}
+                      onChange={(v) => setDetail('title', v)}
+                      options={TITLES}
+                      placeholder="Select a title"
+                      clearable
+                    />
+                  </label>
+                  <label className="field"><span>Gender</span>
+                    <ListAutocomplete
+                      // Defaults the picker to Male for a brand-new, never-saved
+                      // record (SACS is a boys' school) without ever overwriting
+                      // an existing choice — once details.gender has any value
+                      // (including one someone deliberately changed away from
+                      // Male), that value wins.
+                      value={details.gender || 'Male'}
+                      onChange={(v) => setDetail('gender', v)}
+                      options={GENDERS}
+                      placeholder="Select a gender"
+                      clearable
+                    />
+                  </label>
+                </div>
+
+                <label className="field"><span>Date of birth</span>
+                  <input
+                    type="date"
+                    value={details.date_of_birth || ''}
+                    onChange={(e) => setDetail('date_of_birth', e.target.value)}
+                    autoComplete="bday"
+                  />
+                </label>
+
+                {/* "Known as" used to live here too — it duplicated the
+                    "Preferred first name" field in About, which writes to
+                    profiles.preferred_name and is what the directory shows. */}
+                <div className="field-row">
+                  <label className="field"><span>Initials</span>
+                    <ClearableInput
+                      value={details.initials}
+                      onChange={(e) => setDetail('initials', e.target.value)}
+                      onClear={() => setDetail('initials', '')}
+                      placeholder="e.g. J.A."
+                    />
+                  </label>
+                  <label className="field"><span>Surname at school (if different)</span>
+                    <ClearableInput
+                      value={details.surname_at_school}
+                      onChange={(e) => setDetail('surname_at_school', e.target.value)}
+                      onClear={() => setDetail('surname_at_school', '')}
+                      placeholder="Only if it has changed"
+                    />
+                  </label>
+                </div>
+
+                <div className="field-row">
+                  <label className="field"><span>ID / passport number</span>
+                    <ClearableInput
+                      value={details.id_number}
+                      onChange={(e) => setDetail('id_number', e.target.value)}
+                      onClear={() => setDetail('id_number', '')}
+                    />
+                  </label>
+                  <label className="field"><span>Nationality</span>
+                    <ClearableInput
+                      value={details.nationality}
+                      onChange={(e) => setDetail('nationality', e.target.value)}
+                      onClear={() => setDetail('nationality', '')}
+                    />
+                  </label>
+                </div>
+
+                <div className="field-row">
+                  <label className="field"><span>Home phone</span>
+                    <PhoneInput value={details.phone_home} onChange={(v) => setDetail('phone_home', v)} />
+                  </label>
+                  <label className="field"><span>Work phone</span>
+                    <PhoneInput value={details.phone_work} onChange={(v) => setDetail('phone_work', v)} />
+                  </label>
+                </div>
+
+                <div className="field">
+                  <span>Association with SACS</span>
+                  <span className="hint">Tick everything that applies — these aren&rsquo;t mutually exclusive.</span>
+                  <div className="chip-toggle-row">
+                    {[
+                      ['old_boy', 'Old Boy'],
+                      ['current_parent', 'Current parent'],
+                      ['past_parent', 'Past parent'],
+                      ['current_staff', 'Current staff'],
+                      ['past_staff', 'Past staff'],
+                    ].map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={details[key] ? 'chip-toggle on' : 'chip-toggle'}
+                        aria-pressed={details[key]}
+                        onClick={() => setDetail(key, !details[key])}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Main expertise — options are scoped to whichever industry is selected above */}
-                <label className={fieldCls('expertise')}><span>Main areas you can mentor in</span>
-                  <MultiSelectAutocomplete
-                    values={form.expertise}
-                    onChange={(value) => set('expertise', value)}
-                    options={EXPERTISE_BY_INDUSTRY[form.industry] || EXPERTISE_OPTIONS}
-                    placeholder={form.industry ? 'Search your expertise, or type your own' : 'Pick an industry above to see relevant options'}
-                    allowCustom
-                  />
-                </label>
-
-                {/* Free-text mentoring description — replaces the old
-                    structured "what can you offer" tag picker. A specific
-                    list of services never covered what actually makes a
-                    mentor useful nearly as well as a couple of sentences in
-                    their own words does. */}
-                <label className={fieldCls('mentor_note')}><span>Anything else you'd like people to know?</span>
-                  <span className="hint">
-                    Tell people about your experience, specific topics you're happy to discuss, industries you've worked in, or anything else that might be useful.
-                  </span>
-                  <textarea
-                    rows={4}
-                    value={form.mentor_note}
-                    onChange={(e) => set('mentor_note', e.target.value.slice(0, 600))}
-                    placeholder="I've worked in investment banking for the past 8 years and am happy to chat about careers in finance, preparing for interviews, or starting out in the industry."
-                  />
-                </label>
-
-                {/* A simple on/off — not a capacity or scheduling system,
-                    just whether you currently show up in the mentor
-                    directory. Saves immediately like the two toggles above,
-                    same reasoning: this is a status, not a draft. */}
                 <div className="field">
-                  <span>Are you currently available to mentor?</span>
+                  <span>How can the Alumni Association reach you?</span>
+                  <div className="chip-toggle-row">
+                    {[
+                      ['comm_pref_email', 'Email'],
+                      ['comm_pref_phone', 'Phone'],
+                      ['comm_pref_sms', 'SMS'],
+                    ].map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={details[key] ? 'chip-toggle on' : 'chip-toggle'}
+                        aria-pressed={details[key]}
+                        onClick={() => setDetail(key, !details[key])}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="field">
+                  <span>Membership tier</span>
+                  <p className="hint">
+                    {details.subscription_tier} — set by the Alumni Association office, not editable here.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mentoring — Collapsible, two clearly separate halves. */}
+          <div className="profile-section pe-section" id="pe-section-mentoring" ref={setSectionRef('mentoring')}>
+            <button type="button"
+              className="profile-mentoring-toggle"
+              onClick={() => setShowMentoring(!showMentoring)}
+            >
+              <span className="profile-mentoring-title">
+                Mentoring
+                {mentoringHasMissing && <span className="field-missing-dot" aria-label="Has unfilled optional fields" />}
+              </span>
+              <span className={`toggle-arrow ${showMentoring ? 'open' : ''}`}>▼</span>
+            </button>
+
+            {showMentoring && (
+              <div className="profile-mentoring-content">
+                <p className="pe-section-hint" style={{ marginTop: 0 }}>
+                  Choose how you&rsquo;d like to participate in the alumni mentoring network — you can be both a mentor and a mentee, or either alone.
+                </p>
+
+                {/* ---- Half 1: helping other alumni ---- */}
+                <div className="pe-mentor-subhead">
+                  <span className="pe-mentor-subhead-eyebrow">Help other alumni</span>
+                  <span className="pe-mentor-subhead-desc">Share your experience with other alumni.</span>
+                </div>
+
+                {/* Single, top-level gate for this half — everything below
+                    only makes sense once someone has actually said yes
+                    here, so it's the one and only "am I open to this"
+                    question. This toggle alone is also what puts someone
+                    under Find a Mentor — there's no separate
+                    "Mentoring/Coaching" checkbox anymore, so this is the
+                    only thing to flip. */}
+                <div className="field">
+                  <span>Open to mentoring and other opportunities?</span>
                   <div className="onboarding-choice-row profile-choice-row">
                     <button
                       type="button"
-                      className={!form.mentor_paused ? 'onboarding-choice on' : 'onboarding-choice'}
-                      onClick={() => saveToggle('mentor_paused', false)}
-                      disabled={togglingField === 'mentor_paused'}
+                      className={form.is_open_to_opportunities ? 'onboarding-choice on' : 'onboarding-choice'}
+                      onClick={() => saveToggle('is_open_to_opportunities', true)}
+                      disabled={togglingField === 'is_open_to_opportunities'}
                     >
-                      Available
+                      Yes
                     </button>
                     <button
                       type="button"
-                      className={form.mentor_paused ? 'onboarding-choice on' : 'onboarding-choice'}
-                      onClick={() => saveToggle('mentor_paused', true)}
-                      disabled={togglingField === 'mentor_paused'}
+                      className={!form.is_open_to_opportunities ? 'onboarding-choice on' : 'onboarding-choice'}
+                      onClick={() => saveToggle('is_open_to_opportunities', false)}
+                      disabled={togglingField === 'is_open_to_opportunities'}
                     >
-                      Not currently available
+                      Not right now
                     </button>
                   </div>
-                  <span className="hint">
-                    Keeps your mentoring info on your profile but hides you from the active mentor directory. You can change this any time.
-                  </span>
+                  {togglingField === 'is_open_to_opportunities' && <span className="hint">Saving…</span>}
+                  {form.is_open_to_opportunities && togglingField !== 'is_open_to_opportunities' && (
+                    <span className="hint mentor-status-hint">
+                      ✓ You'll show up under Find a Mentor.{' '}
+                      <button type="button" className="link-btn" onClick={() => navigate('/mentoring')}>
+                        See how you appear →
+                      </button>
+                    </span>
+                  )}
                 </div>
 
-                {/* Business website */}
-                <label className={fieldCls('business_website')}><span>Business website or portfolio (optional)</span>
-                  <ClearableInput
-                    type="url"
-                    value={form.business_website}
-                    onChange={(e) => set('business_website', e.target.value)}
-                    onClear={() => set('business_website', '')}
-                    placeholder="https://yourwebsite.com"
-                  />
-                </label>
+                {form.is_open_to_opportunities && (
+                  <div className="profile-mentoring-details">
+                    <div className="field-row">
+                      <label className={fieldCls('availability')} id="field-availability"><span>Availability</span>
+                        <ListAutocomplete
+                          value={form.availability}
+                          onChange={(value) => set('availability', value)}
+                          options={AVAILABILITY_OPTIONS}
+                          placeholder="Search your availability"
+                          clearable
+                        />
+                      </label>
+
+                      <div className={fieldCls('geographic_focus')} id="field-geographic_focus">
+                        <span>Geographic focus</span>
+                        <div className="tags-grid compact">
+                          {GEOGRAPHIC_FOCUS.map((geo) => (
+                            <button
+                              key={geo}
+                              type="button"
+                              className={`tag-btn ${form.geographic_focus.includes(geo) ? 'selected' : ''}`}
+                              onClick={() => toggleTag('geographic_focus', geo)}
+                            >
+                              {geo}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Main expertise — options are scoped to whichever industry is selected above */}
+                    <label className={fieldCls('expertise')} id="field-expertise"><span>Main areas you can mentor in</span>
+                      <MultiSelectAutocomplete
+                        values={form.expertise}
+                        onChange={(value) => set('expertise', value)}
+                        options={EXPERTISE_BY_INDUSTRY[form.industry] || EXPERTISE_OPTIONS}
+                        placeholder={form.industry ? 'Search your expertise, or type your own' : 'Pick an industry above to see relevant options'}
+                        allowCustom
+                      />
+                    </label>
+
+                    {/* Free-text mentoring description — replaces the old
+                        structured "what can you offer" tag picker. A specific
+                        list of services never covered what actually makes a
+                        mentor useful nearly as well as a couple of sentences in
+                        their own words does. */}
+                    <label className="field"><span>Anything else you'd like people to know?</span>
+                      <span className="hint">
+                        Tell people about your experience, specific topics you're happy to discuss, industries you've worked in, or anything else that might be useful.
+                      </span>
+                      <textarea
+                        rows={4}
+                        value={form.mentor_note}
+                        onChange={(e) => set('mentor_note', e.target.value.slice(0, 600))}
+                        placeholder="I've worked in investment banking for the past 8 years and am happy to chat about careers in finance, preparing for interviews, or starting out in the industry."
+                      />
+                    </label>
+
+                    {/* A simple on/off — not a capacity or scheduling system,
+                        just whether you currently show up in the mentor
+                        directory. Saves immediately like the toggle above,
+                        same reasoning: this is a status, not a draft. */}
+                    <div className="field">
+                      <span>Are you currently available to mentor?</span>
+                      <div className="onboarding-choice-row profile-choice-row">
+                        <button
+                          type="button"
+                          className={!form.mentor_paused ? 'onboarding-choice on' : 'onboarding-choice'}
+                          onClick={() => saveToggle('mentor_paused', false)}
+                          disabled={togglingField === 'mentor_paused'}
+                        >
+                          Available
+                        </button>
+                        <button
+                          type="button"
+                          className={form.mentor_paused ? 'onboarding-choice on' : 'onboarding-choice'}
+                          onClick={() => saveToggle('mentor_paused', true)}
+                          disabled={togglingField === 'mentor_paused'}
+                        >
+                          Not currently available
+                        </button>
+                      </div>
+                      {togglingField === 'mentor_paused' && <span className="hint">Saving…</span>}
+                      <span className="hint">
+                        Keeps your mentoring info on your profile but hides you from the active mentor directory. You can change this any time.
+                      </span>
+                    </div>
+
+                    {/* Business website */}
+                    <label className={fieldCls('business_website')} id="field-business_website"><span>Business website or portfolio (optional)</span>
+                      <ClearableInput
+                        type="url"
+                        value={form.business_website}
+                        onChange={(e) => set('business_website', e.target.value)}
+                        onClear={() => set('business_website', '')}
+                        placeholder="https://yourwebsite.com"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {/* ---- Half 2: being mentored ---- */}
+                <div className="pe-mentor-subhead pe-mentee-subhead">
+                  <span className="pe-mentor-subhead-eyebrow">Find a mentor</span>
+                  <span className="pe-mentor-subhead-desc">Let other alumni know you&rsquo;d like guidance.</span>
+                </div>
+
+                <div className="profile-mentee-block">
+                  <div className="field">
+                    <span>Looking for a mentor yourself?</span>
+                    <span className="hint">
+                      Say yes and mentors can find you under Find a Mentee, instead of you having to do all the asking.
+                    </span>
+                    <div className="onboarding-choice-row profile-choice-row">
+                      <button
+                        type="button"
+                        className={form.seeking_mentor ? 'onboarding-choice on' : 'onboarding-choice'}
+                        onClick={() => saveToggle('seeking_mentor', true)}
+                        disabled={togglingField === 'seeking_mentor'}
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        className={!form.seeking_mentor ? 'onboarding-choice on' : 'onboarding-choice'}
+                        onClick={() => saveToggle('seeking_mentor', false)}
+                        disabled={togglingField === 'seeking_mentor'}
+                      >
+                        Not right now
+                      </button>
+                    </div>
+                    {togglingField === 'seeking_mentor' && <span className="hint">Saving…</span>}
+                  </div>
+
+                  {form.seeking_mentor && (
+                    <div className="profile-mentoring-details">
+                      <label className="field"><span>What do you want help with?</span>
+                        <MultiSelectAutocomplete
+                          values={form.mentee_goals}
+                          onChange={(value) => set('mentee_goals', value)}
+                          options={EXPERTISE_BY_INDUSTRY[form.industry] || EXPERTISE_OPTIONS}
+                          placeholder={form.industry ? 'Search areas, or type your own' : 'Pick an industry above to see relevant options'}
+                          allowCustom
+                        />
+                        {/* This is also what orders Find a Mentor for you, which
+                            is worth saying out loud — otherwise it reads like
+                            yet another optional tag field. */}
+                        <span className="hint">
+                          This is what sorts the Find a Mentor list for you, so it&rsquo;s worth being specific.
+                        </span>
+                      </label>
+
+                      <label className="field"><span>Anything else a mentor should know? (optional)</span>
+                        <textarea
+                          value={form.mentee_note}
+                          onChange={(e) => set('mentee_note', e.target.value.slice(0, 600))}
+                          placeholder="Where you are now, and what you're trying to work out."
+                          rows={3}
+                        />
+                        <span className="hint">{form.mentee_note.length} / 600</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
+          </div>
 
-            {/* ---- The other half: being mentored ----
-                Sits inside the same collapsible section as the mentor
-                fields, below a divider, because "would you mentor?" and
-                "do you want a mentor?" are not opposites — plenty of people
-                are usefully both, and separating them into different
-                sections made the second one invisible. */}
-            <div className="profile-mentee-block">
-              <div className="field">
-                <span>Looking for a mentor yourself?</span>
-                <span className="hint">
-                  Say yes and mentors can find you under Find a Mentee, instead of you having to do all the asking.
-                </span>
-                <div className="onboarding-choice-row profile-choice-row">
-                  <button
-                    type="button"
-                    className={form.seeking_mentor ? 'onboarding-choice on' : 'onboarding-choice'}
-                    onClick={() => saveToggle('seeking_mentor', true)}
-                    disabled={togglingField === 'seeking_mentor'}
-                  >
-                    Yes
-                  </button>
-                  <button
-                    type="button"
-                    className={!form.seeking_mentor ? 'onboarding-choice on' : 'onboarding-choice'}
-                    onClick={() => saveToggle('seeking_mentor', false)}
-                    disabled={togglingField === 'seeking_mentor'}
-                  >
-                    Not right now
-                  </button>
-                </div>
-              </div>
+          {/* Status messages */}
+          {error && <p className="form-error">{error}</p>}
+          {geoWarning && (
+            <p className="form-warning">
+              Saved — but couldn't locate "{form.city}" for the Alumni Map. Double-check the spelling.
+            </p>
+          )}
 
-              {form.seeking_mentor && (
-                <div className="profile-mentoring-details">
-                  <label className="field"><span>What do you want help with?</span>
-                    <MultiSelectAutocomplete
-                      values={form.mentee_goals}
-                      onChange={(value) => set('mentee_goals', value)}
-                      options={EXPERTISE_BY_INDUSTRY[form.industry] || EXPERTISE_OPTIONS}
-                      placeholder={form.industry ? 'Search areas, or type your own' : 'Pick an industry above to see relevant options'}
-                      allowCustom
-                    />
-                    {/* This is also what orders Find a Mentor for you, which
-                        is worth saying out loud — otherwise it reads like
-                        yet another optional tag field. */}
-                    <span className="hint">
-                      This is what sorts the Find a Mentor list for you, so it&rsquo;s worth being specific.
-                    </span>
-                  </label>
-
-                  <label className="field"><span>Anything else a mentor should know? (optional)</span>
-                    <textarea
-                      value={form.mentee_note}
-                      onChange={(e) => set('mentee_note', e.target.value.slice(0, 600))}
-                      placeholder="Where you are now, and what you're trying to work out."
-                      rows={3}
-                    />
-                    <span className="hint">{form.mentee_note.length} / 600</span>
-                  </label>
-                </div>
-              )}
+          {/* Account — sign out / delete account. Deliberately not routed
+              through the Save flow above: these aren't draft edits, they're
+              immediate account actions. */}
+          <div className="profile-section pe-section pe-account-section">
+            <h3 className="profile-section-title">Account</h3>
+            <div className="pe-account-actions">
+              <button type="button" className="btn ghost" onClick={() => supabase.auth.signOut()} disabled={busy}>
+                Sign out
+              </button>
+              <button type="button" className="btn ghost delete-danger" onClick={() => setConfirmingDelete(true)} disabled={busy}>
+                Delete account
+              </button>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Status messages */}
-      {error && <p className="form-error">{error}</p>}
-      {geoWarning && (
-        <p className="form-warning">
-          Saved — but couldn't locate "{form.city}" for the Alumni Map. Double-check the spelling.
-        </p>
-      )}
-
-      {/* Actions */}
-      <div className="profile-actions">
-        <button type="submit" className="btn primary" disabled={busy} title={busy ? 'Saving…' : undefined}>
-          {busy ? 'Saving…' : 'Save changes'}
-        </button>
-        <button type="button" className="btn ghost" onClick={() => supabase.auth.signOut()} disabled={busy}>
-          Sign out
-        </button>
-        <button type="button" className="btn ghost delete-danger" onClick={() => setConfirmingDelete(true)} disabled={busy}>
-          Delete account
-        </button>
-        {saved && (
-          <span className="profile-saved-chip">
-            <span className="check">✓</span>
-            Saved
-          </span>
-        )}
+        </div>
       </div>
       </form>
+
+      {saved && (
+        <div className="pe-saved-toast" role="status">
+          <span className="check">✓</span> Changes saved
+        </div>
+      )}
+
+      {dirty && (
+        <SaveBar
+          busy={busy}
+          error={error}
+          onDiscard={discardChanges}
+          onSave={() => save()}
+        />
+      )}
 
       {showPhotoModal && (
         <ProfilePhotoModal

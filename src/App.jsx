@@ -665,8 +665,8 @@ export default function App() {
                   <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); goTo('/settings') }}>
                     <SettingsIcon /> Settings
                   </button>
-                  <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); goTo('/profile') }}>
-                    <EditIcon /> Edit profile
+                  <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); goTo(`/people/${session.user.id}`) }}>
+                    <UserIcon /> My profile
                   </button>
                   <button type="button"
                     role="menuitem"
@@ -814,7 +814,6 @@ export default function App() {
                     }}
                     onDirtyChange={setProfileDirty}
                     saveRef={profileSaveRef}
-                    onNavigateHome={() => goTo('/home')}
                   />
                 }
               />
@@ -1258,6 +1257,14 @@ function EditIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  )
+}
+function UserIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   )
 }
