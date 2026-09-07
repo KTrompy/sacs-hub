@@ -126,7 +126,7 @@ function MentorCard({ mentor: m }) {
   const cats = normalizeExpertise(m.expertise)
   const roleLine = [m.occupation, m.grad_year ? `Class of ${m.grad_year}` : null].filter(Boolean).join(' · ')
   return (
-    <Link to={`/mentoring/${m.id}`} className="mtg-person-card">
+    <Link to={`/people/${m.id}`} className="mtg-person-card">
       <div className="mtg-person-card-top">
         <Avatar url={m.avatar_url} name={m.full_name} size={56} />
         <div>

@@ -961,7 +961,7 @@ input, textarea, select { font: inherit; }
 .btn.ghost.delete-danger:hover:not(:disabled) { background: var(--danger); color: #fff; }
 button.delete-danger svg { flex-shrink: 0; }
 
-.link-btn { background: none; border: none; color: var(--orange); font-weight: 600; padding: 4px; transition: color 0.15s ease; }
+.link-btn { background: none; border: none; color: var(--orange); font-weight: 600; padding: 4px; text-decoration: none; transition: color 0.15s ease; }
 .link-btn:hover { color: var(--orange-dark); }
 .link-btn.small { font-size: var(--fs-xs); margin-left: auto; color: var(--ink-soft); }
 .link-btn.small:hover { color: var(--danger); }
@@ -12037,6 +12037,8 @@ button.stretched-link {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
+  text-decoration: none;
+  color: inherit;
   transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
 }
 .mtg-person-card:hover { border-color: var(--line); box-shadow: var(--shadow-card); }
