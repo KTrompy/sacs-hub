@@ -165,6 +165,7 @@ export default function AdminHandbook({ activeId }) {
             Removes the item for everyone, permanently. For events this also wipes the RSVPs.
             Members can already delete their own things, so you're only doing this for content
             that shouldn't be up.
+          </dd>
         </dl>
 
         <h4>Activity log</h4>
