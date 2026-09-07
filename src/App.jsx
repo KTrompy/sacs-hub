@@ -516,10 +516,14 @@ export default function App() {
     if (entityId && entityType === 'post') { goTo(`/feed/${entityId}`); return }
     if (entityId && entityType === 'event') { goTo(`/events/${entityId}`); return }
     if (entityId && entityType === 'job') { goTo(`/jobs/${entityId}`); return }
-    // Mentoring has no per-mentorship route — the pairing lives inside a tab
-    // rather than at its own URL — so these deep-link to the tab that lists
-    // them instead of dropping the person on Find a Mentor.
-    if (entityType === 'mentorship') { goTo('/mentoring?tab=mine'); return }
+    // The redesigned Mentoring section gives each mentorship its own
+    // workspace route, so a mentorship notification can deep-link straight
+    // to it instead of just landing on a tab. A connection (quick
+    // question/conversation) has no page of its own — those surface in
+    // Overview's "Needs your attention" and in Relationships' Questions &
+    // conversations tab — so it lands on Overview.
+    if (entityType === 'mentorship') { goTo(entityId ? `/mentoring/relationships/${entityId}` : '/mentoring/relationships'); return }
+    if (entityType === 'mentorship_connection') { goTo('/mentoring'); return }
     // ADMIN_TAB is included deliberately: new-signup notifications
     // (schema-update-46) point admins at 'admin', which isn't in TABS.
     // Without it those notifications were clickable but went nowhere.
@@ -783,7 +787,7 @@ export default function App() {
               <Route path="/directory" element={<People session={session} onMessage={openMessage} onGoToProfile={() => goTo('/profile')} refetchTrigger={directoryRefetchTrigger} />} />
               <Route path="/feed" element={<Feed session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/feed/:postId" element={<Feed session={session} profile={profile} onMessage={openMessage} />} />
-              <Route path="/mentoring" element={<Mentoring session={session} profile={profile} onProfileChange={setProfile} onMessage={openMessage} />} />
+              <Route path="/mentoring/*" element={<Mentoring session={session} profile={profile} onProfileChange={setProfile} />} />
               <Route path="/events" element={<Events session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/events/:eventId" element={<Events session={session} profile={profile} onMessage={openMessage} />} />
               <Route path="/jobs" element={<Jobs session={session} profile={profile} onMessage={openMessage} />} />

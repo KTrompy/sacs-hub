@@ -3,6 +3,7 @@ import { useAdmin } from './AdminContext.jsx'
 import {
   OverviewIcon, PendingIcon, MembersIcon, ReportsIcon, PostsIcon, JobsIcon,
   EventsIcon, BusinessesIcon, OrdersIcon, ProductsIcon, LegendsIcon, ActivityIcon, HandbookIcon,
+  MentoringIcon,
 } from './icons.jsx'
 
 /* Badges are shown only where a number means "work waiting for you" —
@@ -17,6 +18,7 @@ function useNavGroups() {
         { to: '/admin/pending', label: 'Pending', icon: PendingIcon, badge: readyToApprove.length || null },
         { to: '/admin/members', label: 'Members', icon: MembersIcon },
         { to: '/admin/reports', label: 'Reports', icon: ReportsIcon, badge: openReportsCount || null },
+        { to: '/admin/mentoring', label: 'Mentoring', icon: MentoringIcon },
       ],
     },
     {

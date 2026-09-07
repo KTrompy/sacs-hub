@@ -5,7 +5,8 @@ import { PhotoBlock } from './Directory.jsx'
 import LoadingState from './LoadingState.jsx'
 import EmptyState from './EmptyState.jsx'
 import ReportButton from './ReportButton.jsx'
-import MentorshipRequestModal from './MentorshipRequestModal.jsx'
+import PersonSheet from './mentoring/PersonSheet.jsx'
+import { useToast } from './Toast.jsx'
 import { buildIcebreaker } from '../icebreaker.js'
 import { normalizeExpertise, formatExperienceRange, formatExperienceDuration, safeUrl } from '../utils.js'
 
@@ -47,13 +48,14 @@ function Chips({ items }) {
 export default function PersonProfile({ session, me, onMessage }) {
   const { personId } = useParams()
   const navigate = useNavigate()
+  const showToast = useToast()
   const [person, setPerson] = useState(null)
   const [contact, setContact] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [retryTick, setRetryTick] = useState(0)
-  const [requesting, setRequesting] = useState(null)
+  const [connecting, setConnecting] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -351,20 +353,20 @@ export default function PersonProfile({ session, me, onMessage }) {
 
           {(canAskToMentorMe || canOfferToMentor) && (
             <div className="profile-mentoring-cta">
+              {/* Opens the same profile sheet + commitment ladder used
+                  throughout Mentoring — a quick question, a one-off
+                  conversation, or a full mentorship request — rather than
+                  the old all-or-nothing "send a mentorship request" modal. */}
               {canAskToMentorMe && (
-                <button type="button" className="btn primary small" onClick={() => setRequesting({ asMentor: false })}>
-                  Ask to be mentored
+                <button type="button" className="btn primary small" onClick={() => setConnecting({ mode: 'mentor' })}>
+                  Connect for mentorship
                 </button>
               )}
               {canOfferToMentor && (
-                <button type="button" className="btn ghost small" onClick={() => setRequesting({ asMentor: true })}>
-                  Offer to mentor them
+                <button type="button" className="btn ghost small" onClick={() => setConnecting({ mode: 'mentee' })}>
+                  Offer to help them
                 </button>
               )}
-              {/* Said plainly, because the whole point of keeping flash
-                  mentoring is that a request should never feel like the only
-                  way in. */}
-              <span className="hint">Just have one question? Message them instead — no commitment either way.</span>
             </div>
           )}
         </div>
@@ -386,13 +388,14 @@ export default function PersonProfile({ session, me, onMessage }) {
         )}
       </div>
 
-      {requesting && (
-        <MentorshipRequestModal
-          target={p}
-          profile={me}
-          asMentor={requesting.asMentor}
-          onClose={() => setRequesting(null)}
-          onSent={() => navigate('/mentoring?tab=mine')}
+      {connecting && (
+        <PersonSheet
+          person={p}
+          me={me}
+          mode={connecting.mode}
+          onClose={() => setConnecting(null)}
+          onSent={() => navigate('/mentoring/relationships')}
+          showToast={showToast}
         />
       )}
     </section>

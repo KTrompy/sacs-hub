@@ -5,6 +5,7 @@ import OverviewPage from './admin/OverviewPage.jsx'
 import PendingPage from './admin/PendingPage.jsx'
 import MembersPage from './admin/MembersPage.jsx'
 import ReportsPage from './admin/ReportsPage.jsx'
+import MentoringPage from './admin/MentoringPage.jsx'
 import { PostsPage, JobsPage, EventsPage, BusinessesPage } from './admin/ContentPages.jsx'
 import OrdersPage from './admin/OrdersPage.jsx'
 import ProductsPage from './admin/ProductsPage.jsx'
@@ -43,6 +44,7 @@ export default function Admin({ session }) {
           <Route path="pending" element={<PendingPage />} />
           <Route path="members" element={<MembersPage />} />
           <Route path="reports" element={<ReportsPage />} />
+          <Route path="mentoring" element={<MentoringPage />} />
           <Route path="posts" element={<PostsPage />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="events" element={<EventsPage />} />

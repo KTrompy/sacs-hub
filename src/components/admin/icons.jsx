@@ -16,6 +16,7 @@ export const OrdersIcon = () => (<svg {...base}><path d="M4 6h16l-1.5 9.5a2 2 0 
 export const ProductsIcon = () => (<svg {...base}><path d="M3.5 8l8.5-4.5L20.5 8v8L12 20.5 3.5 16z" /><path d="M3.5 8L12 12.5 20.5 8" /><path d="M12 12.5V20.5" /></svg>)
 export const LegendsIcon = () => (<svg {...base}><path d="M12 3.5l2.6 5.4 5.9.7-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.7z" /></svg>)
 export const ActivityIcon = () => (<svg {...base}><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3.5 2" /></svg>)
+export const MentoringIcon = () => (<svg {...base}><circle cx="8.5" cy="8" r="3" /><circle cx="16" cy="15.5" r="3" /><path d="M10.8 9.8l3.4 3.9" /></svg>)
 export const HandbookIcon = () => (<svg {...base}><path d="M5 4.5c2.2-1 4.6-1 6.8 0v14.8c-2.2-1-4.6-1-6.8 0z" /><path d="M18.8 4.5c-2.2-1-4.6-1-6.8 0v14.8c2.2-1 4.6-1 6.8 0z" /></svg>)
 export const SearchIcon = () => (<svg {...base} width="15" height="15"><circle cx="10.5" cy="10.5" r="6" /><path d="M19 19l-4-4" /></svg>)
 export const MenuIcon = () => (<svg {...base}><path d="M4 6.5h16M4 12h16M4 17.5h16" /></svg>)

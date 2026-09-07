@@ -1,186 +1,218 @@
 import { normalizeExpertise } from './utils.js'
 
-// Ranking for Find a Mentor / Find a Mentee.
-//
-// The old page listed everyone who had flipped one toggle, in whatever order
-// Postgres handed them back. With a handful of members that is fine; with a
-// few hundred it is a wall of strangers, and the person who would actually
-// have been useful to you is on page three.
-//
-// Scoring is deliberately plain arithmetic rather than anything clever. Two
-// reasons: it runs on data already in memory (no extra round trip, and no
-// server-side ranking to keep in sync), and every point is explainable — the
-// UI shows the *reasons*, not the number, because "Can help with Fundraising
-// and Pricing" persuades someone to reach out and "83% match" does not.
-//
-// Nothing here is a hard filter. A low score still shows, just further down:
-// alumni networks are small enough that hiding people is worse than ordering
-// them badly.
+// Matching, rebuilt around three stages: eligibility (can this pairing even
+// happen), purpose fit (does their experience answer your actual need), and
+// preference weighting (what you said would make someone especially useful
+// to you). The score itself is never shown anywhere — only the reasons it
+// produced, in the person's own words wherever possible. See docs/ADMIN_PAGE
+// -style comments throughout: every number here should be explainable in one
+// short sentence a member would find persuasive, not just true.
 
-const AVAILABILITY_POINTS = {
-  'Available now': 10,
-  'Part-time available': 7,
-  'By request/ad-hoc': 4,
-  'Fully booked': 0,
-}
+// A small, hand-built taxonomy so related topics contribute to matching
+// without a database table. Deliberately shallow — a handful of clusters
+// that come up constantly in an alumni network, not an attempt at a
+// universal ontology. Keys and values are matched case-insensitively.
+const TOPIC_CLUSTERS = [
+  ['fundraising', 'venture capital', 'angel investment', 'pitching', 'financial modelling', 'startups', 'entrepreneurship'],
+  ['startups', 'entrepreneurship', 'starting a business', 'scaling', 'founder', 'business strategy'],
+  ['career direction', 'career transition', 'changing industries', 'job search', 'interview preparation'],
+  ['leadership', 'management', 'people management', 'executive coaching', 'board & advisory roles'],
+  ['working overseas', 'international experience', 'relocation', 'immigration'],
+  ['finance', 'investment banking', 'private equity', 'asset management', 'accounting'],
+  ['engineering', 'technology', 'software development', 'product management', 'data science'],
+  ['law', 'legal', 'commercial law', 'compliance'],
+  ['university decisions', 'postgraduate study', 'further study'],
+  ['marketing', 'branding', 'communications', 'public relations'],
+  ['sales', 'business development', 'client relationships'],
+  ['consulting', 'management consulting', 'strategy consulting'],
+]
 
-function lower(list) {
-  return (list || []).filter(Boolean).map((s) => String(s).trim().toLowerCase())
-}
+function lower(v) { return String(v || '').trim().toLowerCase() }
 
-// Case-insensitive intersection that returns the *original* casing from the
-// first list, so reasons read the way the person typed them.
-function overlap(a, b) {
-  const bSet = new Set(lower(b))
-  const seen = new Set()
-  const out = []
-  for (const item of a || []) {
-    if (!item) continue
-    const key = String(item).trim().toLowerCase()
-    if (bSet.has(key) && !seen.has(key)) {
-      seen.add(key)
-      out.push(item)
-    }
+function clusterMates(topic) {
+  const t = lower(topic)
+  const out = new Set()
+  for (const cluster of TOPIC_CLUSTERS) {
+    if (cluster.some((c) => c === t)) cluster.forEach((c) => out.add(c))
   }
   return out
+}
+
+// Topic overlap that also credits related-but-not-identical topics at a
+// discount, so "Fundraising" and "Venture capital" count for something even
+// when neither list uses the other's exact words.
+function topicFit(want, have) {
+  const wantList = normalizeExpertise(want)
+  const haveSet = new Set(normalizeExpertise(have).map(lower))
+  if (wantList.length === 0 || haveSet.size === 0) return { exact: [], related: [] }
+
+  const exact = []
+  const related = []
+  for (const w of wantList) {
+    const wl = lower(w)
+    if (haveSet.has(wl)) { exact.push(w); continue }
+    const mates = clusterMates(wl)
+    if ([...mates].some((m) => haveSet.has(m))) related.push(w)
+  }
+  return { exact, related }
 }
 
 function listPhrase(items, max = 2) {
   const shown = items.slice(0, max)
   const rest = items.length - shown.length
   const joined = shown.length === 2 ? `${shown[0]} and ${shown[1]}` : shown[0]
-  if (rest > 0) return `${joined} +${rest} more`
-  return joined
+  return rest > 0 ? `${joined} +${rest} more` : joined
 }
 
-// The half of the score that doesn't care which chair anyone is sitting in.
-function commonSignals(me, them, { seniorIsThem }) {
+// Stage 1 — eligibility. Nothing below should ever be scored or shown as a
+// recommendation if it fails here; a low score still shows (alumni networks
+// are small enough that hiding people is worse than ordering them badly),
+// but an ineligible pairing genuinely can't happen.
+export function eligibleForMentorship(me, them) {
+  if (!them || !me || them.id === me.id) return false
+  if (!them.is_open_to_opportunities) return false
+  return true
+}
+
+export function eligibleForGuidanceFrom(me, them) {
+  // "them" is a potential mentee, from a mentor's point of view.
+  if (!them || !me || them.id === me.id) return false
+  return !!them.seeking_mentor
+}
+
+// How much room a mentor has left, and what they're actually open to right
+// now. `active_mentorships` is attached by the caller from a single grouped
+// count query rather than fetched per card.
+export function mentorAvailability(person, mentoringProfile) {
+  const mp = mentoringProfile || {}
+  const capacity = Number(person?.mentor_capacity) || 2
+  const active = Number(person?.active_mentorships) || 0
+  const pausedUntil = mp.mentor_paused_until ? new Date(mp.mentor_paused_until) : null
+  const stillPaused = pausedUntil ? pausedUntil.getTime() > Date.now() : !!person?.mentor_paused
+  return {
+    capacity,
+    active,
+    paused: stillPaused,
+    hasRoom: !stillPaused && active < capacity,
+    spotsLeft: Math.max(0, capacity - active),
+    quickQuestions: mp.quick_questions_enabled !== false,
+    conversations: mp.conversations_enabled !== false,
+    mentorships: mp.mentorships_enabled !== false,
+  }
+}
+
+// Stage 2 + 3 — purpose fit and experience relevance, modified by the
+// asker's stated preferences. Returns a score (internal only) and a short
+// list of human reasons, strongest first.
+export function scoreMentor(me, them, myMentoringProfile) {
   let score = 0
   const reasons = []
+  const prefs = myMentoringProfile || {}
 
-  if (me?.industry && them?.industry && me.industry === them.industry) {
-    score += 20
+  // Purpose fit — the strongest signal by a distance.
+  const goals = me?.mentee_goals
+  const { exact, related } = topicFit(goals, them?.expertise)
+  if (exact.length > 0) {
+    score += Math.min(exact.length, 3) * 18
+    reasons.push({ key: 'goals', label: `Can help with ${listPhrase(exact)}`, strong: true })
+  }
+  if (related.length > 0 && exact.length < 2) {
+    score += Math.min(related.length, 2) * 8
+    reasons.push({ key: 'related', label: `Has related experience in ${listPhrase(related)}` })
+  }
+
+  // Experience relevance — industry, occupation, career stage. Weighted by
+  // what the person said would make someone especially useful to them,
+  // rather than fixed weights for everyone.
+  const industryMatch = me?.industry && them?.industry && lower(me.industry) === lower(them.industry)
+  if (industryMatch && (prefs.pref_same_industry !== false)) {
+    score += prefs.pref_same_industry ? 22 : 14
     reasons.push({ key: 'industry', label: `Also in ${them.industry}` })
   }
 
-  // Experience gap. Same-year peers can be great sounding boards but they are
-  // not what someone means by "mentor", so a gap in the wrong direction
-  // simply scores nothing rather than going negative — plenty of people
-  // haven't filled in a grad year at all, and punishing them for a blank
-  // field would bury them under everyone who did.
   const myYear = Number(me?.grad_year)
   const theirYear = Number(them?.grad_year)
   if (myYear && theirYear) {
-    const gap = seniorIsThem ? myYear - theirYear : theirYear - myYear
-    if (gap >= 5 && gap <= 30) {
-      score += 15
-      reasons.push({
-        key: 'experience',
-        label: seniorIsThem ? `${gap} years ahead of you` : `${gap} years behind you`,
-      })
-    } else if (gap >= 1) {
-      score += 8
+    const gap = theirYear - myYear
+    if (gap <= -3 && gap >= -35) {
+      const weight = prefs.pref_seniority ? 20 : 12
+      score += weight
+      reasons.push({ key: 'experience', label: `${Math.abs(gap)} years ahead of you at your career stage` })
     }
   }
 
-  if (me?.city && them?.city && me.city.trim().toLowerCase() === them.city.trim().toLowerCase()) {
-    score += 10
-    reasons.push({ key: 'location', label: `Both in ${them.city}` })
-  } else if (me?.country && them?.country && me.country === them.country) {
+  if (prefs.pref_local !== false) {
+    if (me?.city && them?.city && lower(me.city) === lower(them.city)) {
+      score += prefs.pref_local ? 16 : 6
+      reasons.push({ key: 'location', label: `Both in ${them.city}` })
+    }
+  }
+
+  if (prefs.pref_international && (them?.geographic_focus || '').toLowerCase().includes('international')) {
+    score += 14
+    reasons.push({ key: 'international', label: 'Has international experience' })
+  }
+
+  if (prefs.pref_experience !== false && (them?.bio || '').trim().length > 60) {
     score += 4
   }
 
-  return { score, reasons }
-}
-
-// Ranking a potential mentor, from the mentee's point of view.
-export function scoreMentor(me, them) {
-  let score = 0
-  const reasons = []
-
-  // The strongest signal by a distance: they have said they can help with the
-  // exact thing you have said you want help with.
-  const goals = normalizeExpertise(me?.mentee_goals)
-  const canHelp = overlap(goals, normalizeExpertise(them?.expertise))
-  if (canHelp.length > 0) {
-    score += Math.min(canHelp.length, 3) * 15
-    reasons.push({ key: 'goals', label: `Can help with ${listPhrase(canHelp)}`, strong: true })
-  }
-
-  const common = commonSignals(me, them, { seniorIsThem: true })
-  score += common.score
-  reasons.push(...common.reasons)
-
-  score += AVAILABILITY_POINTS[them?.availability] ?? 3
-
-  const room = mentorHeadroom(them)
-  if (room.paused) {
-    // Not hidden — someone may still want to see them and come back later —
-    // but never suggested ahead of a mentor who can actually say yes.
-    score = Math.round(score * 0.4)
-  } else if (room.hasRoom) {
-    score += 10
-    if (room.active === 0) reasons.push({ key: 'capacity', label: 'Not mentoring anyone yet' })
-  } else {
+  const avail = mentorAvailability(them, them.mentoringProfile)
+  if (avail.paused) {
     score = Math.round(score * 0.5)
+  } else if (avail.hasRoom) {
+    score += 8
+  } else {
+    score = Math.round(score * 0.6)
   }
 
-  return { score, reasons: reasons.slice(0, 3), tier: tierFor(score) }
+  return { score, reasons: reasons.slice(0, 3), availability: avail }
 }
 
-// Ranking a potential mentee, from the mentor's point of view.
+// Ranking a potential mentee, from a mentor's point of view — the mirror of
+// scoreMentor, using the mentor's own stated expertise as the "want" side.
 export function scoreMentee(me, them) {
   let score = 0
   const reasons = []
 
-  const theirGoals = normalizeExpertise(them?.mentee_goals)
-  const canHelp = overlap(normalizeExpertise(me?.expertise), theirGoals)
-  if (canHelp.length > 0) {
-    score += Math.min(canHelp.length, 3) * 15
-    reasons.push({ key: 'goals', label: `You can help with ${listPhrase(canHelp)}`, strong: true })
+  const { exact, related } = topicFit(me?.expertise, them?.mentee_goals)
+  if (exact.length > 0) {
+    score += Math.min(exact.length, 3) * 18
+    reasons.push({ key: 'goals', label: `You can help with ${listPhrase(exact)}`, strong: true })
+  }
+  if (related.length > 0 && exact.length < 2) {
+    score += Math.min(related.length, 2) * 8
+    reasons.push({ key: 'related', label: `Related to what you offer: ${listPhrase(related)}` })
   }
 
-  const common = commonSignals(me, them, { seniorIsThem: false })
-  score += common.score
-  reasons.push(...common.reasons)
+  if (me?.industry && them?.industry && lower(me.industry) === lower(them.industry)) {
+    score += 14
+    reasons.push({ key: 'industry', label: `Also in ${them.industry}` })
+  }
 
-  // A mentee who wrote something about what they're after has already put in
-  // more effort than one who ticked a box, and is a better bet for a mentor
-  // deciding where to spend a limited number of hours.
   if ((them?.mentee_note || '').trim().length > 40) {
     score += 8
     reasons.push({ key: 'note', label: 'Wrote about what they need' })
   }
 
-  return { score, reasons: reasons.slice(0, 3), tier: tierFor(score) }
+  return { score, reasons: reasons.slice(0, 3) }
 }
 
-function tierFor(score) {
+export function tierFor(score) {
   if (score >= 55) return 'strong'
   if (score >= 30) return 'good'
   return null
 }
 
-export const TIER_LABEL = { strong: 'Strong match', good: 'Good match' }
+export const TIER_LABEL = { strong: 'Excellent fit', good: 'Good fit' }
 
-// How much room a mentor has left. `active_mentorships` is attached by
-// Mentoring.jsx from a single grouped count query rather than fetched per
-// card — see the note there.
-export function mentorHeadroom(mentor) {
-  const capacity = Number(mentor?.mentor_capacity) || 2
-  const active = Number(mentor?.active_mentorships) || 0
-  return {
-    capacity,
-    active,
-    paused: !!mentor?.mentor_paused,
-    hasRoom: !mentor?.mentor_paused && active < capacity,
-    spotsLeft: Math.max(0, capacity - active),
-  }
-}
-
-// Sort helper: score first, then a stable tiebreak so the list doesn't
-// reshuffle between renders for people who happen to score identically.
 export function byScore(a, b) {
   if (b.match.score !== a.match.score) return b.match.score - a.match.score
   return String(a.full_name || '').localeCompare(String(b.full_name || ''))
+}
+
+// Backward-compatible alias — mirrors the old mentorHeadroom name used
+// elsewhere before this rewrite, now backed by the richer availability model.
+export function mentorHeadroom(person, mentoringProfile) {
+  return mentorAvailability(person, mentoringProfile)
 }

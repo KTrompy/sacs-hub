@@ -13,15 +13,18 @@ function timeAgo(iso) {
 // this app already has (see App.jsx TABS).
 // `member` covers the new-signup alerts added in schema-update-46, which
 // go to admins and should land them on the pending-approval queue.
-// `mentorship` covers the request/accept/decline/session alerts added in
-// schema-update-56 — they all land on Mentoring's "My mentoring" tab, which
-// is where every one of them is actionable.
+// `mentorship` covers the request/discuss/accept/decline/session alerts —
+// App.jsx's handleNotificationNavigate deep-links these straight to that
+// mentorship's own workspace route. `mentorship_connection` covers the
+// lighter quick-question/conversation tier added in schema-update-64,
+// which has no page of its own and lands on Mentoring's Overview.
 const ENTITY_TAB = {
   post: 'feed',
   event: 'events',
   job: 'jobs',
   member: 'admin',
   mentorship: 'mentoring',
+  mentorship_connection: 'mentoring',
 }
 
 // Bell + dropdown in the header. Polls once on mount, then stays live via
