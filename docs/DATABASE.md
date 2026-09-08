@@ -306,6 +306,7 @@ A `BEFORE UPDATE` trigger on profiles blocks non-admin users from changing their
 | job-application-files | Private | Application CVs and cover letters |
 | album-photos | Public | Shared photo albums |
 | merch-images | Public | Merchandise product images |
+| broadcast-email-images | Public, admin-only write (schema-update-67) | Inline images an admin drops into an Admin -> Members broadcast email; not user-namespaced, any admin can manage any image |
 
 All buckets namespace objects under `<user-id>/`. Storage cleanup on account deletion is handled by `purgeAndDeleteUser()` in the Edge Functions (not by database cascades).
 

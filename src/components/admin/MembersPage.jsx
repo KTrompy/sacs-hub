@@ -288,6 +288,7 @@ export default function MembersPage() {
           eyebrow={`${selected.size} member${selected.size === 1 ? '' : 's'} selected`}
           recipientName="Broadcast email"
           placeholder="Write your announcement…"
+          richText={true}
           onSend={async (subject, message) => {
             const res = await supabase.functions.invoke('send-broadcast-email', {
               body: { recipient_ids: Array.from(selected), subject, message },

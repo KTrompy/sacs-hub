@@ -35,3 +35,6 @@ supabase.deb
 testfile123
 page-09.jpg
 page-10.jpg
+
+# Local Claude Code / Cowork settings -- machine-specific, not shared
+.claude/

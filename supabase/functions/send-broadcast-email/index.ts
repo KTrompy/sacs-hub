@@ -55,7 +55,10 @@ function json(req: Request, body: unknown, status = 200) {
 const SITE_URL = 'https://sacsalumni.org'
 const FROM_DOMAIN = 'no-reply@sacsalumni.org'
 const MAX_SUBJECT = 150
-const MAX_MESSAGE = 4000
+// Matches EmailModal.jsx's RICH_MAX_MESSAGE -- this is now sanitized HTML
+// (headings, formatting, inline image tags), not plain text, so the old
+// 4000-character plain-text cap was far too tight for a real newsletter.
+const MAX_MESSAGE = 20000
 // A hard ceiling, not a real-world expectation -- this is a safety rail
 // against a mis-click sending to an enormous accidental selection, and
 // keeps one request well within Resend's rate limits. Raise it if the
@@ -71,6 +74,25 @@ function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
+}
+
+// The composer (EmailEditor.jsx) already runs everything through DOMPurify
+// with a tight tag/attribute whitelist (sanitizeEmailHtml, src/sanitizeHtml.js)
+// before it ever reaches here, and only an admin (is_admin(), checked below)
+// can call this function at all. This is a second, deliberately simple pass
+// on top of that -- not a full HTML parser, just a backstop in case this
+// endpoint is ever called directly with a bypassed or stale client -- since
+// whatever comes through goes out to every selected member's inbox. It
+// strips the categories of tag/attribute no legitimate newsletter needs:
+// script/style/iframe/object/embed blocks, any on*="" event handler, and
+// javascript:/data: URLs in href or src.
+function stripDangerousHtml(html: string): string {
+  return html
+    .replace(/<(script|style|iframe|object|embed)[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<(script|style|iframe|object|embed)[^>]*\/?>(?!<\/\1>)/gi, '')
+    .replace(/\son\w+\s*=\s*(["']).*?\1/gi, '')
+    .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
+    .replace(/((?:href|src)\s*=\s*)(["'])\s*(javascript|data):[^"']*\2/gi, '$1$2$2')
 }
 
 function sanitizeHeaderName(s: string): string {
@@ -154,6 +176,7 @@ Deno.serve(async (req) => {
     if (message.length > MAX_MESSAGE) {
       return json(req, { error: `Message is too long (max ${MAX_MESSAGE} characters).` }, 400)
     }
+    const safeMessage = stripDangerousHtml(message)
 
     const recipientIds = Array.from(new Set(recipientIdsRaw as string[]))
     if (recipientIds.length > MAX_RECIPIENTS) {
@@ -248,8 +271,24 @@ Deno.serve(async (req) => {
       `You're receiving this because you're a SACS Alumni Hub member and ${escapeHtml(senderFullName)} ` +
       `(SACS Alumni admin) sent this to a group that included you. Turn these off any time in ` +
       `Settings &rarr; Notifications &rarr; Committee emails.`
-    const text =
-      `${message}\n\n---\nYou're receiving this because you're a SACS Alumni Hub member and ${senderFullName} ` +
+    // Rough HTML -> plain text: strip tags, then unescape the handful of
+    // entities the editor's own commands can produce (bold/italic/lists/
+    // links/headings never need more than this). Good enough for the
+    // fallback body a handful of very old or text-only mail clients show
+    // -- not meant to be a general HTML-to-text converter.
+    const plainMessage = safeMessage
+      .replace(/<(p|div|h1|h2|h3|li|br|hr)[^>]*>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+    const footerText =
+      `---\nYou're receiving this because you're a SACS Alumni Hub member and ${senderFullName} ` +
       `(SACS Alumni admin) sent this to a group that included you. Turn these off any time in ` +
       `Settings -> Notifications -> Committee emails.`
 
@@ -265,10 +304,10 @@ Deno.serve(async (req) => {
         subject,
         html: shell(
           heading,
-          `<p style="${P}">Hi ${escapeHtml(firstName)},</p><p style="${P}">${escapeHtml(message)}</p>`,
+          `<p style="${P}">Hi ${escapeHtml(firstName)},</p><div style="font-size:15px;line-height:1.6;color:#1A1A1A;padding-bottom:16px;">${safeMessage}</div>`,
           footerNote,
         ),
-        text: `Hi ${firstName},\n\n${text}`,
+        text: `Hi ${firstName},\n\n${plainMessage}\n\n${footerText}`,
       }))
 
       const resendRes = await fetch('https://api.resend.com/emails/batch', {

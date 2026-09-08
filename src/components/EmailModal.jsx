@@ -4,8 +4,15 @@ import { useToast } from './Toast.jsx'
 import useDiscardGuard from './useDiscardGuard.jsx'
 import useModal from '../useModal.js'
 import { Avatar } from './Directory.jsx'
+import EmailEditor from './EmailEditor.jsx'
 
 const MAX_MESSAGE = 4000
+// Rich HTML (headings, formatting, image URLs) runs far longer than the
+// same content as plain text for the same amount of actual writing --
+// this is a length on the sanitized HTML string, not on what the admin
+// sees themselves typing, and a couple of inserted images alone can be
+// a few hundred characters of markup before any text at all.
+const RICH_MAX_MESSAGE = 20000
 const MAX_SUBJECT = 150
 // Same lingering delay as ContactModal.jsx, so every "email" action in the
 // app feels like the same widget.
@@ -28,6 +35,7 @@ export default function EmailModal({
   messageDefault = '',
   placeholder = 'Write your message…',
   sentToast = 'Email sent.',
+  richText = false,
   onSend,
   onClose,
 }) {
@@ -53,12 +61,17 @@ export default function EmailModal({
 
   const modalRef = useModal({ onClose: requestClose, closeOnEscape: !busy && !sent })
 
-  const remaining = MAX_MESSAGE - messageText.length
+  const activeMax = richText ? RICH_MAX_MESSAGE : MAX_MESSAGE
+  const remaining = activeMax - messageText.length
   const counterLow = remaining <= 200
 
   async function send() {
-    if (!messageText.trim()) {
+    if (!messageText.trim() || (richText && messageText === '<br>')) {
       setError('Write a message before sending.')
+      return
+    }
+    if (messageText.length > activeMax) {
+      setError(`Message is too long (max ${activeMax} characters).`)
       return
     }
     setBusy(true)
@@ -87,7 +100,7 @@ export default function EmailModal({
     <>
       <div className="modal-backdrop" onClick={requestClose} role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
         <form
-          className="modal modal-contact"
+          className={richText ? "modal modal-contact modal-email-rich" : "modal modal-contact"}
           ref={modalRef}
           onClick={(e) => e.stopPropagation()}
           onSubmit={(e) => { e.preventDefault(); if (!busy && !sent) send() }}
@@ -124,20 +137,36 @@ export default function EmailModal({
               />
             </label>
 
-            <label className="field contact-modal-message">
+            <label className={richText ? "field contact-modal-message rich-mode" : "field contact-modal-message"}>
               <span>Message</span>
-              <textarea
-                className="contact-modal-textarea"
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE))}
-                placeholder={placeholder}
-                rows={7}
-                autoFocus
-                disabled={sent}
-              />
-              <span className={`contact-modal-counter${counterLow ? ' is-low' : ''}`}>
-                {messageText.length} / {MAX_MESSAGE}
-              </span>
+              {richText ? (
+                <div style={{ paddingBottom: 16 }}>
+                  <EmailEditor
+                    value={messageText}
+                    onChange={setMessageText}
+                    placeholder={placeholder}
+                    disabled={sent}
+                  />
+                  <span className={`contact-modal-counter${counterLow ? ' is-low' : ''}`}>
+                    {messageText.length} / {activeMax}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <textarea
+                    className="contact-modal-textarea"
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE))}
+                    placeholder={placeholder}
+                    rows={7}
+                    autoFocus
+                    disabled={sent}
+                  />
+                  <span className={`contact-modal-counter${counterLow ? ' is-low' : ''}`}>
+                    {messageText.length} / {MAX_MESSAGE}
+                  </span>
+                </>
+              )}
             </label>
 
             {error && (

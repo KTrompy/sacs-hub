@@ -8748,6 +8748,56 @@ button.delete-danger svg { flex-shrink: 0; }
 .job-attachment-chip.empty { color: var(--ink-soft); font-style: italic; }
 .job-attachment-chip svg { color: var(--maroon); flex-shrink: 0; }
 
+/* ---------- Newsletter-style toolbar additions (Admin broadcast email
+   only -- EmailEditor.jsx). Same rte-editor-wrap-full/rte-toolbar-full
+   base as the Business description editor above, just with headings,
+   an inline image button and a divider on top. ---------- */
+.rte-editor h1, .rte-editor h2, .rte-editor h3 {
+  font-family: var(--display);
+  color: var(--ink);
+  margin: 10px 0 8px;
+  line-height: 1.25;
+}
+.rte-editor h1 { font-size: var(--fs-2xl); }
+.rte-editor h2 { font-size: var(--fs-xl); }
+.rte-editor h3 { font-size: var(--fs-lg); }
+.rte-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  display: block;
+  margin: 10px 0;
+}
+.rte-editor hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 14px 0;
+}
+.rte-btn-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--orange);
+  animation: contact-spin 0.7s linear infinite;
+}
+.rte-upload-error {
+  margin: 6px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--danger);
+}
+
+/* The broadcast composer needs more room than the plain-text contact
+   modal it's built on -- a full toolbar plus headings/images read as
+   cramped at 520px. Widened only when richText is on (modal-email-rich),
+   so every other EmailModal/ContactModal use keeps its original size. */
+.modal-email-rich { max-width: 720px; }
+.modal-email-rich .rte-editor { min-height: 220px; }
+@media (max-width: 760px) {
+  .modal-email-rich { max-width: 100%; }
+}
+
 /* ---------- Full rich text toolbar (Business description only) ---------- */
 .rte-toolbar-full .rte-toolbar-formats { flex-wrap: wrap; row-gap: 4px; }
 .rte-editor-wrap-full .rte-editor { min-height: 130px; }

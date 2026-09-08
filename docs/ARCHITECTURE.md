@@ -202,7 +202,7 @@ is the source of truth):
 4. **`send-member-email`** — Admin-to-member email via Resend
 5. **`send-contact-email`** — Member-to-member email via Resend, triggered by the "Message" button anywhere in the app (see FEATURES.md § Contact via Email)
 6. **`send-directed-email`** — Admin-to-member and member-to-business email via Resend (the mailto: replacements that don't fit send-contact-email's or send-support-email's shape)
-7. **`send-broadcast-email`** — Admin -> a selected/filtered group of members, batched through Resend's `/emails/batch` (max 100/call), skipping anyone who's opted out via `notification_preferences.notify_admin_broadcast` (see FEATURES.md § Admin Panel)
+7. **`send-broadcast-email`** — Admin -> a selected/filtered group of members, batched through Resend's `/emails/batch` (max 100/call), skipping anyone who's opted out via `notification_preferences.notify_admin_broadcast`. Message is rich HTML from EmailEditor.jsx (already sanitized client-side with DOMPurify), re-sanitized server-side as a backstop before being rendered into the email (see FEATURES.md § Admin Panel)
 
 All share the same CORS/JSON-response pattern; `delete-account` and `admin-delete-member` additionally share `_shared/accountCleanup.ts` for the `purgeAndDeleteUser()` flow.
 

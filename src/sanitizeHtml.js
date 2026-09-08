@@ -33,6 +33,19 @@ export function sanitizeBusinessHtml(html) {
   return DOMPurify.sanitize(html, BUSINESS_CONFIG)
 }
 
+const EMAIL_CONFIG = {
+  ALLOWED_TAGS: [
+    'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'br', 'div', 'p', 'span', 'blockquote', 'a', 
+    'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tbody', 'thead', 'tfoot', 'tr', 'td', 'th', 'center', 'hr'
+  ],
+  ALLOWED_ATTR: ['style', 'href', 'target', 'rel', 'src', 'alt', 'width', 'height', 'cellpadding', 'cellspacing', 'border', 'align', 'valign'],
+}
+
+export function sanitizeEmailHtml(html) {
+  if (!html) return ''
+  return DOMPurify.sanitize(html, EMAIL_CONFIG)
+}
+
 // contentEditable (the rich text editor used for job/post descriptions)
 // often leaves a trailing empty <div><br></div> or two behind if someone
 // hits Enter a few extra times while composing. Nothing was stripping
