@@ -284,6 +284,9 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
           <h2 className="panel-title">Business Directory</h2>
           <p className="panel-sub">Old Boy-owned and Old Boy-run businesses, all in one place.</p>
         </div>
+        {canPost && !showForm && (
+          <button type="button" className="btn primary" onClick={() => setShowForm(true)}>List your business</button>
+        )}
       </div>
 
       {showForm && (

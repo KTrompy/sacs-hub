@@ -1076,7 +1076,7 @@ export default function Profile({ session, profile, onSaved, onDirtyChange, save
                   placeholder="2012"
                 />
               </label>
-              <label className="field" id="field-grad_year"><span>Class of</span>
+              <label className="field" id="field-grad_year"><span>Year left SACS</span>
                 <ClearableInput
                   inputMode="numeric"
                   value={form.grad_year}
