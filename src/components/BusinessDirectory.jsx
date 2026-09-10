@@ -297,17 +297,6 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
         />
       )}
 
-      {!showForm && businesses.length > 0 && (
-        <div className="jobs-encourage-banner">
-          <span>
-            🏢 {businesses.length} {businesses.length === 1 ? 'business has' : 'businesses have'} been listed by fellow Old Boys. Run something of your own? List it — it takes about two minutes.
-          </span>
-          {canPost && (
-            <button type="button" className="btn primary small" onClick={() => setShowForm(true)}>List it</button>
-          )}
-        </div>
-      )}
-
       <div className="directory-toolbar">
         <div className="search-wrap">
           <input
