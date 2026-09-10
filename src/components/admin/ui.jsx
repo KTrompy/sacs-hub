@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { lockBodyScroll } from '../../scrollLock.js'
 
 /* ---------- Page header ----------
    Every workspace opens the same way: an optional breadcrumb, a title, one
@@ -119,11 +120,10 @@ export function Drawer({ open, onClose, title, eyebrow, children, footer, wide }
     function onKey(e) { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
     panelRef.current?.focus()
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const unlockScroll = lockBodyScroll()
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prevOverflow
+      unlockScroll()
     }
   }, [open, onClose])
 

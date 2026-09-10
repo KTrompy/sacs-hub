@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAdmin } from './AdminContext.jsx'
+import { lockBodyScroll } from '../../scrollLock.js'
 import {
   OverviewIcon, PendingIcon, MembersIcon, ReportsIcon, PostsIcon, JobsIcon,
   EventsIcon, BusinessesIcon, OrdersIcon, ProductsIcon, LegendsIcon, ActivityIcon, HandbookIcon,
@@ -49,6 +51,13 @@ function useNavGroups() {
 }
 
 export default function AdminSidebar({ mobileOpen, onCloseMobile }) {
+  // Lock the page behind the mobile nav drawer so it can't be scrolled
+  // (including touch rubber-band on mobile Safari) while it's open.
+  useEffect(() => {
+    if (!mobileOpen) return undefined
+    return lockBodyScroll()
+  }, [mobileOpen])
+
   const groups = useNavGroups()
 
   const content = (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { lockBodyScroll } from './scrollLock.js'
 
 // Everything a modal owes the person using it, in one hook.
 //
@@ -99,11 +100,8 @@ export default function useModal(options = {}) {
 
     document.addEventListener('keydown', onKey)
 
-    let prevOverflow
-    if (lockScroll) {
-      prevOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-    }
+    let unlockScroll
+    if (lockScroll) unlockScroll = lockBodyScroll()
 
     // Move focus into the modal. Prefer an actual input over the close
     // button when there is one, so opening a composer puts the cursor where
@@ -145,7 +143,7 @@ export default function useModal(options = {}) {
       document.removeEventListener('keydown', onKey)
       const i = stack.indexOf(token)
       if (i !== -1) stack.splice(i, 1)
-      if (lockScroll) document.body.style.overflow = prevOverflow
+      if (lockScroll) unlockScroll?.()
 
       if (history) {
         clearTimeout(pushTimer)

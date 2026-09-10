@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PageHeader, Skeleton } from './ui.jsx'
 import { useAdmin } from './AdminContext.jsx'
 import { Avatar } from '../Directory.jsx'
@@ -6,6 +6,7 @@ import EmptyState from '../EmptyState.jsx'
 import Turnstile, { TURNSTILE_SITE_KEY } from '../Turnstile.jsx'
 import EmailModal from '../EmailModal.jsx'
 import { supabase } from '../../supabaseClient'
+import { lockBodyScroll } from '../../scrollLock.js'
 
 function timeAgo(iso) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -46,6 +47,13 @@ export default function PendingPage() {
   } = useAdmin()
   const [declineTarget, setDeclineTarget] = useState(null)
   const [declineReason, setDeclineReason] = useState('')
+
+  // Lock the page behind the decline dialog so it can't be scrolled while
+  // it's open — same as every other modal/drawer in the app.
+  useEffect(() => {
+    if (!declineTarget) return undefined
+    return lockBodyScroll()
+  }, [declineTarget])
 
   const declined = members.filter((m) => m.declined_at)
   const ready = pending.filter((m) => m.consented_at && m.email_confirmed_at)

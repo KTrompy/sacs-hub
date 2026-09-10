@@ -5,6 +5,7 @@ import CityAutocomplete from './CityAutocomplete.jsx'
 import { useToast } from './Toast.jsx'
 import useDiscardGuard from './useDiscardGuard.jsx'
 import useModal from '../useModal.js'
+import { lockBodyScroll } from '../scrollLock.js'
 import DateTimePicker from './DateTimePicker.jsx'
 import RichTextToolbarExtended from './RichTextToolbarExtended.jsx'
 import { isSafeHttpUrl } from '../utils.js'
@@ -42,9 +43,7 @@ export default function EventFormEnhanced({ session, onCancel, onCreated, initia
 
   useEffect(() => {
     if (isEdit) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prevOverflow }
+    return lockBodyScroll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

@@ -13,6 +13,7 @@ import CityAutocomplete from './CityAutocomplete.jsx'
 import { useToast } from './Toast.jsx'
 import useDiscardGuard from './useDiscardGuard.jsx'
 import useModal from '../useModal.js'
+import { lockBodyScroll } from '../scrollLock.js'
 import { matchReason } from '../icebreaker.js'
 import { sanitizeHtml, trimTrailingHtml } from '../sanitizeHtml.js'
 import ApplyModal from './ApplyModal.jsx'
@@ -237,12 +238,11 @@ export default function Jobs({ session, profile, onMessage }) {
   // Lock body scroll while the filter drawer is open, and let Escape close it.
   useEffect(() => {
     if (!filterOpen || isWide) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const unlockScroll = lockBodyScroll()
     function onKey(e) { if (e.key === 'Escape') setFilterOpen(false) }
     document.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = prevOverflow
+      unlockScroll()
       document.removeEventListener('keydown', onKey)
     }
   }, [filterOpen, isWide])
@@ -816,27 +816,7 @@ export function JobForm({ session, onCancel, onCreated, initial = null }) {
   // lets the background scroll through touch events.
   useEffect(() => {
     if (isEdit) return
-    const scrollY = window.scrollY
-    const html = document.documentElement
-    const body = document.body
-    const prevHtmlOverflow = html.style.overflow
-    const prevBodyOverflow = body.style.overflow
-    const prevBodyPosition = body.style.position
-    const prevBodyTop = body.style.top
-    const prevBodyWidth = body.style.width
-    html.style.overflow = 'hidden'
-    body.style.overflow = 'hidden'
-    body.style.position = 'fixed'
-    body.style.top = `-${scrollY}px`
-    body.style.width = '100%'
-    return () => {
-      html.style.overflow = prevHtmlOverflow
-      body.style.overflow = prevBodyOverflow
-      body.style.position = prevBodyPosition
-      body.style.top = prevBodyTop
-      body.style.width = prevBodyWidth
-      window.scrollTo(0, scrollY)
-    }
+    return lockBodyScroll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

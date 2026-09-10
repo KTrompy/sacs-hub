@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient'
 import { COUNTRIES, INDUSTRIES, INDUSTRY_KEYWORDS, SA_CITIES, SERVICES_OFFERED } from '../constants.js'
 import MultiSelectAutocomplete from './MultiSelectAutocomplete.jsx'
 import { useIsWide } from '../utils.js'
+import { lockBodyScroll } from '../scrollLock.js'
 
 // Shared by both Old Boys views (List = Directory.jsx, Map = AlumniMap.jsx)
 // so switching between them doesn't reset your search/filters — People.jsx
@@ -68,26 +69,14 @@ export function useDirectoryFilters(session, refetchTrigger) {
 
   useEffect(() => {
     if (!filterOpen || isWide) return
-    // Plain `overflow: hidden` on body isn't enough on mobile Safari — it
-    // still lets the page rubber-band/scroll behind the drawer via touch.
-    // Pinning body to `position: fixed` at its current scroll offset is the
-    // standard fix; we restore the exact scroll position on close so the
-    // page doesn't jump.
-    const scrollY = window.scrollY
-    const body = document.body
-    const prev = { overflow: body.style.overflow, position: body.style.position, top: body.style.top, width: body.style.width }
-    body.style.overflow = 'hidden'
-    body.style.position = 'fixed'
-    body.style.top = `-${scrollY}px`
-    body.style.width = '100%'
+    // See scrollLock.js — plain `overflow: hidden` on body isn't enough on
+    // mobile Safari, which still lets the page rubber-band/scroll behind
+    // the drawer via touch.
+    const unlockScroll = lockBodyScroll()
     function onKey(e) { if (e.key === 'Escape') setFilterOpen(false) }
     document.addEventListener('keydown', onKey)
     return () => {
-      body.style.overflow = prev.overflow
-      body.style.position = prev.position
-      body.style.top = prev.top
-      body.style.width = prev.width
-      window.scrollTo(0, scrollY)
+      unlockScroll()
       document.removeEventListener('keydown', onKey)
     }
   }, [filterOpen, isWide])

@@ -16,6 +16,7 @@ import ReportButton from './ReportButton.jsx'
 import { useToast } from './Toast.jsx'
 import useDiscardGuard from './useDiscardGuard.jsx'
 import useModal from '../useModal.js'
+import { lockBodyScroll } from '../scrollLock.js'
 import { useIsWide } from '../utils.js'
 import { COUNTRIES } from '../constants.js'
 import BusinessDescriptionEditor from './BusinessDescriptionEditor.jsx'
@@ -188,12 +189,11 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
 
   useEffect(() => {
     if (!filterOpen || isWide) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const unlockScroll = lockBodyScroll()
     function onKey(e) { if (e.key === 'Escape') setFilterOpen(false) }
     document.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = prevOverflow
+      unlockScroll()
       document.removeEventListener('keydown', onKey)
     }
   }, [filterOpen, isWide])
@@ -586,9 +586,7 @@ export function BusinessForm({ session, onCancel, onCreated, initial = null }) {
 
   useEffect(() => {
     if (isEdit) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prevOverflow }
+    return lockBodyScroll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

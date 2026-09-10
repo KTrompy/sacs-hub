@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { supabase, isAuthError } from './supabaseClient'
+import { lockBodyScroll } from './scrollLock.js'
 import Auth from './components/Auth.jsx'
 import ResetPassword from './components/ResetPassword.jsx'
 import Onboarding from './components/onboarding/Onboarding.jsx'
@@ -167,12 +168,11 @@ export default function App() {
   // Jobs.jsx, BusinessDirectory.jsx).
   useEffect(() => {
     if (!navOpen) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const unlockScroll = lockBodyScroll()
     function onKey(e) { if (e.key === 'Escape') setNavOpen(false) }
     document.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = prevOverflow
+      unlockScroll()
       document.removeEventListener('keydown', onKey)
     }
   }, [navOpen])
