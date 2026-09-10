@@ -14,32 +14,61 @@
 // restores the exact scroll position so the page doesn't jump when the
 // overlay closes.
 //
-// Safe to call more than once while already locked (nested overlays, e.g.
-// a ConfirmDialog on top of a modal): each call snapshots whatever is
-// already in place as "prev" and restores exactly that on its own unlock,
-// so the outermost lock/unlock pair always wins.
+// Reference-counted at module scope, rather than each call saving/restoring
+// its own snapshot of "whatever was there before it." Two overlays are
+// often open at once (a ConfirmDialog on top of the modal it's discarding),
+// and ConfirmDialog frequently unmounts in the *same tick* as the modal
+// underneath it (confirm a discard and both disappear together) — so the
+// two lock/unlock pairs don't always settle in strict last-opened-first-
+// closed order. With a per-call snapshot, an unlock that fires "out of
+// order" reapplies a stale, already-locked snapshot instead of the page's
+// true original style, and the page is left stuck unscrollable for good.
+// A shared counter sidesteps that entirely: only the *first* lock call
+// captures the original style and scroll position, and only when the
+// count drops back to zero does the last unlock restore them — regardless
+// of which order the calls happen in.
+let lockCount = 0
+let savedScrollY = 0
+let prevStyles = null
+
 export function lockBodyScroll() {
-  const scrollY = window.scrollY
-  const html = document.documentElement
-  const body = document.body
-  const prev = {
-    htmlOverflow: html.style.overflow,
-    bodyOverflow: body.style.overflow,
-    bodyPosition: body.style.position,
-    bodyTop: body.style.top,
-    bodyWidth: body.style.width,
+  if (lockCount === 0) {
+    savedScrollY = window.scrollY
+    const html = document.documentElement
+    const body = document.body
+    prevStyles = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+    }
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    body.style.position = 'fixed'
+    body.style.top = `-${savedScrollY}px`
+    body.style.width = '100%'
   }
-  html.style.overflow = 'hidden'
-  body.style.overflow = 'hidden'
-  body.style.position = 'fixed'
-  body.style.top = `-${scrollY}px`
-  body.style.width = '100%'
+  lockCount++
+
+  // Guards a caller that accidentally invokes its own unlock twice (e.g. an
+  // effect cleanup that runs, then a stray extra call) from decrementing
+  // the shared counter more than once for a single lock.
+  let released = false
   return function unlock() {
-    html.style.overflow = prev.htmlOverflow
-    body.style.overflow = prev.bodyOverflow
-    body.style.position = prev.bodyPosition
-    body.style.top = prev.bodyTop
-    body.style.width = prev.bodyWidth
-    window.scrollTo(0, scrollY)
+    if (released) return
+    released = true
+    lockCount = Math.max(0, lockCount - 1)
+    if (lockCount === 0 && prevStyles) {
+      const html = document.documentElement
+      const body = document.body
+      html.style.overflow = prevStyles.htmlOverflow
+      body.style.overflow = prevStyles.bodyOverflow
+      body.style.position = prevStyles.bodyPosition
+      body.style.top = prevStyles.bodyTop
+      body.style.width = prevStyles.bodyWidth
+      window.scrollTo(0, savedScrollY)
+      prevStyles = null
+    }
   }
 }
