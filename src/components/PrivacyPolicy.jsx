@@ -16,7 +16,7 @@ import EmailModal from './EmailModal.jsx'
 //     session and therefore before the router's protected routes exist.
 // Update the "Last updated" date below whenever the content changes —
 // POPIA notices are meant to reflect current practice, not history.
-const LAST_UPDATED = '6 September 2026'
+const LAST_UPDATED = '10 September 2026'
 
 // withEmailModal=true swaps the plain mailto: link for the floating
 // compose popup. Only the full page (<PrivacyPolicy/>, routed at /privacy)
@@ -42,19 +42,25 @@ export function PrivacyPolicyContent({ withEmailModal = false }) {
       <h3>What we collect</h3>
       <p>
         When you join, we collect your name, email address, the years you
-        attended SACS, and a residential address, which the committee uses
-        to verify you actually attended before approving your
-        account. From there, anything else on your profile is what you
-        choose to add: phone number, city/country and the coordinates used
-        to place you on the alumni map, occupation, employer, industry,
-        LinkedIn profile, a bio, a CV upload, and business or mentoring
-        details if you fill those sections in. We also keep a record of
-        posts, event RSVPs, job listings and business listings you create,
-        and a last-seen timestamp used for the "recently online" indicator.
-        When you email another member through the site (the "Message"
-        button on a profile, post or listing), the subject and message text
-        pass through Resend, our email delivery provider, to reach them —
-        we don't store the content of those emails ourselves.
+        attended SACS, and your city/country, which the committee uses to
+        verify you actually attended before approving your account. While
+        you're signing up we also look up your city from your device's IP
+        address (via two lookup services, ipapi.co and ipwho.is) to speed
+        up that field — see "Who else sees it" below. A full postal
+        address is optional and only asked for if you choose to add one.
+        From there, anything else on your profile is what you choose to
+        add: phone number, the coordinates used to place you on the alumni
+        map, occupation, employer, industry, LinkedIn profile, a bio, a CV
+        upload, and business or mentoring details if you fill those
+        sections in. We also keep a record of posts, event RSVPs, job
+        listings and business listings you create, a last-seen timestamp
+        used for the "recently online" indicator, and, if you report a
+        post, listing or member for admins to review, whatever you write
+        in that report (which may describe another member). When you email
+        another member through the site (the "Message" button on a
+        profile, post or listing), the subject and message text pass
+        through Resend, our email delivery provider, to reach them — we
+        don't store the content of those emails ourselves.
       </p>
 
       <h3>Why we process it</h3>
@@ -73,17 +79,21 @@ export function PrivacyPolicyContent({ withEmailModal = false }) {
         → Privacy) allow — you control who can see your phone number, email
         and location. Any approved member can email you using the
         "Message" button on your profile, a post, or a listing you've
-        created. Site admins can see full profiles
-        in order to run the platform and moderate content. We use a small
-        number of external processors to operate the site: Supabase (hosted
-        in Frankfurt, Germany) for the database, authentication and file
-        storage; Mapbox for map tiles and turning addresses into map
-        coordinates; Cloudflare Turnstile for bot protection at signup;
+        created. Site admins can see full profiles, including your email
+        address, in order to run the platform, and see anything you submit
+        when reporting a post, listing or member, in order to moderate it.
+        We use a small number of external processors to operate the site:
+        Supabase (hosted in Frankfurt, Germany) for the database,
+        authentication and file storage; Mapbox for map tiles and turning
+        addresses into map coordinates; ipapi.co and ipwho.is, which
+        receive your IP address during signup to suggest your city; and
         Resend for delivering emails sent through the site (account emails
-        and messages you send other members); and Google, only if you
-        choose to sign in with a Google account. None of
-        these processors use your data for anything other than providing
-        that service to the Hub.
+        and messages you send other members). Cloudflare Turnstile also
+        runs bot-protection checks at signup and other sensitive actions
+        where we've turned it on. If you sign in with a Google account,
+        Google shares your name, email address and profile photo with us
+        for that. None of these processors use your data for anything
+        other than providing that service to the Hub.
       </p>
       <p>
         Because Supabase's servers are in the EU, your data is processed
@@ -94,11 +104,14 @@ export function PrivacyPolicyContent({ withEmailModal = false }) {
 
       <h3>How long we keep it</h3>
       <p>
-        For as long as your account exists. If you delete your account (or
-        ask an admin to), your profile, posts, uploaded files and
-        other account data are permanently removed — this can't be undone,
-        and there's no separate backup copy kept for marketing or analytics
-        purposes.
+        For as long as your account exists. If you delete your own account,
+        your profile, posts, uploaded files and other account data are
+        permanently removed — this can't be undone, and there's no separate
+        backup copy kept for marketing or analytics purposes. If an admin
+        removes your account instead, the same data is deleted the same
+        way, except that your name stays in our internal admin action log
+        — a permanent record of who did what, kept for accountability, not
+        as a backup of your profile.
       </p>
 
       <h3>Keeping it secure</h3>
@@ -113,12 +126,12 @@ export function PrivacyPolicyContent({ withEmailModal = false }) {
       <p>
         You can view and correct almost everything we hold on you directly
         from your Profile page at any time. You can change who can see your
-        contact details, or opt out of the news/events emails, from Settings
-        → Privacy. You can permanently delete your account and everything in
-        it from Settings, with no need to ask anyone. If you'd like a copy of
-        the data we hold on you, or have any other question about how your
-        information is used, email the address below and we'll deal with it
-        promptly.
+        contact details from Settings → Privacy, and opt in or out of
+        committee news/event emails from Settings → Notifications. You can
+        permanently delete your account and everything in it from Settings,
+        with no need to ask anyone. If you'd like a copy of the data we
+        hold on you, or have any other question about how your information
+        is used, email the address below and we'll deal with it promptly.
       </p>
 
       <h3>Contact / complaints</h3>
@@ -136,6 +149,7 @@ export function PrivacyPolicyContent({ withEmailModal = false }) {
         <EmailModal
           eyebrow="Contact"
           recipientName="SACS Alumni admin team"
+          avatarUrl="/sacs-logo.png"
           subjectDefault="SACS Alumni — privacy question"
           onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
           sentToast="Email sent."

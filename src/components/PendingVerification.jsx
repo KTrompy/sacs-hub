@@ -124,6 +124,7 @@ export default function PendingVerification({ session, profile, onProfileChange 
           <EmailModal
             eyebrow="Contact"
             recipientName="SACS Alumni admin team"
+            avatarUrl="/sacs-logo.png"
             subjectDefault="SACS Alumni — my signup details"
             messageDefault={`Hi,\n\nI signed up for SACS Alumni with ${email} and wanted to check on / correct my details:\n\n`}
             onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}

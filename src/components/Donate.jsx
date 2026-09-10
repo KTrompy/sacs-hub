@@ -44,6 +44,7 @@ export default function Donate() {
         <EmailModal
           eyebrow="Contact"
           recipientName="SACS Alumni admin team"
+          avatarUrl="/sacs-logo.png"
           subjectDefault="Supporting SACS"
           onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
           sentToast="Email sent."

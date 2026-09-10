@@ -62,7 +62,7 @@ export default function Settings({ session, profile, onSaved }) {
 
       <div className="settings-panel">
         {tab === 'account' && <AccountTab session={session} profile={profile} onSaved={onSaved} />}
-        {tab === 'notifications' && <NotificationsTab session={session} />}
+        {tab === 'notifications' && <NotificationsTab session={session} profile={profile} />}
         {tab === 'privacy' && <PrivacyTab session={session} profile={profile} onSaved={onSaved} />}
       </div>
     </section>
@@ -492,7 +492,7 @@ function AccountTab({ session, profile, onSaved }) {
 }
 
 /* ---------- Notifications ---------- */
-function NotificationsTab({ session }) {
+function NotificationsTab({ session, profile }) {
   const showToast = useToast()
   const [prefs, setPrefs] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -504,10 +504,20 @@ function NotificationsTab({ session }) {
       .eq('user_id', session.user.id)
       .maybeSingle()
       .then(({ data }) => {
-        setPrefs(data || { notify_post_activity: true, notify_event_rsvp: true, notify_event_comment: true, notify_admin_broadcast: true })
+        setPrefs(data || {
+          notify_post_activity: true,
+          notify_event_rsvp: true,
+          notify_event_comment: true,
+          // No row yet means this person has never saved a Settings
+          // preference -- fall back to what they actually told us at
+          // signup (profiles.email_news_opt_in) rather than a blanket
+          // "true". Otherwise, flipping some unrelated toggle here would
+          // silently opt them in to committee emails they never agreed to.
+          notify_admin_broadcast: profile?.email_news_opt_in === true,
+        })
         setLoading(false)
       })
-  }, [session.user.id])
+  }, [session.user.id, profile?.email_news_opt_in])
 
   async function toggle(key) {
     const prev = prefs

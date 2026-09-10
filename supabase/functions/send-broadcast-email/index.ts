@@ -4,16 +4,22 @@
 // Same auth shape as send-directed-email's admin_to_member kind (is_admin()
 // checked against the caller's own token, recipients looked up server-side
 // so the browser never needs a member's email), but fans out to a list
-// instead of one target, and -- unlike every other email in this app --
-// respects an opt-out: notification_preferences.notify_admin_broadcast
-// (schema-update-66). Nothing else sent by this codebase can be turned
-// off by the recipient; a broadcast is the first thing that needed that.
+// instead of one target and requires real opt-in consent (see below) --
+// nothing else sent by this codebase works that way.
 //
 // Recipient emails and names come from admin_list_members() rather than
 // admin.getUserById() in a loop -- that RPC already joins profiles to
 // auth.users and is_admin()-gated, so one call gets every member's email
 // in the same shape the Members page itself uses, instead of one Admin
 // API round trip per recipient.
+//
+// Consent: a member is sent this only if notification_preferences
+// .notify_admin_broadcast is true (whatever they last chose in Settings),
+// or -- if they've never saved a Settings preference -- if
+// profiles.email_news_opt_in is true (their signup answer). No signal at
+// all = not sent. (schema-update-66 originally shipped this as an
+// opt-out, default-true column; that didn't match what the signup screen
+// promised members, so this now requires an actual opt-in signal.)
 //
 // Sends batch through Resend's /emails/batch endpoint (max 100 per call
 // per Resend's limit), chunking larger selections.
@@ -218,12 +224,21 @@ Deno.serve(async (req) => {
       return json(req, { error: 'Could not load the member list.' }, 500)
     }
 
-    const [{ data: senderProfile }, { data: prefRows }] = await Promise.all([
+    const [{ data: senderProfile }, { data: prefRows }, { data: optInRows }] = await Promise.all([
       adminClient.from('profiles').select('full_name, first_name').eq('id', senderId).maybeSingle(),
       adminClient
         .from('notification_preferences')
         .select('user_id, notify_admin_broadcast')
         .in('user_id', recipientIds),
+      // Real POPIA opt-in consent has to come from somewhere even for a
+      // member who has never opened Settings -- that's what they answered
+      // on the "email me news and events" question at signup. Only once
+      // they've actually saved a preference in Settings does that value
+      // (prefRows, below) take over.
+      adminClient
+        .from('profiles')
+        .select('id, email_news_opt_in')
+        .in('id', recipientIds),
     ])
 
     const senderFirstName =
@@ -233,13 +248,15 @@ Deno.serve(async (req) => {
       'The committee'
     const senderFullName = (senderProfile?.full_name ?? '').trim() || senderFirstName
 
-    // No row in notification_preferences means the member has never
-    // touched their notification settings -- the column default (true)
-    // is what applies, same as the fallback object NotificationsTab uses
-    // client-side before a row exists.
-    const optedOut = new Set(
-      (prefRows ?? []).filter((r) => r.notify_admin_broadcast === false).map((r) => r.user_id),
-    )
+    // A member is only included if they've affirmatively opted in:
+    // either they've explicitly set notify_admin_broadcast in Settings
+    // (true or false, whichever they chose most recently), or -- if
+    // they've never touched Settings at all -- they said yes to news/event
+    // emails at signup (profiles.email_news_opt_in). Anyone with neither
+    // signal is treated as opted out, not opted in.
+    const explicitPref = new Map((prefRows ?? []).map((r) => [r.user_id, r.notify_admin_broadcast === true]))
+    const signupOptIn = new Map((optInRows ?? []).map((r) => [r.id, r.email_news_opt_in === true]))
+    const optedIn = (id: string): boolean => explicitPref.has(id) ? (explicitPref.get(id) ?? false) : (signupOptIn.get(id) ?? false)
 
     const membersById = new Map((allMembers as Member[]).map((m) => [m.id, m]))
 
@@ -250,7 +267,7 @@ Deno.serve(async (req) => {
     for (const id of recipientIds) {
       const m = membersById.get(id)
       if (!m || !m.email) { skippedNoEmail++; continue }
-      if (optedOut.has(id)) { optedOutCount++; continue }
+      if (!optedIn(id)) { optedOutCount++; continue }
       const firstName = (m.first_name ?? '').trim() || (m.full_name ?? '').trim().split(/\s+/)[0] || 'there'
       toSend.push({ email: m.email, firstName })
     }
@@ -259,7 +276,7 @@ Deno.serve(async (req) => {
       return json(req, {
         error:
           optedOutCount > 0
-            ? 'Everyone selected has turned off committee emails.'
+            ? 'None of the selected members have opted in to committee emails.'
             : 'None of the selected members have a usable email address.',
       }, 400)
     }

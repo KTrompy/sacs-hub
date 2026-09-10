@@ -897,6 +897,7 @@ export default function App() {
         <EmailModal
           eyebrow="Contact"
           recipientName="SACS Alumni admin team"
+          avatarUrl="/sacs-logo.png"
           onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
           sentToast="Email sent."
           onClose={() => setSupportEmailOpen(false)}
@@ -974,6 +975,7 @@ function ProfileLoadError({ onRetry, onSignOut }) {
         <EmailModal
           eyebrow="Contact"
           recipientName="SACS Alumni admin team"
+          avatarUrl="/sacs-logo.png"
           onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
           sentToast="Email sent."
           onClose={() => setEmailOpen(false)}
@@ -1012,6 +1014,7 @@ function AccountRemoved({ onSignOut }) {
         <EmailModal
           eyebrow="Contact"
           recipientName="SACS Alumni admin team"
+          avatarUrl="/sacs-logo.png"
           subjectDefault="SACS Alumni — my account was removed"
           onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
           sentToast="Email sent."
@@ -1059,6 +1062,7 @@ function AccountDeclined({ reason, onSignOut }) {
         <EmailModal
           eyebrow="Contact"
           recipientName="SACS Alumni admin team"
+          avatarUrl="/sacs-logo.png"
           subjectDefault="SACS Alumni — please recheck my account"
           onSend={(subject, message) => supabase.functions.invoke('send-support-email', { body: { subject, message } })}
           sentToast="Email sent."
