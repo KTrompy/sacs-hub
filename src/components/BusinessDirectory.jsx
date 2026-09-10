@@ -272,7 +272,7 @@ export default function BusinessDirectory({ session, profile, onMessage }) {
 
   function openMessageWithOwner(b) {
     onMessage(
-      { id: b.owner_id, full_name: b.profiles?.full_name },
+      { id: b.owner_id, full_name: b.profiles?.full_name, avatar_url: b.profiles?.avatar_url },
       `Hi! I saw "${b.name}" on the SACS Business Directory and wanted to reach out.`
     )
   }

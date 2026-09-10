@@ -6,6 +6,7 @@ import { Avatar } from '../Directory.jsx'
 import ConfirmDialog from '../ConfirmDialog.jsx'
 import EmptyState from '../EmptyState.jsx'
 import EmailModal from '../EmailModal.jsx'
+import { useToast } from '../Toast.jsx'
 import { supabase } from '../../supabaseClient'
 
 const FILTERS = [
@@ -40,6 +41,8 @@ export default function MembersPage() {
   const [emailOpen, setEmailOpen] = useState(false)
   const [selected, setSelected] = useState(() => new Set())
   const [broadcastOpen, setBroadcastOpen] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const showToast = useToast()
 
   const myId = session?.user?.id
   const active = FILTERS.find((f) => f.id === filter) || FILTERS[0]
@@ -70,6 +73,36 @@ export default function MembersPage() {
       else next.add(id)
       return next
     })
+  }
+
+  // Pushes every approved member into the Resend Audience used by
+  // resend.com/broadcasts, so an admin can compose/send from Resend's own
+  // editor and still have it respect the same committee-email opt-in this
+  // site enforces (send-broadcast-email's optedIn() logic, mirrored
+  // server-side in sync-resend-audience). Run this right before opening
+  // Resend to send something -- nothing keeps the two in sync on its own.
+  async function syncToResend() {
+    setSyncing(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-resend-audience')
+      if (error || data?.error) {
+        showToast(data?.error || 'Could not sync to Resend.', { type: 'error' })
+        return
+      }
+      const parts = []
+      if (data.created) parts.push(`${data.created} added`)
+      if (data.updated) parts.push(`${data.updated} updated`)
+      if (data.removed) parts.push(`${data.removed} removed`)
+      if (data.failed) parts.push(`${data.failed} failed`)
+      showToast(
+        parts.length ? `Synced to Resend: ${parts.join(', ')}.` : `Synced to Resend: already up to date (${data.total} members).`,
+        { type: data.failed ? 'error' : 'success' }
+      )
+    } catch {
+      showToast('Could not reach the server to sync.', { type: 'error' })
+    } finally {
+      setSyncing(false)
+    }
   }
 
   function ask(member, action) { setConfirmTarget({ member, action }) }
@@ -130,11 +163,18 @@ export default function MembersPage() {
       <PageHeader
         title="Members"
         description="Un-approve pauses access reversibly. Delete erases the account and everything they've posted, for good — keep it for spam and for people who've asked to be removed."
-        action={selected.size > 0 && (
-          <button type="button" className="btn primary small" onClick={() => setBroadcastOpen(true)}>
-            Email {selected.size} selected
-          </button>
-        )}
+        action={
+          <div className="adm-page-head-actions">
+            <button type="button" className="btn small" disabled={syncing} onClick={syncToResend}>
+              {syncing ? (<><Spinner /> Syncing…</>) : 'Sync to Resend'}
+            </button>
+            {selected.size > 0 && (
+              <button type="button" className="btn primary small" onClick={() => setBroadcastOpen(true)}>
+                Email {selected.size} selected
+              </button>
+            )}
+          </div>
+        }
       />
 
       <Toolbar
@@ -312,4 +352,8 @@ export default function MembersPage() {
       )}
     </>
   )
+}
+
+function Spinner() {
+  return <span className="rte-btn-spinner" aria-hidden="true" />
 }

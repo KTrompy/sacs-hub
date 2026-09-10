@@ -387,7 +387,7 @@ export default function Feed({ session, profile, onMessage }) {
       onTogglePin: () => togglePin(p.id, !p.pinned),
       onImageClick: (src) => setLightbox(src),
       onMessage: () => onMessage?.(
-        { id: p.author_id, full_name: p.profiles?.full_name },
+        { id: p.author_id, full_name: p.profiles?.full_name, avatar_url: p.profiles?.avatar_url },
         'Hi! I saw your post on the feed and wanted to reach out.'
       ),
       onOpenProfile: goToProfile,

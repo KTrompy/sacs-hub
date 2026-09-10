@@ -71,7 +71,7 @@ export default function BusinessDetail({ session, profile, onMessage }) {
 
   function messageOwner() {
     onMessage(
-      { id: business.owner_id, full_name: business.profiles?.full_name },
+      { id: business.owner_id, full_name: business.profiles?.full_name, avatar_url: business.profiles?.avatar_url },
       `Hi! I saw "${business.name}" on the SACS Business Directory and wanted to reach out.`
     )
   }

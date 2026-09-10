@@ -238,7 +238,7 @@ export default function PersonProfile({ session, me, onMessage }) {
                 </button>
               ) : (
                 <>
-                  <button type="button" className="header-icon-btn profile-message-btn" onClick={() => onMessage({ id: p.id, full_name: p.full_name })} aria-label="Message" title="Message">
+                  <button type="button" className="header-icon-btn profile-message-btn" onClick={() => onMessage({ id: p.id, full_name: p.full_name, avatar_url: p.avatar_url })} aria-label="Message" title="Message">
                     <MessageIcon />
                   </button>
                   {linkedinHref && (
@@ -461,7 +461,7 @@ export default function PersonProfile({ session, me, onMessage }) {
         <div className="profile-actions">
           <button type="button"
             className="btn primary"
-            onClick={() => onMessage?.({ id: p.id, full_name: p.full_name }, buildIcebreaker(me, p))}
+            onClick={() => onMessage?.({ id: p.id, full_name: p.full_name, avatar_url: p.avatar_url }, buildIcebreaker(me, p))}
           >
             Send a message
           </button>

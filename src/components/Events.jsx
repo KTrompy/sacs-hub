@@ -932,7 +932,7 @@ function AttendeeList({ eventId, eventTitle, session, profile, iAmGoing, onMessa
                   <button type="button"
                     className="attendee-message"
                     onClick={() => onMessage(
-                      { id: a.user_id, full_name: a.profiles?.full_name },
+                      { id: a.user_id, full_name: a.profiles?.full_name, avatar_url: a.profiles?.avatar_url },
                       eventIcebreaker(a.profiles, eventTitle)
                     )}
                     aria-label={`Message ${a.profiles?.full_name || 'this Old Boy'}`}

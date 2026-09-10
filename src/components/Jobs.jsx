@@ -581,7 +581,7 @@ export default function Jobs({ session, profile, onMessage }) {
                       type="button"
                       className="btn ghost small"
                       onClick={() => onMessage(
-                        { id: j.posted_by, full_name: j.profiles?.full_name },
+                        { id: j.posted_by, full_name: j.profiles?.full_name, avatar_url: j.profiles?.avatar_url },
                         `Hi! I saw your "${j.title}" post on the job board and wanted to reach out.`
                       )}
                     >

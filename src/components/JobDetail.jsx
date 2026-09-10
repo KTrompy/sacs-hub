@@ -281,7 +281,7 @@ export default function JobDetail({ session, profile, onMessage }) {
                 <button type="button"
                   className="btn ghost small"
                   onClick={() => onMessage(
-                    { id: job.posted_by, full_name: poster?.full_name },
+                    { id: job.posted_by, full_name: poster?.full_name, avatar_url: poster?.avatar_url },
                     `Hi! I saw your "${job.title}" post on the job board and wanted to reach out.`
                   )}
                 >
