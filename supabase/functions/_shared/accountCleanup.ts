@@ -22,6 +22,7 @@ export const ALLOWED_ORIGINS = [
   'https://www.sacsalumni.org',
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://sacsalumni.pages.dev',
 ]
 
 // Vercel preview builds for THIS project, e.g.
@@ -34,10 +35,14 @@ export const ALLOWED_ORIGINS = [
 // redeploy this function) to match, or preview/production URLs on that
 // project will get CORS-blocked from calling this function.
 const PREVIEW_ORIGIN_RE = /^https:\/\/sacs-hub[a-z0-9-]*\.vercel\.app$/
+// The live site moved to Cloudflare Pages (sacsalumni.pages.dev) --
+// this covers Cloudflare's preview-deploy subdomains the same way
+// PREVIEW_ORIGIN_RE covers Vercel's.
+const CF_PAGES_PREVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9-]+\.sacsalumni\.pages\.dev$/
 
 export function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') ?? ''
-  const allowed = ALLOWED_ORIGINS.includes(origin) || PREVIEW_ORIGIN_RE.test(origin)
+  const allowed = ALLOWED_ORIGINS.includes(origin) || PREVIEW_ORIGIN_RE.test(origin) || CF_PAGES_PREVIEW_ORIGIN_RE.test(origin)
   return {
     'Access-Control-Allow-Origin': allowed ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
