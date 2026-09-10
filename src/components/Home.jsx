@@ -680,9 +680,11 @@ export default function Home({ session, profile, onMessage }) {
                         <Avatar url={m.avatar_url} name={m.full_name} size={44} />
                         <span>{(m.full_name || 'Alumnus').split(' ')[0]}</span>
                       </div>
-                      {m.industry && (
-                        <p className="home-network-tag">{m.industry}</p>
-                      )}
+                      {/* Always rendered (even with no industry) so every card
+                          reserves the same vertical space here — otherwise the
+                          message button below would land at a different depth
+                          on cards whose person has no industry set. */}
+                      <p className="home-network-tag">{m.industry || ''}</p>
                       <button
                         type="button"
                         className="home-network-message-btn"
@@ -824,9 +826,16 @@ function ImageIcon() {
 }
 
 function MessageIcon() {
+  // A plain envelope (rect + chevron) instead of a speech-bubble-with-tail:
+  // the bubble's tail made the icon's visual weight sit above-and-right of
+  // its own bounding box, so it never looked centered inside the round
+  // button no matter how well the button itself was centered. This shape
+  // is left-right and top-bottom balanced, matching the Message icon used
+  // on the Old Boys directory cards (Directory.jsx).
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
     </svg>
   )
 }

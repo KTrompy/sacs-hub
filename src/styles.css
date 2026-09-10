@@ -9231,6 +9231,11 @@ button.delete-danger svg { flex-shrink: 0; }
   margin: -2px 0 0 0;
   text-align: center;
   line-height: 1.3;
+  /* Reserves space for its full 2-line clamp even when this person has no
+     industry set (the element is always rendered now, possibly empty) —
+     so the message button that follows sits at the same depth on every
+     card in the row. */
+  min-height: calc(var(--fs-2xs) * 1.3 * 2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -9242,9 +9247,15 @@ button.delete-danger svg { flex-shrink: 0; }
   overflow-wrap: break-word;
 }
 .home-network-message-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+  /* Used to be a position:absolute corner badge (top-right of the card).
+     Now a normal in-flow button, last in the card's centered column, so it
+     sits centered under the name/industry and — combined with the fixed
+     min-height reserved on .home-network-tag below — lands at the exact
+     same depth on every card regardless of that card's content. It still
+     needs a positioned ancestor for stacking (see the
+     `.home-network-message-btn { position: relative; z-index: 2 }` rule
+     further down this file) so it stays clickable above the card's
+     full-card stretched-link overlay. */
   width: 26px;
   height: 26px;
   display: flex;
@@ -9254,7 +9265,7 @@ button.delete-danger svg { flex-shrink: 0; }
   border-radius: 50%;
   background: var(--card);
   color: var(--maroon);
-  opacity: 0.7;
+  opacity: 1;
   transition: opacity 0.2s var(--ease), background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
 }
 .home-network-item:hover .home-network-message-btn,
