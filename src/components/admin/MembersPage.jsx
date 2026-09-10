@@ -275,6 +275,7 @@ export default function MembersPage() {
         <EmailModal
           eyebrow="New message"
           recipientName={openM.full_name || openM.email}
+          avatarUrl={openM.avatar_url}
           onSend={(subject, message) => supabase.functions.invoke('send-directed-email', {
             body: { kind: 'admin_to_member', target_id: openM.id, subject, message },
           })}

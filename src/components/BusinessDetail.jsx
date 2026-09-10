@@ -227,6 +227,7 @@ export default function BusinessDetail({ session, profile, onMessage }) {
         <EmailModal
           eyebrow="New message"
           recipientName={business.name}
+          avatarUrl={business.logo_url}
           onSend={(subject, message) => supabase.functions.invoke('send-directed-email', {
             body: { kind: 'member_to_business', target_id: business.id, subject, message },
           })}

@@ -269,6 +269,7 @@ function PendingCard({ member: m, busy, onApprove, onDecline, onResend }) {
         <EmailModal
           eyebrow="New message"
           recipientName={m.full_name || m.email}
+          avatarUrl={m.avatar_url}
           onSend={sendToThisMember}
           sentToast="Email sent."
           onClose={() => setEmailOpen(false)}
@@ -278,6 +279,7 @@ function PendingCard({ member: m, busy, onApprove, onDecline, onResend }) {
         <EmailModal
           eyebrow="New message"
           recipientName={m.full_name || m.email}
+          avatarUrl={m.avatar_url}
           subjectDefault="Finishing your SACS Alumni signup"
           messageDefault={'Hi,\n\nYou started signing up for the SACS Alumni Hub but there are a couple of details still to fill in — it takes about thirty seconds. Just sign in again at https://www.sacsalumni.org and it will pick up where you left off.\n\nThanks,\nSACS Alumni'}
           onSend={sendToThisMember}
